@@ -22,6 +22,10 @@ const FALLBACK_MARKETS = [
     { id: "theta-token", name: "Theta", symbol: "theta", current_price: 0.294, market_cap: 289600000, total_volume: 13000000, price_change_percentage_24h: 2.12, price_change_percentage_1h_in_currency: 0.62, image: "" }
 ];
 
+const FALLBACK_SPARKLINE = [12, 12.4, 12.8, 13, 13.4, 14.2, 14.8, 15.1, 15.4];
+const FALLBACK_STATUS = "Live API unavailable - fallback snapshot";
+let fallbackWarningShown = false;
+
 const HOLDINGS = [
     { id: "bitcoin", symbol: "BTC", balance: 0.0001393 },
     { id: "litecoin", symbol: "LTC", balance: 0 },
@@ -62,6 +66,15 @@ function formatPercent(value) {
     return `${numeric.toFixed(2)}%`;
 }
 
+function finiteNumber(value, fallback = 0) {
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? numeric : fallback;
+}
+
+function safeText(value, fallback) {
+    return typeof value === "string" && value.trim() ? value.trim() : fallback;
+}
+
 function percentClass(value) {
     const numeric = Number(value);
     if (numeric > 0) return "positive";
@@ -70,19 +83,65 @@ function percentClass(value) {
 }
 
 function byId(markets, id) {
-    return markets.find(item => item.id === id);
+    return Array.isArray(markets) ? markets.find(item => item.id === id) : undefined;
 }
 
 function coinspotUrl(coin) {
-    const symbol = coin.symbol ? coin.symbol.toUpperCase() : "";
+    const symbol = safeText(coin?.symbol, "btc").toUpperCase();
     return `https://www.coinspot.com.au/buy/${symbol}`;
 }
 
 function coinCell(coin) {
-    const icon = coin.image
-        ? `<img class="coin-icon" src="${coin.image}" alt="">`
+    const safeCoin = normalizeMarket(coin);
+    const icon = safeCoin.image
+        ? `<img class="coin-icon" src="${safeCoin.image}" alt="">`
         : `<span class="coin-icon"></span>`;
-    return `<span class="coin">${icon}${coin.name}</span>`;
+    return `<span class="coin">${icon}${safeCoin.name}</span>`;
+}
+
+function normalizeSparkline(coin) {
+    const prices = coin?.sparkline_in_7d?.price;
+    if (!Array.isArray(prices)) return { price: FALLBACK_SPARKLINE };
+    const cleanPrices = prices.map(value => Number(value)).filter(Number.isFinite);
+    return { price: cleanPrices.length ? cleanPrices : FALLBACK_SPARKLINE };
+}
+
+function normalizeMarket(coin = {}, index = 0) {
+    const idSeed = safeText(coin.id, safeText(coin.symbol, `asset-${index}`)).toLowerCase();
+    const symbol = safeText(coin.symbol, idSeed || `asset-${index}`).toLowerCase();
+    const name = safeText(coin.name, symbol.toUpperCase());
+    return {
+        ...coin,
+        id: idSeed,
+        name,
+        symbol,
+        current_price: finiteNumber(coin.current_price),
+        market_cap: finiteNumber(coin.market_cap),
+        total_volume: finiteNumber(coin.total_volume),
+        price_change_percentage_24h: finiteNumber(coin.price_change_percentage_24h),
+        price_change_percentage_1h_in_currency: finiteNumber(coin.price_change_percentage_1h_in_currency),
+        image: typeof coin.image === "string" ? coin.image : "",
+        sparkline_in_7d: normalizeSparkline(coin)
+    };
+}
+
+function normalizeMarkets(markets) {
+    const source = Array.isArray(markets) && markets.length ? markets : FALLBACK_MARKETS;
+    return source.map(normalizeMarket);
+}
+
+function fallbackMarkets() {
+    return normalizeMarkets(FALLBACK_MARKETS);
+}
+
+function warnFallbackOnce() {
+    if (fallbackWarningShown) return;
+    fallbackWarningShown = true;
+    console.warn("Live API unavailable; rendering fallback snapshot.");
+}
+
+function shouldForceFallback() {
+    return new URLSearchParams(window.location.search).has("forceFallback");
 }
 
 function setStatus(message, isLive = true) {
@@ -105,28 +164,31 @@ async function getMarkets() {
     });
 
     try {
+        if (shouldForceFallback()) throw new Error("Forced fallback snapshot");
         const response = await fetch(`https://api.coingecko.com/api/v3/coins/markets?${params.toString()}`, {
             headers: { "accept": "application/json" },
             cache: "no-store"
         });
         if (!response.ok) throw new Error(`CoinGecko ${response.status}`);
         const data = await response.json();
+        if (!Array.isArray(data) || !data.length) throw new Error("Empty market payload");
         setStatus(`Live data updated ${new Date().toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit" })}`);
-        return Array.isArray(data) && data.length ? data : FALLBACK_MARKETS;
+        return normalizeMarkets(data);
     } catch (error) {
-        setStatus("Live API unavailable - showing fallback snapshot", false);
-        return FALLBACK_MARKETS;
+        warnFallbackOnce();
+        setStatus(FALLBACK_STATUS, false);
+        return fallbackMarkets();
     }
 }
 
 function sellPrice(price) {
-    return price * 0.99015;
+    return finiteNumber(price) * 0.99015;
 }
 
 function renderChart(coin) {
     const svg = document.getElementById("portfolio-chart");
     if (!svg) return;
-    const prices = coin?.sparkline_in_7d?.price?.slice(-32) || [12, 12.4, 12.8, 13, 13.4, 14.2, 14.8, 15.1, 15.4];
+    const prices = normalizeSparkline(coin).price.slice(-32);
     const min = Math.min(...prices);
     const max = Math.max(...prices);
     const width = 420;
@@ -268,10 +330,11 @@ function renderTodayMovers(markets) {
 }
 
 function tile(coin) {
+    const safeCoin = normalizeMarket(coin);
     return `
         <span class="coin-tile">
-            ${coin.image ? `<img class="coin-icon" src="${coin.image}" alt="">` : `<span class="coin-icon"></span>`}
-            <span>${coin.symbol.toUpperCase()}</span>
+            ${safeCoin.image ? `<img class="coin-icon" src="${safeCoin.image}" alt="">` : `<span class="coin-icon"></span>`}
+            <span>${safeCoin.symbol.toUpperCase()}</span>
         </span>
     `;
 }
@@ -327,7 +390,7 @@ function eventForState(item) {
 }
 
 function buildDecisionPipeline(markets) {
-    const safeMarkets = Array.isArray(markets) ? markets : FALLBACK_MARKETS;
+    const safeMarkets = normalizeMarkets(markets);
     const volumeThreshold = [...safeMarkets]
         .map(coin => Number(coin.total_volume) || 0)
         .sort((a, b) => b - a)[4] || 0;
