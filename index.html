@@ -1,211 +1,301 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZenCloud Terminal • CoinSpot Companion</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
-
-        :root {
-            --primary: #00ff9d;
-            --bg: #050505;
-            --card: #0f0f0f;
-            --danger: #ff3b5c;
-            --warning: #ffd700;
-        }
-
-        * { box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: #e0e0e0; margin: 0; }
-
-        nav {
-            background: rgba(10,10,10,0.98);
-            backdrop-filter: blur(12px);
-            padding: 18px 40px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #222;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-        .logo { font-family: 'Space Grotesk', sans-serif; font-size: 1.8rem; font-weight: 700; color: var(--primary); }
-        nav a { color: #ccc; margin-left: 28px; text-decoration: none; font-weight: 500; }
-        nav a:hover { color: var(--primary); }
-
-        .header { padding: 40px 40px 20px; text-align: center; background: linear-gradient(#0a0a0a, #050505); }
-        h1 { font-family: 'Space Grotesk', sans-serif; font-size: 2.9rem; margin: 0; }
-        .balance { font-size: 2.8rem; font-weight: 700; color: var(--primary); margin: 10px 0; }
-
-        .layout {
-            max-width: 1680px;
-            margin: 0 auto;
-            padding: 0 40px 60px;
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 30px;
-        }
-        #watchlist { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 22px; }
-
-        .card { background:#0f0f0f; border:1px solid #222; border-radius:16px; padding:24px; }
-        .pill { display:inline-block; padding:4px 10px; border-radius:9999px; font-size:0.75rem; font-weight:700; letter-spacing:0.03em; }
-        .buy { background: rgba(0,255,157,0.14); color: var(--primary); }
-        .wait { background: rgba(255,215,0,0.14); color: var(--warning); }
-        .sell { background: rgba(255,59,92,0.14); color: var(--danger); }
-        textarea {
-            width: 100%; min-height: 160px; background:#0b0b0b; color:#ddd; border:1px solid #2a2a2a;
-            border-radius:12px; padding:12px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-        }
-        button {
-            background: var(--primary); color:#000; border:none; border-radius:999px; font-weight:700;
-            padding:10px 18px; cursor:pointer; margin-top:10px;
-        }
-        .small { color:#777; font-size:0.9rem; }
-    </style>
-</head>
-<body>
-    <nav>
-        <div class="logo">ZEN CLOUD</div>
-        <div>
-            <a href="index.html">Terminal</a>
-            <a href="logs.html">Trade Logs</a>
-            <a href="alerts.html">Alerts</a>
-        </div>
-    </nav>
-
-    <div class="header">
-        <h1>Day Trading Terminal</h1>
-        <p style="color:#777; margin:8px 0 0;">CoinSpot Companion • Real-time Momentum Scanner</p>
-        <div class="balance" id="total-balance">$0.00 AUD</div>
-        <p id="last-updated" style="color:#555;">Last Updated: Loading...</p>
-    </div>
-
-    <div class="layout">
-        <div>
-            <div class="card" style="margin-bottom:22px;">
-                <h3 style="margin-top:0;color:#00ff9d;">Paste CoinSpot dashboard text</h3>
-                <p class="small">Paste your watchlist or movers text from CoinSpot and click parse. This avoids sharing login credentials.</p>
-                <textarea id="coinspot-raw" placeholder="Paste CoinSpot dashboard text here..."></textarea>
-                <button onclick="parseCoinspotText()">Parse & Update Board</button>
-                <p id="parse-status" class="small"></p>
-            </div>
-
-            <div id="watchlist"></div>
-        </div>
-
-        <div>
-            <div class="card" style="margin-bottom:24px;">
-                <h3 style="color:#00ff9d; margin-top:0;">🚀 Top Gainers</h3>
-                <div id="gainers"></div>
-            </div>
-            <div class="card">
-                <h3 style="color:#ff3b5c; margin-top:0;">🔻 Top Losers</h3>
-                <div id="losers"></div>
-            </div>
-        </div>
-    </div>
-
-    <script src="data.js"></script>
-    <script>
-        function inferSignal(change) {
-            if (change >= 2) return 'BUY';
-            if (change <= -2) return 'SELL';
-            return 'WAIT';
-        }
-
-        function renderDashboard(data) {
-            document.getElementById("last-updated").textContent =
-                "Last Updated: " + new Date(data.last_updated).toLocaleString('en-AU');
-            document.getElementById("total-balance").textContent = data.portfolio || "$0.00 AUD";
-
-            const watchlistEl = document.getElementById("watchlist");
-            watchlistEl.innerHTML = "";
-
-            data.coins.forEach(coin => {
-                const isPos = coin.change_24h >= 0;
-                const signalClass = coin.signal === 'BUY' ? 'buy' : coin.signal === 'SELL' ? 'sell' : 'wait';
-                watchlistEl.innerHTML += `
-                    <div class="card">
-                        <div style="font-size:1.4rem; font-weight:600;">${coin.symbol}/AUD</div>
-                        <div style="font-size:2.2rem; font-weight:700; margin:12px 0;">$${Number(coin.price).toLocaleString()}</div>
-                        <div style="font-size:1.2rem; color:${isPos ? '#00ff9d' : '#ff3b5c'};">${isPos ? '+' : ''}${coin.change_24h}%</div>
-                        <div style="margin:12px 0;">Signal: <span class="pill ${signalClass}">${coin.signal}</span></div>
-                        <a href="https://www.coinspot.com.au/buy/${coin.symbol.toLowerCase()}" target="_blank"
-                           style="background:#00ff9d; color:black; padding:12px 24px; border-radius:9999px; text-decoration:none; display:inline-block; margin-top:12px; font-weight:600;">
-                            TRADE ON COINSPOT →
-                        </a>
-                    </div>
-                `;
-            });
-
-            const sorted = [...data.coins].sort((a,b) => b.change_24h - a.change_24h);
-            document.getElementById('gainers').innerHTML = sorted.slice(0,5)
-                .map(c => `<p><strong>${c.symbol}</strong> <span style="color:#00ff9d;">+${c.change_24h}%</span></p>`).join('');
-            document.getElementById('losers').innerHTML = sorted.slice(-5).reverse()
-                .map(c => `<p><strong>${c.symbol}</strong> <span style="color:#ff3b5c;">${c.change_24h}%</span></p>`).join('');
-        }
-
-        function parseCoinspotText() {
-            const raw = document.getElementById('coinspot-raw').value;
-            const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
-            const watchlistCoins = [];
-            const walletHoldings = [];
-            let portfolio = window.dashboardData.portfolio || '$0.00 AUD';
-
-            const wlRegex = /^([A-Za-z0-9 .-]+)\s+\$?([0-9,]+(?:\.[0-9]+)?)\s+\$?([0-9,]+(?:\.[0-9]+)?)\s+\$[0-9.,]+[MBT]?\s+\$[0-9.,]+[MBT]?\s+(-?[0-9.]+)%/;
-            const moverRegex = /^([A-Za-z0-9 .-]+)\s+\$?([0-9,]+(?:\.[0-9]+)?)\s+(-?[0-9.]+)%/;
-            const walletRegex = /^([A-Za-z0-9 .-]+)\s+([0-9.]+)$/;
-
-            for (const line of lines) {
-                if (line.startsWith('$') && line.includes('.')) portfolio = `${line.replace(/\s+/g, '')} AUD`;
-
-                const wlMatch = line.match(wlRegex);
-                if (wlMatch) {
-                    const symbol = wlMatch[1].split(' ').map(w => w[0]).join('').toUpperCase().slice(0,5);
-                    watchlistCoins.push({
-                        symbol,
-                        price: parseFloat(wlMatch[2].replace(/,/g, '')),
-                        change_24h: parseFloat(wlMatch[4]),
-                        signal: inferSignal(parseFloat(wlMatch[4]))
-                    });
-                    continue;
-                }
-
-                const moverMatch = line.match(moverRegex);
-                if (moverMatch && watchlistCoins.length < 15) {
-                    const symbol = moverMatch[1].split(' ').map(w => w[0]).join('').toUpperCase().slice(0,5);
-                    watchlistCoins.push({
-                        symbol,
-                        price: parseFloat(moverMatch[2].replace(/,/g, '')),
-                        change_24h: parseFloat(moverMatch[3]),
-                        signal: inferSignal(parseFloat(moverMatch[3]))
-                    });
-                    continue;
-                }
-
-                const walletMatch = line.match(walletRegex);
-                if (walletMatch) walletHoldings.push(walletMatch[1]);
-            }
-
-            if (watchlistCoins.length === 0) {
-                document.getElementById('parse-status').textContent = 'No rows detected. Paste lines that include price + 24h change.';
-                return;
-            }
-
-            window.dashboardData = {
-                ...window.dashboardData,
-                last_updated: new Date().toISOString(),
-                portfolio,
-                coins: watchlistCoins
-            };
-
-            renderDashboard(window.dashboardData);
-            document.getElementById('parse-status').textContent = `Parsed ${watchlistCoins.length} assets${walletHoldings.length ? ` • Wallet entries: ${walletHoldings.length}` : ''}.`;
-        }
-
-        renderDashboard(window.dashboardData);
-        setInterval(() => renderDashboard(window.dashboardData), 30000);
-    </script>
-</body>
-</html>
+ (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
+diff --git a/index.html b/index.html
+index ebc614ac0318f4af81d1715895fbda3381fc4b15..d71b62d767de54eb5d40732f5bb92eea9735e43f 100644
+--- a/index.html
++++ b/index.html
+@@ -1,137 +1,235 @@
+ <!DOCTYPE html>
+ <html lang="en">
+ <head>
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <title>ZenCloud Terminal • CoinSpot Companion</title>
+     <style>
+         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+-        
++
+         :root {
+             --primary: #00ff9d;
+             --bg: #050505;
+             --card: #0f0f0f;
++            --danger: #ff3b5c;
++            --warning: #ffd700;
+         }
++
+         * { box-sizing: border-box; }
+-        body {
+-            font-family: 'Inter', sans-serif;
+-            background: var(--bg);
+-            color: #e0e0e0;
+-            margin: 0;
+-            padding: 0;
+-        }
++        body { font-family: 'Inter', sans-serif; background: var(--bg); color: #e0e0e0; margin: 0; }
++
+         nav {
+             background: rgba(10,10,10,0.98);
+             backdrop-filter: blur(12px);
+             padding: 18px 40px;
+             display: flex;
+             justify-content: space-between;
+             align-items: center;
+             border-bottom: 1px solid #222;
+             position: sticky;
+             top: 0;
+             z-index: 100;
+         }
+-        .logo {
+-            font-family: 'Space Grotesk', sans-serif;
+-            font-size: 1.8rem;
+-            font-weight: 700;
+-            color: var(--primary);
+-        }
+-        nav a {
+-            color: #ccc;
+-            margin-left: 28px;
+-            text-decoration: none;
+-            font-weight: 500;
+-        }
++        .logo { font-family: 'Space Grotesk', sans-serif; font-size: 1.8rem; font-weight: 700; color: var(--primary); }
++        nav a { color: #ccc; margin-left: 28px; text-decoration: none; font-weight: 500; }
+         nav a:hover { color: var(--primary); }
+ 
+-        .header {
+-            padding: 40px 40px 20px;
+-            text-align: center;
+-            background: linear-gradient(#0a0a0a, #050505);
++        .header { padding: 40px 40px 20px; text-align: center; background: linear-gradient(#0a0a0a, #050505); }
++        h1 { font-family: 'Space Grotesk', sans-serif; font-size: 2.9rem; margin: 0; }
++        .balance { font-size: 2.8rem; font-weight: 700; color: var(--primary); margin: 10px 0; }
++
++        .layout {
++            max-width: 1680px;
++            margin: 0 auto;
++            padding: 0 40px 60px;
++            display: grid;
++            grid-template-columns: 2fr 1fr;
++            gap: 30px;
+         }
+-        h1 {
+-            font-family: 'Space Grotesk', sans-serif;
+-            font-size: 2.9rem;
+-            margin: 0;
++        #watchlist { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 22px; }
++
++        .card { background:#0f0f0f; border:1px solid #222; border-radius:16px; padding:24px; }
++        .pill { display:inline-block; padding:4px 10px; border-radius:9999px; font-size:0.75rem; font-weight:700; letter-spacing:0.03em; }
++        .buy { background: rgba(0,255,157,0.14); color: var(--primary); }
++        .wait { background: rgba(255,215,0,0.14); color: var(--warning); }
++        .sell { background: rgba(255,59,92,0.14); color: var(--danger); }
++        textarea {
++            width: 100%; min-height: 160px; background:#0b0b0b; color:#ddd; border:1px solid #2a2a2a;
++            border-radius:12px; padding:12px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+         }
+-        .balance {
+-            font-size: 2.8rem;
+-            font-weight: 700;
+-            color: var(--primary);
+-            margin: 10px 0;
++        button {
++            background: var(--primary); color:#000; border:none; border-radius:999px; font-weight:700;
++            padding:10px 18px; cursor:pointer; margin-top:10px;
+         }
++        .small { color:#777; font-size:0.9rem; }
+     </style>
+ </head>
+ <body>
+     <nav>
+         <div class="logo">ZEN CLOUD</div>
+         <div>
+             <a href="index.html">Terminal</a>
+             <a href="logs.html">Trade Logs</a>
+             <a href="alerts.html">Alerts</a>
+-            <a href="watchlist.html">Watchlist</a>
+         </div>
+     </nav>
+ 
+     <div class="header">
+         <h1>Day Trading Terminal</h1>
+         <p style="color:#777; margin:8px 0 0;">CoinSpot Companion • Real-time Momentum Scanner</p>
+         <div class="balance" id="total-balance">$0.00 AUD</div>
+         <p id="last-updated" style="color:#555;">Last Updated: Loading...</p>
+     </div>
+ 
+-    <div style="max-width: 1680px; margin: 0 auto; padding: 0 40px 60px; display: grid; grid-template-columns: 2fr 1fr; gap: 30px;">
+-        <!-- Main Watchlist -->
+-        <div id="watchlist" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 22px;"></div>
++    <div class="layout">
++        <div>
++            <div class="card" style="margin-bottom:22px;">
++                <h3 style="margin-top:0;color:#00ff9d;">Paste CoinSpot dashboard text</h3>
++                <p class="small">Paste your watchlist or movers text from CoinSpot and click parse. This avoids sharing login credentials.</p>
++                <textarea id="coinspot-raw" placeholder="Paste CoinSpot dashboard text here..."></textarea>
++                <button onclick="parseCoinspotText()">Parse & Update Board</button>
++                <p id="parse-status" class="small"></p>
++            </div>
++
++            <div id="watchlist"></div>
++        </div>
+ 
+-        <!-- Side Panel -->
+         <div>
+-            <div style="background:#0f0f0f; border:1px solid #222; border-radius:16px; padding:24px; margin-bottom:24px;">
++            <div class="card" style="margin-bottom:24px;">
+                 <h3 style="color:#00ff9d; margin-top:0;">🚀 Top Gainers</h3>
+                 <div id="gainers"></div>
+             </div>
+-            <div style="background:#0f0f0f; border:1px solid #222; border-radius:16px; padding:24px;">
++            <div class="card">
+                 <h3 style="color:#ff3b5c; margin-top:0;">🔻 Top Losers</h3>
+                 <div id="losers"></div>
+             </div>
+         </div>
+     </div>
+ 
+     <script src="data.js"></script>
+     <script>
+-        function loadDashboard() {
+-            const data = window.dashboardData;
+-            document.getElementById("last-updated").textContent = 
+-                "Last Updated: " + new Date(data.last_updated).toLocaleString('en-AU');
++        
++        const coinNameToSymbol = {
++            'cardano': 'ADA',
++            'bnb': 'BNB',
++            'bitcoin': 'BTC',
++            'dogecoin': 'DOGE',
++            'polkadot': 'DOT',
++            'ethereum': 'ETH',
++            'litecoin': 'LTC',
++            'stellar': 'XLM',
++            'theta': 'THETA',
++            'xrp': 'XRP',
++            'solana': 'SOL'
++        };
+ 
+-            // Total Balance (fake for now)
+-            document.getElementById("total-balance").textContent = "$248.65 AUD";
++        function toSymbol(rawName) {
++            const key = rawName.toLowerCase().trim();
++            if (coinNameToSymbol[key]) return coinNameToSymbol[key];
++            const cleaned = rawName.replace(/[^A-Za-z0-9 ]/g, '').trim();
++            if (/^[A-Za-z0-9]{2,8}$/.test(cleaned)) return cleaned.toUpperCase();
++            return cleaned.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0,6);
++        }
++
++        function inferSignal(change) {
++            if (change >= 2) return 'BUY';
++            if (change <= -2) return 'SELL';
++            return 'WAIT';
++        }
++
++        function renderDashboard(data) {
++            document.getElementById("last-updated").textContent =
++                "Last Updated: " + new Date(data.last_updated).toLocaleString('en-AU');
++            document.getElementById("total-balance").textContent = data.portfolio || "$0.00 AUD";
+ 
+             const watchlistEl = document.getElementById("watchlist");
+             watchlistEl.innerHTML = "";
+ 
+             data.coins.forEach(coin => {
+                 const isPos = coin.change_24h >= 0;
+-                const html = `
+-                    <div style="background:#0f0f0f; border:1px solid #222; border-radius:16px; padding:24px; transition:all 0.3s;">
+-                        <div style="font-size:1.4rem; font-weight:600;">${coin.symbol}/AUD</div>
+-                        <div style="font-size:2.4rem; font-weight:700; margin:12px 0;">$${Number(coin.price).toLocaleString()}</div>
++                const signalClass = coin.signal === 'BUY' ? 'buy' : coin.signal === 'SELL' ? 'sell' : 'wait';
++                const safeSymbol = String(coin.symbol).replace(/[^A-Z0-9]/gi, '').toUpperCase();
++                watchlistEl.innerHTML += `
++                    <div class="card">
++                        <div style="font-size:1.4rem; font-weight:600;">${safeSymbol}/AUD</div>
++                        <div style="font-size:2.2rem; font-weight:700; margin:12px 0;">$${Number(coin.price).toLocaleString()}</div>
+                         <div style="font-size:1.2rem; color:${isPos ? '#00ff9d' : '#ff3b5c'};">${isPos ? '+' : ''}${coin.change_24h}%</div>
+-                        <div style="margin:12px 0;">Signal: <strong style="color:${coin.signal==='BUY'?'#00ff9d':'#ffd700'}">${coin.signal}</strong></div>
+-                        <a href="https://www.coinspot.com.au/buy/${coin.symbol.toLowerCase()}" target="_blank" 
++                        <div style="margin:12px 0;">Signal: <span class="pill ${signalClass}">${coin.signal}</span></div>
++                        <a href="https://www.coinspot.com.au/buy/${safeSymbol.toLowerCase()}" target="_blank" rel="noopener noreferrer"
+                            style="background:#00ff9d; color:black; padding:12px 24px; border-radius:9999px; text-decoration:none; display:inline-block; margin-top:12px; font-weight:600;">
+                             TRADE ON COINSPOT →
+                         </a>
+                     </div>
+                 `;
+-                watchlistEl.innerHTML += html;
+             });
++
++            const sorted = [...data.coins].sort((a,b) => b.change_24h - a.change_24h);
++            document.getElementById('gainers').innerHTML = sorted.slice(0,5)
++                .map(c => `<p><strong>${c.symbol}</strong> <span style="color:#00ff9d;">+${c.change_24h}%</span></p>`).join('');
++            document.getElementById('losers').innerHTML = sorted.slice(-5).reverse()
++                .map(c => `<p><strong>${c.symbol}</strong> <span style="color:#ff3b5c;">${c.change_24h}%</span></p>`).join('');
++        }
++
++        function parseCoinspotText() {
++            const raw = document.getElementById('coinspot-raw').value;
++            const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
++            const watchlistCoins = [];
++            const walletHoldings = [];
++            let portfolio = window.dashboardData.portfolio || '$0.00 AUD';
++
++            const wlRegex = /^([A-Za-z0-9 .-]+)\s+\$?([0-9,]+(?:\.[0-9]+)?)\s+\$?([0-9,]+(?:\.[0-9]+)?)\s+\$[0-9.,]+[MBT]?\s+\$[0-9.,]+[MBT]?\s+(-?[0-9.]+)%/;
++            const moverRegex = /^([A-Za-z0-9 .-]+)\s+\$?([0-9,]+(?:\.[0-9]+)?)\s+(-?[0-9.]+)%/;
++            const walletRegex = /^([A-Za-z0-9 .-]+)\s+([0-9.]+)$/;
++
++            for (const line of lines) {
++                if (line.startsWith('$') && line.includes('.')) portfolio = `${line.replace(/\s+/g, '')} AUD`;
++
++                const wlMatch = line.match(wlRegex);
++                if (wlMatch) {
++                    const symbol = toSymbol(wlMatch[1]);
++                    watchlistCoins.push({
++                        symbol,
++                        price: parseFloat(wlMatch[2].replace(/,/g, '')),
++                        change_24h: parseFloat(wlMatch[4]),
++                        signal: inferSignal(parseFloat(wlMatch[4]))
++                    });
++                    continue;
++                }
++
++                const moverMatch = line.match(moverRegex);
++                if (moverMatch && watchlistCoins.length < 15) {
++                    const symbol = toSymbol(moverMatch[1]);
++                    watchlistCoins.push({
++                        symbol,
++                        price: parseFloat(moverMatch[2].replace(/,/g, '')),
++                        change_24h: parseFloat(moverMatch[3]),
++                        signal: inferSignal(parseFloat(moverMatch[3]))
++                    });
++                    continue;
++                }
++
++                const walletMatch = line.match(walletRegex);
++                if (walletMatch) walletHoldings.push(walletMatch[1]);
++            }
++
++            if (watchlistCoins.length === 0) {
++                document.getElementById('parse-status').textContent = 'No rows detected. Paste lines that include price + 24h change.';
++                return;
++            }
++
++            window.dashboardData = {
++                ...window.dashboardData,
++                last_updated: new Date().toISOString(),
++                portfolio,
++                coins: watchlistCoins
++            };
++
++            renderDashboard(window.dashboardData);
++            document.getElementById('parse-status').textContent = `Parsed ${watchlistCoins.length} assets${walletHoldings.length ? ` • Wallet entries: ${walletHoldings.length}` : ''}.`;
+         }
+ 
+-        loadDashboard();
+-        setInterval(loadDashboard, 30000);
++        renderDashboard(window.dashboardData);
++        setInterval(() => renderDashboard(window.dashboardData), 30000);
+     </script>
+ </body>
+-</html>
+\ No newline at end of file
++</html>
+ 
+EOF
+)
