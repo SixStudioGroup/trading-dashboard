@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ZenCloud Crypto Dashboard</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=decision-terminal-20260521">
 </head>
 <body data-page="dashboard">
     <header class="topbar">
@@ -16,7 +16,6 @@
             <a class="active" href="index.html">Dashboard</a>
             <a href="logs.html">Market Logs</a>
             <a href="alerts.html">Alerts</a>
-            <a class="external-link" href="https://www.coinspot.com.au/my/dashboard" target="_blank" rel="noopener noreferrer">Open CoinSpot</a>
         </nav>
     </header>
 
@@ -24,7 +23,7 @@
         <section class="welcome">
             <div>
                 <h1>ZenCloud Crypto Dashboard</h1>
-                <p>Live AUD crypto market view for watchlist, movers, holdings, and alerts.</p>
+                <p>Scan ranked opportunities, analyse one asset, then execute deliberately.</p>
             </div>
             <div class="status-card">
                 <span class="status-dot"></span>
@@ -32,61 +31,71 @@
             </div>
         </section>
 
-        <section class="dashboard-grid">
-            <div class="column">
-                <section class="panel">
-                    <div class="panel-header">
-                        <h2 class="panel-title">Quick Actions</h2>
-                        <p class="panel-subtitle">Jump into your live trading workflow</p>
-                    </div>
-                    <div class="panel-body quick-deposit">
-                        <div>
-                            <strong>Open your CoinSpot dashboard</strong>
-                            <p class="panel-subtitle">Use ZenCloud for live market scanning, then execute in CoinSpot.</p>
-                        </div>
-                        <a class="button-primary" href="https://www.coinspot.com.au/my/dashboard" target="_blank" rel="noopener noreferrer">Open CoinSpot</a>
-                    </div>
-                </section>
+        <section class="decision-grid">
+            <section class="panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">Opportunity Queue</h2>
+                    <p class="panel-subtitle">Ranked by the scoring engine</p>
+                </div>
+                <table class="watchlist-table">
+                    <thead>
+                        <tr>
+                            <th>Coin</th>
+                            <th>Signal</th>
+                            <th class="num">Score</th>
+                            <th class="num">Price</th>
+                            <th class="num">1hr</th>
+                            <th class="num">24hr</th>
+                            <th>Analyse</th>
+                        </tr>
+                    </thead>
+                    <tbody id="opportunities-body">
+                        <tr><td colspan="7" class="loading-cell">Loading ranked opportunities...</td></tr>
+                    </tbody>
+                </table>
+            </section>
 
-                <section class="panel">
-                    <div class="panel-header">
-                        <h2 class="panel-title">My Watchlist</h2>
-                        <p class="panel-subtitle">Live AUD rates, market cap, volume, and 24hr change</p>
-                    </div>
-                    <table class="watchlist-table">
-                        <thead>
-                            <tr>
-                                <th>Coin</th>
-                                <th class="num">Buy</th>
-                                <th class="num">Sell</th>
-                                <th class="num">Market Cap</th>
-                                <th class="num">Volume (24hr)</th>
-                                <th class="num">Change (24hr)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="watchlist-body">
-                            <tr><td colspan="6" class="loading-cell">Loading live watchlist...</td></tr>
-                        </tbody>
-                    </table>
-                </section>
+            <section class="panel analysis-panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">Asset Analysis</h2>
+                    <p class="panel-subtitle">Select an opportunity to unlock execution</p>
+                </div>
+                <div class="panel-body" id="analysis-panel">
+                    <div class="loading-cell">Select an asset from the queue.</div>
+                </div>
+            </section>
+        </section>
 
-                <section class="panel">
-                    <div class="panel-header">
-                        <h2 class="panel-title">Wallets</h2>
-                        <p class="panel-subtitle">Balances with live AUD value</p>
-                    </div>
-                    <table class="compact-table">
-                        <thead><tr><th>Coin</th><th class="num">Balance</th><th class="num">Live Value</th></tr></thead>
-                        <tbody id="wallets-body">
-                            <tr><td colspan="3" class="loading-cell">Loading wallet values...</td></tr>
-                        </tbody>
-                    </table>
-                </section>
-            </div>
+        <details class="panel collapsible-panel" open>
+            <summary>
+                <span>Watchlist</span>
+                <small>Ranked subset of tracked assets</small>
+            </summary>
+            <table class="watchlist-table">
+                <thead>
+                    <tr>
+                        <th>Coin</th>
+                        <th>Signal</th>
+                        <th class="num">Score</th>
+                        <th class="num">Buy</th>
+                        <th class="num">Sell</th>
+                        <th class="num">Change (24hr)</th>
+                    </tr>
+                </thead>
+                <tbody id="watchlist-body">
+                    <tr><td colspan="6" class="loading-cell">Loading watchlist...</td></tr>
+                </tbody>
+            </table>
+        </details>
 
-            <div class="column">
-                <section class="panel">
-                    <div class="panel-header">
+        <details class="panel collapsible-panel">
+            <summary>
+                <span>Portfolio And Wallets</span>
+                <small>Holdings context</small>
+            </summary>
+            <div class="support-grid two-column">
+                <section>
+                    <div class="panel-header flat-header">
                         <h2 class="panel-title">My Portfolio</h2>
                         <p class="panel-subtitle">BTC holding valued from live AUD price</p>
                     </div>
@@ -99,8 +108,19 @@
                     </div>
                 </section>
 
-                <section class="panel">
-                    <div class="panel-header">
+                <section>
+                    <div class="panel-header flat-header">
+                        <h2 class="panel-title">Wallets</h2>
+                        <p class="panel-subtitle">Balances with live AUD value</p>
+                    </div>
+                    <table class="compact-table">
+                        <thead><tr><th>Coin</th><th class="num">Balance</th><th class="num">Live Value</th></tr></thead>
+                        <tbody id="wallets-body">
+                            <tr><td colspan="3" class="loading-cell">Loading wallet values...</td></tr>
+                        </tbody>
+                    </table>
+
+                    <div class="panel-header flat-header">
                         <h2 class="panel-title">My Holdings</h2>
                     </div>
                     <div class="panel-body holdings-split">
@@ -112,27 +132,17 @@
                         </table>
                     </div>
                 </section>
-
-                <section class="panel">
-                    <div class="panel-header">
-                        <h2 class="panel-title">Popular Now</h2>
-                        <p class="panel-subtitle">Highest live 24hr volume</p>
-                    </div>
-                    <div class="panel-body coin-rail" id="popular-now"></div>
-                </section>
-
-                <section class="panel">
-                    <div class="panel-header">
-                        <h2 class="panel-title">Popular Today</h2>
-                        <p class="panel-subtitle">Most active major coins by current market volume</p>
-                    </div>
-                    <div class="panel-body coin-rail" id="popular-today"></div>
-                </section>
             </div>
+        </details>
 
-            <div class="column">
-                <section class="panel">
-                    <div class="panel-header">
+        <details class="panel collapsible-panel">
+            <summary>
+                <span>Market Context</span>
+                <small>Secondary scan inputs</small>
+            </summary>
+            <div class="support-grid three-column">
+                <section>
+                    <div class="panel-header flat-header">
                         <h2 class="panel-title">Recent Movers</h2>
                         <p class="panel-subtitle">Largest live 1hr moves</p>
                     </div>
@@ -144,16 +154,16 @@
                     </table>
                 </section>
 
-                <section class="panel">
-                    <div class="panel-header">
-                        <h2 class="panel-title">New Coins</h2>
-                        <p class="panel-subtitle">Fresh watch candidates from the live market list</p>
+                <section>
+                    <div class="panel-header flat-header">
+                        <h2 class="panel-title">Top Volume</h2>
+                        <p class="panel-subtitle">Highest live 24hr volume</p>
                     </div>
-                    <div class="panel-body coin-rail new-coins" id="new-coins"></div>
+                    <div class="panel-body coin-rail" id="popular-now"></div>
                 </section>
 
-                <section class="panel">
-                    <div class="panel-header">
+                <section>
+                    <div class="panel-header flat-header">
                         <h2 class="panel-title">Today's Movers</h2>
                         <p class="panel-subtitle">Top live 24hr gainers and losers</p>
                     </div>
@@ -169,9 +179,9 @@
                     </div>
                 </section>
             </div>
-        </section>
+        </details>
     </main>
 
-    <script src="app.js"></script>
+    <script src="app.js?v=decision-terminal-20260521"></script>
 </body>
 </html>

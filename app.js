@@ -32,6 +32,7 @@ const HOLDINGS = [
 ];
 
 const page = document.body.dataset.page;
+let selectedAssetId = null;
 
 const compactMoney = new Intl.NumberFormat("en-AU", {
     style: "currency",
@@ -70,6 +71,11 @@ function percentClass(value) {
 
 function byId(markets, id) {
     return markets.find(item => item.id === id);
+}
+
+function coinspotUrl(coin) {
+    const symbol = coin.symbol ? coin.symbol.toUpperCase() : "";
+    return `https://www.coinspot.com.au/buy/${symbol}`;
 }
 
 function coinCell(coin) {
@@ -152,22 +158,63 @@ function renderChart(coin) {
     `;
 }
 
-function renderDashboard(markets) {
-    const watchlist = WATCHLIST_IDS.map(id => byId(markets, id)).filter(Boolean);
-    const btc = byId(markets, "bitcoin") || watchlist[0];
+function renderDashboard(model) {
+    const { markets, rankedAssets } = model;
+    const watchlist = rankedAssets.filter(item => WATCHLIST_IDS.includes(item.coin.id));
+    const opportunityRows = rankedAssets.slice(0, 10);
+    const selected = rankedAssets.find(item => item.coin.id === selectedAssetId);
+    const btc = byId(markets, "bitcoin") || watchlist[0]?.coin;
     const portfolioValue = HOLDINGS.reduce((total, holding) => {
         const coin = byId(markets, holding.id);
         return total + (coin ? coin.current_price * holding.balance : 0);
     }, 0);
 
-    document.getElementById("watchlist-body").innerHTML = watchlist.map(coin => `
+    document.getElementById("opportunities-body").innerHTML = opportunityRows.map(item => `
+        <tr class="${item.coin.id === selectedAssetId ? "selected-row" : ""}">
+            <td>${coinCell(item.coin)}</td>
+            <td><span class="badge ${item.decision.klass}">${item.decision.label}</span></td>
+            <td class="num">${item.decision.score}</td>
+            <td class="num">${formatPrice(item.coin.current_price)}</td>
+            <td class="num ${percentClass(item.coin.price_change_percentage_1h_in_currency)}">${formatPercent(item.coin.price_change_percentage_1h_in_currency)}</td>
+            <td class="num ${percentClass(item.coin.price_change_percentage_24h)}">${formatPercent(item.coin.price_change_percentage_24h)}</td>
+            <td><button class="table-action" type="button" data-asset-id="${item.coin.id}">Analyse</button></td>
+        </tr>
+    `).join("");
+
+    document.getElementById("analysis-panel").innerHTML = selected ? `
+            <div class="analysis-heading">
+                ${coinCell(selected.coin)}
+                <span class="badge ${selected.decision.klass}">${selected.decision.label}</span>
+            </div>
+            <dl class="metric-grid">
+                <div><dt>Score</dt><dd>${selected.decision.score}</dd></div>
+                <div><dt>Price</dt><dd>${formatPrice(selected.coin.current_price)}</dd></div>
+                <div><dt>1hr</dt><dd class="${percentClass(selected.coin.price_change_percentage_1h_in_currency)}">${formatPercent(selected.coin.price_change_percentage_1h_in_currency)}</dd></div>
+                <div><dt>24hr</dt><dd class="${percentClass(selected.coin.price_change_percentage_24h)}">${formatPercent(selected.coin.price_change_percentage_24h)}</dd></div>
+                <div><dt>Volume</dt><dd>${formatBig(selected.coin.total_volume)}</dd></div>
+                <div><dt>Sell Est.</dt><dd>${formatPrice(sellPrice(selected.coin.current_price))}</dd></div>
+            </dl>
+            <div class="execution-bar">
+                <span>Execution opens only for the selected asset.</span>
+                <a class="button-primary" href="${coinspotUrl(selected.coin)}" target="_blank" rel="noopener noreferrer">Open CoinSpot</a>
+            </div>
+        ` : `<div class="empty-analysis">Select an asset from the opportunity queue to inspect price action, score context, and execution.</div>`;
+
+    document.querySelectorAll("[data-asset-id]").forEach(button => {
+        button.addEventListener("click", event => {
+            selectedAssetId = event.currentTarget.dataset.assetId;
+            renderDashboard(model);
+        });
+    });
+
+    document.getElementById("watchlist-body").innerHTML = watchlist.map(item => `
         <tr>
-            <td>${coinCell(coin)}</td>
-            <td class="num">${formatPrice(coin.current_price)}</td>
-            <td class="num">${formatPrice(sellPrice(coin.current_price))}</td>
-            <td class="num">${formatBig(coin.market_cap)}</td>
-            <td class="num">${formatBig(coin.total_volume)}</td>
-            <td class="num ${percentClass(coin.price_change_percentage_24h)}">${formatPercent(coin.price_change_percentage_24h)}</td>
+            <td>${coinCell(item.coin)}</td>
+            <td><span class="badge ${item.decision.klass}">${item.decision.label}</span></td>
+            <td class="num">${item.decision.score}</td>
+            <td class="num">${formatPrice(item.coin.current_price)}</td>
+            <td class="num">${formatPrice(sellPrice(item.coin.current_price))}</td>
+            <td class="num ${percentClass(item.coin.price_change_percentage_24h)}">${formatPercent(item.coin.price_change_percentage_24h)}</td>
         </tr>
     `).join("");
 
@@ -190,7 +237,6 @@ function renderDashboard(markets) {
 
     const highVolume = [...markets].sort((a, b) => b.total_volume - a.total_volume).slice(0, 8);
     document.getElementById("popular-now").innerHTML = highVolume.map(tile).join("");
-    document.getElementById("popular-today").innerHTML = highVolume.slice(0, 8).reverse().map(tile).join("");
 
     const recent = [...markets].sort((a, b) =>
         Math.abs(b.price_change_percentage_1h_in_currency || 0) - Math.abs(a.price_change_percentage_1h_in_currency || 0)
@@ -203,7 +249,6 @@ function renderDashboard(markets) {
         </tr>
     `).join("");
 
-    document.getElementById("new-coins").innerHTML = markets.slice(24, 28).map(tile).join("");
     renderTodayMovers(markets);
 }
 
@@ -231,32 +276,109 @@ function tile(coin) {
     `;
 }
 
-function signalFor(coin) {
-    const oneHour = coin.price_change_percentage_1h_in_currency || 0;
-    const day = coin.price_change_percentage_24h || 0;
-    if (day > 5 && oneHour > 0) return { label: "BUY", klass: "buy", note: "Strong 24hr momentum with positive 1hr confirmation." };
-    if (day < -3) return { label: "SELL RISK", klass: "sell", note: "Price is under live 24hr pressure." };
-    if (day > 2) return { label: "WATCH", klass: "watch", note: "Momentum building; wait for confirmation." };
-    return { label: "WAIT", klass: "wait", note: "No clear live edge yet." };
+function marketStateFor(coin, volumeThreshold) {
+    const oneHour = Number(coin.price_change_percentage_1h_in_currency) || 0;
+    const day = Number(coin.price_change_percentage_24h) || 0;
+    const volume = Number(coin.total_volume) || 0;
+    const absoluteMove = Math.abs(day);
+    const momentumScore = Math.round((day * 12) + (oneHour * 30) + Math.min(volume / Math.max(volumeThreshold, 1), 2) * 10);
+    const trendState = day >= 5 && oneHour > 0
+        ? "trend_breakout"
+        : day <= -3
+            ? "trend_downside"
+            : day >= 2
+                ? "trend_positive"
+                : day <= -1
+                    ? "trend_softening"
+                    : "trend_neutral";
+    const volatilityState = absoluteMove >= 5
+        ? "volatility_high"
+        : absoluteMove >= 2
+            ? "volatility_medium"
+            : "volatility_low";
+    const alertTrigger = trendState === "trend_breakout"
+        ? "breakout_event"
+        : trendState === "trend_downside"
+            ? "risk_threshold_breach"
+            : volume >= volumeThreshold
+                ? "volume_spike"
+                : "none";
+
+    return { trendState, momentumScore, volatilityState, alertTrigger };
 }
 
-function renderLogs(markets) {
-    const rows = markets.slice(0, 16).map(coin => {
-        const signal = signalFor(coin);
+function decisionForState(state) {
+    if (state.trendState === "trend_breakout") return { label: "Breakout", klass: "strong", score: state.momentumScore };
+    if (state.trendState === "trend_downside") return { label: "Sell Risk", klass: "sell", score: state.momentumScore };
+    if (state.trendState === "trend_positive") return { label: "Watch", klass: "watch", score: state.momentumScore };
+    return { label: "Watch", klass: "wait", score: state.momentumScore };
+}
+
+function eventForState(item) {
+    const eventMap = {
+        breakout_event: { type: "Breakout Event", klass: "strong", value: item.coin.price_change_percentage_24h, rule: "24hr above 5% with positive 1hr", triggerState: "breakout_event" },
+        risk_threshold_breach: { type: "Sell Risk", klass: "risk", value: item.coin.price_change_percentage_24h, rule: "24hr below -3%", triggerState: "risk_threshold_breach" },
+        volume_spike: { type: "Volume Spike", klass: "volume", value: item.coin.total_volume, rule: "Top live AUD volume band", triggerState: "volume_spike" }
+    };
+    if (item.state.trendState === "trend_positive") {
+        return { type: "Watch Event", klass: "watch", value: item.coin.price_change_percentage_24h, rule: "24hr above 2%", triggerState: "trend_positive" };
+    }
+    return eventMap[item.state.alertTrigger] || null;
+}
+
+function buildDecisionPipeline(markets) {
+    const safeMarkets = Array.isArray(markets) ? markets : FALLBACK_MARKETS;
+    const volumeThreshold = [...safeMarkets]
+        .map(coin => Number(coin.total_volume) || 0)
+        .sort((a, b) => b - a)[4] || 0;
+    const assets = safeMarkets.map(coin => {
+        const state = marketStateFor(coin, volumeThreshold);
+        return { coin, state, decision: decisionForState(state) };
+    });
+    const rankedAssets = [...assets].sort((a, b) => b.decision.score - a.decision.score);
+    const alertEvents = assets
+        .map(item => ({ item, event: eventForState(item) }))
+        .filter(row => row.event)
+        .sort((a, b) => {
+            const eventOrder = { "Sell Risk": 0, "Breakout Event": 1, "Watch Event": 2, "Volume Spike": 3 };
+            return eventOrder[a.event.type] - eventOrder[b.event.type] || Math.abs(b.event.value) - Math.abs(a.event.value);
+        });
+
+    return { markets: safeMarkets, assets, rankedAssets, alertEvents };
+}
+
+function observationFor(item) {
+    const signalMap = {
+        trend_breakout: { label: "Breakout", klass: "strong", note: "24hr breakout threshold met with positive 1hr confirmation." },
+        trend_positive: { label: "Watch", klass: "watch", note: "24hr watch threshold met." },
+        trend_downside: { label: "Sell Risk", klass: "sell", note: "24hr downside threshold met." },
+        trend_softening: { label: "Softening", klass: "wait", note: "24hr change is below neutral band." },
+        trend_neutral: { label: "Neutral", klass: "wait", note: "No threshold state transition." }
+    };
+    if (item.state.alertTrigger === "volume_spike" && item.state.trendState === "trend_neutral") {
+        return { label: "Volume Spike", klass: "volume", note: "Asset is inside the top live AUD volume band." };
+    }
+    return signalMap[item.state.trendState] || signalMap.trend_neutral;
+}
+
+function renderLogs(model) {
+    const rows = model.assets.slice(0, 16).map(item => {
+        const observation = observationFor(item);
         return `
             <tr>
                 <td>${new Date().toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit", timeZone: "Australia/Brisbane" })}</td>
-                <td>${coinCell(coin)}</td>
-                <td class="num">${formatPrice(coin.current_price)}</td>
-                <td class="num ${percentClass(coin.price_change_percentage_1h_in_currency)}">${formatPercent(coin.price_change_percentage_1h_in_currency)}</td>
-                <td class="num ${percentClass(coin.price_change_percentage_24h)}">${formatPercent(coin.price_change_percentage_24h)}</td>
-                <td><span class="badge ${signal.klass}">${signal.label}</span></td>
-                <td>${signal.note}</td>
+                <td>${coinCell(item.coin)}</td>
+                <td class="num">${formatPrice(item.coin.current_price)}</td>
+                <td class="num ${percentClass(item.coin.price_change_percentage_1h_in_currency)}">${formatPercent(item.coin.price_change_percentage_1h_in_currency)}</td>
+                <td class="num ${percentClass(item.coin.price_change_percentage_24h)}">${formatPercent(item.coin.price_change_percentage_24h)}</td>
+                <td><span class="badge ${observation.klass}">${observation.label}</span></td>
+                <td>${observation.note}</td>
             </tr>
         `;
     }).join("");
     document.getElementById("logs-body").innerHTML = rows;
 
+    const { markets } = model;
     const watchlist = WATCHLIST_IDS.map(id => byId(markets, id)).filter(Boolean);
     document.getElementById("logs-watchlist-body").innerHTML = watchlist.map(coin => `
         <tr>
@@ -269,40 +391,26 @@ function renderLogs(markets) {
     `).join("");
 }
 
-function renderAlerts(markets) {
-    const highVolume = [...markets].sort((a, b) => b.total_volume - a.total_volume).slice(0, 5);
-    const alertCoins = [...markets]
-        .filter(coin => (coin.price_change_percentage_24h || 0) > 2 || (coin.price_change_percentage_24h || 0) < -3)
-        .slice(0, 18);
-    const combined = [...new Map([...alertCoins, ...highVolume].map(coin => [coin.id, coin])).values()].slice(0, 18);
-    document.getElementById("alerts-body").innerHTML = combined.map(coin => {
-        const day = coin.price_change_percentage_24h || 0;
-        const oneHour = coin.price_change_percentage_1h_in_currency || 0;
-        const severity = day > 5 ? "strong" : day < -3 ? "risk" : "watch";
-        const label = severity === "strong" ? "Strong Buy" : severity === "risk" ? "Sell Risk" : "Watch";
-        const text = severity === "strong"
-            ? "24hr breakout with live positive momentum."
-            : severity === "risk"
-                ? "Live downside pressure is above risk threshold."
-                : "Momentum is active; watch for confirmation.";
-        return `
+function renderAlerts(model) {
+    const rows = model.alertEvents.slice(0, 18).map(({ item, event }) => `
             <tr>
-                <td><span class="badge ${severity}">${label}</span></td>
-                <td>${coinCell(coin)}</td>
-                <td class="num">${formatPrice(coin.current_price)}</td>
-                <td class="num ${percentClass(oneHour)}">${formatPercent(oneHour)}</td>
-                <td class="num ${percentClass(day)}">${formatPercent(day)}</td>
-                <td>${text}</td>
+                <td><span class="badge ${event.klass}">${event.type}</span></td>
+                <td>${coinCell(item.coin)}</td>
+                <td><span class="state-token">${event.triggerState}</span></td>
+                <td class="num">${event.type === "Volume Spike" ? formatBig(event.value) : formatPercent(event.value)}</td>
+                <td class="num">${formatPrice(item.coin.current_price)}</td>
+                <td>${event.rule}</td>
             </tr>
-        `;
-    }).join("");
+    `).join("");
+    document.getElementById("alerts-body").innerHTML = rows || `<tr><td colspan="6" class="loading-cell">No threshold events in the current market state.</td></tr>`;
 }
 
 async function boot() {
     const markets = await getMarkets();
-    if (page === "dashboard") renderDashboard(markets);
-    if (page === "logs") renderLogs(markets);
-    if (page === "alerts") renderAlerts(markets);
+    const model = buildDecisionPipeline(markets);
+    if (page === "dashboard") renderDashboard(model);
+    if (page === "logs") renderLogs(model);
+    if (page === "alerts") renderAlerts(model);
 }
 
 boot();

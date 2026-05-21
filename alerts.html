@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Alerts - ZenCloud Crypto Dashboard</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=decision-terminal-20260521">
 </head>
 <body data-page="alerts">
     <header class="topbar">
@@ -16,7 +16,6 @@
             <a href="index.html">Dashboard</a>
             <a href="logs.html">Market Logs</a>
             <a class="active" href="alerts.html">Alerts</a>
-            <a class="external-link" href="https://www.coinspot.com.au/my/dashboard" target="_blank" rel="noopener noreferrer">Open CoinSpot</a>
         </nav>
     </header>
 
@@ -24,7 +23,7 @@
         <section class="welcome">
             <div>
                 <h1>Alerts</h1>
-                <p>Live momentum, sell-risk, and volume alerts across the same market data used by the dashboard.</p>
+                <p>Threshold events emitted by the live signal pipeline.</p>
             </div>
             <div class="status-card">
                 <span class="status-dot"></span>
@@ -36,17 +35,17 @@
             <section class="panel">
                 <div class="panel-header">
                     <h2 class="panel-title">Live Alerts</h2>
-                    <p class="panel-subtitle">Alert rules refresh automatically with the live feed.</p>
+                    <p class="panel-subtitle">One row per threshold trigger</p>
                 </div>
                 <table>
                     <thead>
                         <tr>
-                            <th>Severity</th>
+                            <th>Event Type</th>
                             <th>Coin</th>
+                            <th>Trigger State</th>
+                            <th class="num">Threshold Value</th>
                             <th class="num">Price</th>
-                            <th class="num">1hr</th>
-                            <th class="num">24hr</th>
-                            <th>Alert</th>
+                            <th>Rule</th>
                         </tr>
                     </thead>
                     <tbody id="alerts-body">
@@ -55,21 +54,22 @@
                 </table>
             </section>
 
-            <section class="panel">
+            <section class="panel compact-rules">
                 <div class="panel-header">
                     <h2 class="panel-title">Alert Rules</h2>
-                    <p class="panel-subtitle">Transparent rules used to classify the live market.</p>
+                    <p class="panel-subtitle">Compact threshold reference</p>
                 </div>
                 <div class="panel-body rules-grid">
-                    <div class="rule-card strong">Strong Buy: 24hr above 5% and 1hr positive</div>
-                    <div class="rule-card watch">Watch: 24hr between 2% and 5%</div>
-                    <div class="rule-card risk">Sell Risk: 24hr below -3%</div>
-                    <div class="rule-card volume">Volume Alert: top live AUD volume assets</div>
+                    <div class="rule-card strong"><strong>Breakout Event</strong><span>24hr above 5% with positive 1hr</span></div>
+                    <div class="rule-card watch"><strong>Watch Event</strong><span>24hr above 2%</span></div>
+                    <div class="rule-card risk"><strong>Sell Risk</strong><span>24hr below -3%</span></div>
+                    <div class="rule-card volume"><strong>Volume Spike</strong><span>Top live AUD volume band</span></div>
                 </div>
             </section>
+
         </section>
     </main>
 
-    <script src="app.js"></script>
+    <script src="app.js?v=decision-terminal-20260521"></script>
 </body>
 </html>

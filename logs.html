@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Market Logs - ZenCloud Crypto Dashboard</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=decision-terminal-20260521">
 </head>
 <body data-page="logs">
     <header class="topbar">
@@ -16,7 +16,6 @@
             <a href="index.html">Dashboard</a>
             <a class="active" href="logs.html">Market Logs</a>
             <a href="alerts.html">Alerts</a>
-            <a class="external-link" href="https://www.coinspot.com.au/my/dashboard" target="_blank" rel="noopener noreferrer">Open CoinSpot</a>
         </nav>
     </header>
 
@@ -24,7 +23,7 @@
         <section class="welcome">
             <div>
                 <h1>Market Logs</h1>
-                <p>Live market scan log generated from AUD price, volume, 1hr movement, and 24hr movement.</p>
+                <p>Timestamped system observations from the live decision pipeline.</p>
             </div>
             <div class="status-card">
                 <span class="status-dot"></span>
@@ -35,8 +34,8 @@
         <section class="wide-grid">
             <section class="panel">
                 <div class="panel-header">
-                    <h2 class="panel-title">Live Trade Ideas</h2>
-                    <p class="panel-subtitle">Signals are derived from live momentum and volume, not stored manually.</p>
+                    <h2 class="panel-title">Live Signal Log</h2>
+                    <p class="panel-subtitle">System observations only</p>
                 </div>
                 <table>
                     <thead>
@@ -51,22 +50,22 @@
                         </tr>
                     </thead>
                     <tbody id="logs-body">
-                        <tr><td colspan="7" class="loading-cell">Loading live market logs...</td></tr>
+                        <tr><td colspan="7" class="loading-cell">Loading signal log...</td></tr>
                     </tbody>
                 </table>
             </section>
 
-            <section class="panel">
-                <div class="panel-header">
-                    <h2 class="panel-title">Live Watchlist Snapshot</h2>
-                    <p class="panel-subtitle">Same live feed and visual language as the dashboard.</p>
-                </div>
+            <details class="panel collapsible-panel">
+                <summary>
+                    <span>Watchlist Snapshot</span>
+                    <small>Debug view of formatted watchlist inputs</small>
+                </summary>
                 <table class="watchlist-table">
                     <thead>
                         <tr>
                             <th>Coin</th>
-                            <th class="num">Buy</th>
-                            <th class="num">Sell</th>
+                            <th class="num">Price</th>
+                            <th class="num">Sell Est.</th>
                             <th class="num">Volume (24hr)</th>
                             <th class="num">Change (24hr)</th>
                         </tr>
@@ -75,10 +74,10 @@
                         <tr><td colspan="5" class="loading-cell">Loading live snapshot...</td></tr>
                     </tbody>
                 </table>
-            </section>
+            </details>
         </section>
     </main>
 
-    <script src="app.js"></script>
+    <script src="app.js?v=decision-terminal-20260521"></script>
 </body>
 </html>
