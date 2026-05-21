@@ -3,116 +3,135 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZenCloud • CoinSpot Companion</title>
+    <title>ZenCloud Terminal • CoinSpot Companion</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+        
+        :root {
+            --primary: #00ff9d;
+            --bg: #050505;
+            --card: #0f0f0f;
+        }
+        * { box-sizing: border-box; }
         body {
             font-family: 'Inter', sans-serif;
-            background: #0a0a0a;
+            background: var(--bg);
             color: #e0e0e0;
             margin: 0;
             padding: 0;
         }
-        nav { background: #111; padding: 14px 0; text-align: center; border-bottom: 1px solid #333; }
-        nav a { color: #00ff9d; margin: 0 20px; text-decoration: none; font-weight: 500; }
-        .header {
-            text-align: center;
-            padding: 25px 20px;
-            background: linear-gradient(135deg, #1a1a2e, #0f0f1e);
+        nav {
+            background: rgba(10,10,10,0.98);
+            backdrop-filter: blur(12px);
+            padding: 18px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #222;
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
-        h1 { color: #00ff9d; margin: 0; font-size: 2.4rem; }
-        .subtitle { color: #888; }
-        
-        .container {
-            max-width: 1600px;
-            margin: 25px auto;
-            padding: 0 20px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-            gap: 18px;
-        }
-        .card {
-            background: #111;
-            border-radius: 12px;
-            padding: 18px;
-            border: 1px solid #222;
-        }
-        .symbol { font-size: 1.35rem; font-weight: 600; }
-        .price { font-size: 2.1rem; font-weight: 700; margin: 6px 0; }
-        .change { font-size: 1.05rem; font-weight: 600; }
-        .positive { color: #00ff9d; }
-        .negative { color: #ff3b5c; }
-        .signal {
-            padding: 6px 18px;
-            border-radius: 6px;
+        .logo {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.8rem;
             font-weight: 700;
-            display: inline-block;
-            margin-top: 8px;
+            color: var(--primary);
         }
-        .buy { background: #004d2e; color: #00ff9d; }
-        .wait { background: #4d4d00; color: #ffcc00; }
+        nav a {
+            color: #ccc;
+            margin-left: 28px;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        nav a:hover { color: var(--primary); }
+
+        .header {
+            padding: 40px 40px 20px;
+            text-align: center;
+            background: linear-gradient(#0a0a0a, #050505);
+        }
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2.9rem;
+            margin: 0;
+        }
+        .balance {
+            font-size: 2.8rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 10px 0;
+        }
     </style>
 </head>
 <body>
     <nav>
-        <a href="index.html">Dashboard</a>
-        <a href="logs.html">Trade Logs</a>
-        <a href="#">Alerts</a>
-        <a href="#">CoinSpot Quick Links</a>
+        <div class="logo">ZEN CLOUD</div>
+        <div>
+            <a href="index.html">Terminal</a>
+            <a href="logs.html">Trade Logs</a>
+            <a href="alerts.html">Alerts</a>
+            <a href="watchlist.html">Watchlist</a>
+        </div>
     </nav>
 
     <div class="header">
-        <h1>ZenCloud • CoinSpot Companion</h1>
-        <p class="subtitle">Day Trading Watchlist • Signals • Momentum Scanner</p>
-        <p id="last-updated" style="color:#666; margin-top:8px;">Last Updated: Loading...</p>
+        <h1>Day Trading Terminal</h1>
+        <p style="color:#777; margin:8px 0 0;">CoinSpot Companion • Real-time Momentum Scanner</p>
+        <div class="balance" id="total-balance">$0.00 AUD</div>
+        <p id="last-updated" style="color:#555;">Last Updated: Loading...</p>
     </div>
 
-    <div class="container" id="coins-container"></div>
+    <div style="max-width: 1680px; margin: 0 auto; padding: 0 40px 60px; display: grid; grid-template-columns: 2fr 1fr; gap: 30px;">
+        <!-- Main Watchlist -->
+        <div id="watchlist" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 22px;"></div>
 
+        <!-- Side Panel -->
+        <div>
+            <div style="background:#0f0f0f; border:1px solid #222; border-radius:16px; padding:24px; margin-bottom:24px;">
+                <h3 style="color:#00ff9d; margin-top:0;">🚀 Top Gainers</h3>
+                <div id="gainers"></div>
+            </div>
+            <div style="background:#0f0f0f; border:1px solid #222; border-radius:16px; padding:24px;">
+                <h3 style="color:#ff3b5c; margin-top:0;">🔻 Top Losers</h3>
+                <div id="losers"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="data.js"></script>
     <script>
-        async function loadDashboard() {
-            try {
-                const res = await fetch("data.json");
-                const data = await res.json();
-                
-                document.getElementById("last-updated").textContent = 
-                    "Last Updated: " + new Date(data.last_updated).toLocaleString('en-AU');
+        function loadDashboard() {
+            const data = window.dashboardData;
+            document.getElementById("last-updated").textContent = 
+                "Last Updated: " + new Date(data.last_updated).toLocaleString('en-AU');
 
-                const container = document.getElementById("coins-container");
-                container.innerHTML = "";
+            // Total Balance (fake for now)
+            document.getElementById("total-balance").textContent = "$248.65 AUD";
 
-                data.coins.forEach(coin => {
-                    const isPositive = coin.change_24h >= 0;
-                    const changeClass = isPositive ? "positive" : "negative";
-                    const signalClass = coin.signal === "BUY" ? "buy" : "wait";
+            const watchlistEl = document.getElementById("watchlist");
+            watchlistEl.innerHTML = "";
 
-                    const card = `
-                        <div class="card">
-                            <div class="symbol">${coin.symbol}/AUD</div>
-                            <div class="price">$${Number(coin.price).toLocaleString()}</div>
-                            <div class="change ${changeClass}">
-                                ${isPositive ? '+' : ''}${coin.change_24h}%
-                            </div>
-                            <div style="margin:10px 0;">
-                                Trend: <strong>${coin.trend}</strong>
-                            </div>
-                            <div>
-                                Signal: <span class="signal ${signalClass}">${coin.signal}</span>
-                            </div>
-                            <div style="margin-top:10px; color:#aaa; font-size:0.9rem;">
-                                Vol: ${coin.volume}
-                            </div>
-                        </div>
-                    `;
-                    container.innerHTML += card;
-                });
-            } catch (e) {
-                document.getElementById("last-updated").innerHTML = "❌ Error loading data";
-            }
+            data.coins.forEach(coin => {
+                const isPos = coin.change_24h >= 0;
+                const html = `
+                    <div style="background:#0f0f0f; border:1px solid #222; border-radius:16px; padding:24px; transition:all 0.3s;">
+                        <div style="font-size:1.4rem; font-weight:600;">${coin.symbol}/AUD</div>
+                        <div style="font-size:2.4rem; font-weight:700; margin:12px 0;">$${Number(coin.price).toLocaleString()}</div>
+                        <div style="font-size:1.2rem; color:${isPos ? '#00ff9d' : '#ff3b5c'};">${isPos ? '+' : ''}${coin.change_24h}%</div>
+                        <div style="margin:12px 0;">Signal: <strong style="color:${coin.signal==='BUY'?'#00ff9d':'#ffd700'}">${coin.signal}</strong></div>
+                        <a href="https://www.coinspot.com.au/buy/${coin.symbol.toLowerCase()}" target="_blank" 
+                           style="background:#00ff9d; color:black; padding:12px 24px; border-radius:9999px; text-decoration:none; display:inline-block; margin-top:12px; font-weight:600;">
+                            TRADE ON COINSPOT →
+                        </a>
+                    </div>
+                `;
+                watchlistEl.innerHTML += html;
+            });
         }
 
         loadDashboard();
-        setInterval(loadDashboard, 30000);   // Auto refresh every 30 seconds
+        setInterval(loadDashboard, 30000);
     </script>
 </body>
 </html>
