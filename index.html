@@ -3,112 +3,123 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZenCloud Trading Dashboard</title>
+    <title>ZenCloud Day Trading Dashboard</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body {
-            font-family: 'Segoe UI', sans-serif;
-            background: #0f0f0f;
+            font-family: 'Inter', sans-serif;
+            background: #0a0a0a;
             color: #e0e0e0;
             margin: 0;
-            padding: 20px;
+            padding: 0;
+        }
+        nav {
+            background: #111;
+            padding: 15px 0;
+            text-align: center;
+            border-bottom: 1px solid #333;
+        }
+        nav a {
+            color: #00ff9d;
+            margin: 0 20px;
+            text-decoration: none;
+            font-weight: 500;
         }
         .header {
             text-align: center;
-            margin-bottom: 30px;
+            padding: 30px 20px;
+            background: linear-gradient(135deg, #1a1a2e, #0f0f1e);
         }
+        h1 { color: #00ff9d; margin: 0; font-size: 2.6rem; }
         .container {
-            max-width: 1200px;
-            margin: 0 auto;
+            max-width: 1400px;
+            margin: 30px auto;
+            padding: 0 20px;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+            gap: 24px;
         }
         .card {
-            background: #1e1e1e;
-            border-radius: 12px;
+            background: #111;
+            border-radius: 16px;
             padding: 20px;
-            border: 1px solid #333;
+            border: 1px solid #222;
         }
-        h1 { color: #00ff9d; margin: 0 0 10px 0; }
-        .value {
-            font-size: 2.2em;
-            font-weight: bold;
-            margin: 10px 0;
+        .coin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
         }
+        .symbol { font-size: 1.4rem; font-weight: 600; }
+        .price { font-size: 2.2rem; font-weight: 700; }
         .positive { color: #00ff9d; }
         .negative { color: #ff3b5c; }
-        nav {
-            text-align: center;
-            margin-bottom: 20px;
+        .signal {
+            font-weight: 700;
+            padding: 6px 16px;
+            border-radius: 8px;
+            display: inline-block;
         }
-        nav a {
-            color: #00cc7a;
-            margin: 0 15px;
-            text-decoration: none;
-        }
-        #status { font-size: 1.1em; }
+        .buy { background: #004d2e; color: #00ff9d; }
+        .wait { background: #4d4d00; color: #ffcc00; }
     </style>
 </head>
 <body>
     <nav>
-        <a href="index.html">Dashboard</a> |
+        <a href="index.html">Dashboard</a>
         <a href="logs.html">Trade Logs</a>
+        <a href="#">Scanner</a>
+        <a href="#">Watchlist</a>
     </nav>
 
     <div class="header">
-        <h1>ZenCloud Trading Dashboard</h1>
-        <p id="last-updated">Loading...</p>
+        <h1>ZenCloud Day Trading Dashboard</h1>
+        <p id="last-updated" style="color:#888;">Last Updated: Loading...</p>
     </div>
 
-    <div class="container">
-        <div class="card">
-            <h2>Market Status</h2>
-            <div id="status" class="value">Loading...</div>
-            <div id="asset" style="font-size:1.4em;"></div>
-        </div>
-
-        <div class="card">
-            <h2>Current Price</h2>
-            <div id="price" class="value">—</div>
-        </div>
-
-        <div class="card">
-            <h2>Signal</h2>
-            <div id="signal" class="value">—</div>
-        </div>
-
-        <div class="card">
-            <h2>FVG Detected</h2>
-            <div id="fvg" class="value">No</div>
-        </div>
+    <div class="container" id="coins-container">
+        <!-- Cards will be added by JavaScript -->
     </div>
 
     <script>
         fetch("data.json")
-            .then(response => {
-                if (!response.ok) throw new Error("Data file not found");
-                return response.json();
-            })
+            .then(r => r.json())
             .then(data => {
                 document.getElementById("last-updated").textContent = 
-                    "Last Updated: " + new Date(data.last_updated).toLocaleString();
+                    "Last Updated: " + new Date(data.last_updated).toLocaleString('en-AU');
 
-                document.getElementById("status").textContent = data.status;
-                document.getElementById("asset").textContent = data.active_asset;
-                
-                const priceEl = document.getElementById("price");
-                priceEl.textContent = data.current_price ? "$" + data.current_price.toLocaleString() : "—";
+                const container = document.getElementById("coins-container");
+                container.innerHTML = "";
 
-                const signalEl = document.getElementById("signal");
-                signalEl.textContent = data.trade_recommendation;
-                signalEl.className = data.trade_recommendation.includes("BUY") ? "value positive" : 
-                                     (data.trade_recommendation.includes("SELL") ? "value negative" : "value");
+                data.coins.forEach(coin => {
+                    const changeClass = coin.change_24h >= 0 ? "positive" : "negative";
+                    const signalClass = coin.signal === "BUY" ? "buy" : "wait";
 
-                document.getElementById("fvg").textContent = data.fvg_detected ? "Yes ✅" : "No";
+                    const cardHTML = `
+                        <div class="card">
+                            <div class="coin-header">
+                                <div class="symbol">${coin.symbol}</div>
+                                <div class="${changeClass}">${coin.change_24h >= 0 ? '+' : ''}${coin.change_24h}%</div>
+                            </div>
+                            <div class="price">$${coin.price.toLocaleString()}</div>
+                            <div style="margin: 12px 0;">
+                                Trend: <strong>${coin.trend}</strong>
+                            </div>
+                            <div>
+                                Signal: <span class="signal ${signalClass}">${coin.signal}</span>
+                            </div>
+                            <div style="margin-top: 12px; color:#aaa;">
+                                Volume: ${coin.volume}
+                            </div>
+                        </div>
+                    `;
+                    container.innerHTML += cardHTML;
+                });
             })
             .catch(err => {
                 console.error(err);
-                document.getElementById("status").innerHTML = "❌ Error loading data";
+                document.getElementById("last-updated").textContent = "Error loading data";
             });
     </script>
 </body>
