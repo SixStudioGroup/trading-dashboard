@@ -108,6 +108,29 @@
 
     <script src="data.js"></script>
     <script>
+        
+        const coinNameToSymbol = {
+            'cardano': 'ADA',
+            'bnb': 'BNB',
+            'bitcoin': 'BTC',
+            'dogecoin': 'DOGE',
+            'polkadot': 'DOT',
+            'ethereum': 'ETH',
+            'litecoin': 'LTC',
+            'stellar': 'XLM',
+            'theta': 'THETA',
+            'xrp': 'XRP',
+            'solana': 'SOL'
+        };
+
+        function toSymbol(rawName) {
+            const key = rawName.toLowerCase().trim();
+            if (coinNameToSymbol[key]) return coinNameToSymbol[key];
+            const cleaned = rawName.replace(/[^A-Za-z0-9 ]/g, '').trim();
+            if (/^[A-Za-z0-9]{2,8}$/.test(cleaned)) return cleaned.toUpperCase();
+            return cleaned.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0,6);
+        }
+
         function inferSignal(change) {
             if (change >= 2) return 'BUY';
             if (change <= -2) return 'SELL';
@@ -125,13 +148,14 @@
             data.coins.forEach(coin => {
                 const isPos = coin.change_24h >= 0;
                 const signalClass = coin.signal === 'BUY' ? 'buy' : coin.signal === 'SELL' ? 'sell' : 'wait';
+                const safeSymbol = String(coin.symbol).replace(/[^A-Z0-9]/gi, '').toUpperCase();
                 watchlistEl.innerHTML += `
                     <div class="card">
-                        <div style="font-size:1.4rem; font-weight:600;">${coin.symbol}/AUD</div>
+                        <div style="font-size:1.4rem; font-weight:600;">${safeSymbol}/AUD</div>
                         <div style="font-size:2.2rem; font-weight:700; margin:12px 0;">$${Number(coin.price).toLocaleString()}</div>
                         <div style="font-size:1.2rem; color:${isPos ? '#00ff9d' : '#ff3b5c'};">${isPos ? '+' : ''}${coin.change_24h}%</div>
                         <div style="margin:12px 0;">Signal: <span class="pill ${signalClass}">${coin.signal}</span></div>
-                        <a href="https://www.coinspot.com.au/buy/${coin.symbol.toLowerCase()}" target="_blank"
+                        <a href="https://www.coinspot.com.au/buy/${safeSymbol.toLowerCase()}" target="_blank" rel="noopener noreferrer"
                            style="background:#00ff9d; color:black; padding:12px 24px; border-radius:9999px; text-decoration:none; display:inline-block; margin-top:12px; font-weight:600;">
                             TRADE ON COINSPOT →
                         </a>
@@ -162,7 +186,7 @@
 
                 const wlMatch = line.match(wlRegex);
                 if (wlMatch) {
-                    const symbol = wlMatch[1].split(' ').map(w => w[0]).join('').toUpperCase().slice(0,5);
+                    const symbol = toSymbol(wlMatch[1]);
                     watchlistCoins.push({
                         symbol,
                         price: parseFloat(wlMatch[2].replace(/,/g, '')),
@@ -174,7 +198,7 @@
 
                 const moverMatch = line.match(moverRegex);
                 if (moverMatch && watchlistCoins.length < 15) {
-                    const symbol = moverMatch[1].split(' ').map(w => w[0]).join('').toUpperCase().slice(0,5);
+                    const symbol = toSymbol(moverMatch[1]);
                     watchlistCoins.push({
                         symbol,
                         price: parseFloat(moverMatch[2].replace(/,/g, '')),
