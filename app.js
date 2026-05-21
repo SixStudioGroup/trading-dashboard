@@ -27,13 +27,31 @@ const FALLBACK_STATUS = "Live API unavailable - fallback snapshot";
 let fallbackWarningShown = false;
 
 const DEFAULT_HOLDINGS = [
-    { symbol: "BTC", name: "Bitcoin", balance: 0.0001393, note: "Default sample holding", updatedAt: "2026-05-21T00:00:00+10:00" },
-    { symbol: "LTC", name: "Litecoin", balance: 0, note: "Default sample holding", updatedAt: "2026-05-21T00:00:00+10:00" },
-    { symbol: "ETH", name: "Ethereum", balance: 0, note: "Default sample holding", updatedAt: "2026-05-21T00:00:00+10:00" },
-    { symbol: "ETC", name: "Ethereum Classic", balance: 0, note: "Default sample holding", updatedAt: "2026-05-21T00:00:00+10:00" },
-    { symbol: "BNB", name: "BNB", balance: 0, note: "Default sample holding", updatedAt: "2026-05-21T00:00:00+10:00" },
-    { symbol: "TRB", name: "Tellor", balance: 0, note: "Default sample holding", updatedAt: "2026-05-21T00:00:00+10:00" }
+    { symbol: "FET", name: "Artificial Superintelligence Alliance", balance: 0, note: "Default manual holding seed", updatedAt: "2026-05-22T00:00:00+10:00" }
 ];
+
+const LEGACY_DEFAULT_HOLDINGS = [
+    { symbol: "BTC", balance: 0.0001393, note: "Default sample holding" },
+    { symbol: "LTC", balance: 0, note: "Default sample holding" },
+    { symbol: "ETH", balance: 0, note: "Default sample holding" },
+    { symbol: "ETC", balance: 0, note: "Default sample holding" },
+    { symbol: "BNB", balance: 0, note: "Default sample holding" },
+    { symbol: "TRB", balance: 0, note: "Default sample holding" }
+];
+
+const COINSPOT_SYMBOLS = {
+    ADA: "https://www.coinspot.com.au/buy/ada",
+    BNB: "https://www.coinspot.com.au/buy/bnb",
+    BTC: "https://www.coinspot.com.au/buy/btc",
+    DOGE: "https://www.coinspot.com.au/buy/doge",
+    DOT: "https://www.coinspot.com.au/buy/dot",
+    ETH: "https://www.coinspot.com.au/buy/eth",
+    FET: "https://www.coinspot.com.au/buy/fet",
+    LTC: "https://www.coinspot.com.au/buy/ltc",
+    NEAR: "https://www.coinspot.com.au/buy/near",
+    THETA: "https://www.coinspot.com.au/buy/theta",
+    XLM: "https://www.coinspot.com.au/buy/xlm"
+};
 
 const page = document.body.dataset.page;
 const HOLDINGS_STORAGE_KEY = "zencloud.manualHoldings.v1";
@@ -128,6 +146,16 @@ function isDefaultSampleSet(holdings) {
     });
 }
 
+function isLegacyDefaultSampleSet(holdings) {
+    if (!Array.isArray(holdings) || holdings.length !== LEGACY_DEFAULT_HOLDINGS.length) return false;
+    return LEGACY_DEFAULT_HOLDINGS.every(defaultHolding => {
+        const match = holdings.find(holding => holding.symbol === defaultHolding.symbol);
+        return match
+            && match.note === defaultHolding.note
+            && match.balance === defaultHolding.balance;
+    });
+}
+
 function loadHoldings() {
     if (!storageAvailable()) {
         usingDefaultHoldings = true;
@@ -142,8 +170,13 @@ function loadHoldings() {
         holdingsStorageInitialized = true;
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed)) {
+            const normalized = parsed.map(normalizeHolding).filter(holding => holding.symbol);
+            if (isLegacyDefaultSampleSet(normalized)) {
+                usingDefaultHoldings = true;
+                return defaultHoldings();
+            }
             usingDefaultHoldings = false;
-            return parsed.map(normalizeHolding).filter(holding => holding.symbol);
+            return normalized;
         }
         usingDefaultHoldings = true;
         return defaultHoldings();
@@ -237,8 +270,12 @@ function holdingValuation(markets, holding) {
 }
 
 function coinspotUrl(coin) {
-    const symbol = safeText(coin?.symbol, "btc").toUpperCase();
-    return `https://www.coinspot.com.au/buy/${symbol}`;
+    const symbol = safeText(coin?.symbol, "").toUpperCase();
+    return COINSPOT_SYMBOLS[symbol] || null;
+}
+
+function coinspotStatus(coin) {
+    return coinspotUrl(coin) ? "Supported" : "Watch only";
 }
 
 function coinCell(coin) {
@@ -396,7 +433,9 @@ function renderDashboard(model) {
             <td><button class="table-action" type="button" data-asset-id="${item.coin.id}">Analyse</button></td>
         </tr>
     `).join("");
+    renderTradeGuide(opportunityRows);
 
+    const selectedCoinspotUrl = selected ? coinspotUrl(selected.coin) : null;
     document.getElementById("analysis-panel").innerHTML = selected ? `
             <div class="analysis-heading">
                 ${coinCell(selected.coin)}
@@ -412,7 +451,9 @@ function renderDashboard(model) {
             </dl>
             <div class="execution-bar">
                 <span>Execution opens only for the selected asset.</span>
-                <a class="button-primary" href="${coinspotUrl(selected.coin)}" target="_blank" rel="noopener noreferrer">Open CoinSpot</a>
+                ${selectedCoinspotUrl
+                    ? `<a class="button-primary" href="${selectedCoinspotUrl}" target="_blank" rel="noopener noreferrer">Open CoinSpot</a>`
+                    : `<span class="watch-only">Watch only</span>`}
             </div>
         ` : `<div class="empty-analysis">Select an asset from the opportunity queue to inspect price action, score context, and execution.</div>`;
 
@@ -462,6 +503,89 @@ function renderDashboard(model) {
     `).join("");
 
     renderTodayMovers(markets);
+}
+
+function guideStateFor(item) {
+    if (item.state.trendState === "trend_breakout") return { label: "Breakout", klass: "strong" };
+    if (item.state.trendState === "trend_downside") return { label: "Sell Risk", klass: "sell" };
+    if (item.state.trendState === "trend_positive") return { label: "Watch", klass: "watch" };
+    if (item.state.alertTrigger === "volume_spike") return { label: "Volume Spike", klass: "volume" };
+    return { label: "No Action", klass: "wait" };
+}
+
+function confirmationFor(item, stateLabel) {
+    const oneHour = finiteNumber(item.coin.price_change_percentage_1h_in_currency);
+    const day = finiteNumber(item.coin.price_change_percentage_24h);
+    const volume = finiteNumber(item.coin.total_volume);
+    let score = 0;
+    if (oneHour > 0) score += 1;
+    if (day > 2) score += 1;
+    if (volume > 1000000000) score += 1;
+    if (stateLabel === "Breakout") score += 1;
+    if (stateLabel === "Sell Risk") score += 1;
+    if (score >= 3) return "Strong";
+    if (score >= 2) return "Medium";
+    return "Weak";
+}
+
+function riskFor(item) {
+    const move = Math.abs(finiteNumber(item.coin.price_change_percentage_24h));
+    const hour = Math.abs(finiteNumber(item.coin.price_change_percentage_1h_in_currency));
+    if (move >= 8 || hour >= 4) return "High";
+    if (move >= 3 || hour >= 1.5) return "Medium";
+    return "Low";
+}
+
+function liquidityFor(item) {
+    const volume = finiteNumber(item.coin.total_volume);
+    if (volume >= 100000000) return "Suitable";
+    if (volume >= 25000000) return "Caution";
+    return "Avoid";
+}
+
+function signalAgeFor(stateLabel) {
+    return stateLabel === "No Action" ? "Unknown" : "Fresh";
+}
+
+function invalidationFor(stateLabel) {
+    const invalidations = {
+        Breakout: "1hr momentum turns negative",
+        Watch: "24hr move falls below 2%",
+        "Sell Risk": "Risk threshold clears",
+        "Volume Spike": "Volume drops below threshold",
+        "No Action": "New threshold state appears"
+    };
+    return invalidations[stateLabel] || "Unknown";
+}
+
+function renderTradeGuide(items) {
+    const body = document.getElementById("trade-guide-body");
+    if (!body) return;
+    body.innerHTML = items.slice(0, 10).map((item, index) => {
+        const state = guideStateFor(item);
+        const supported = coinspotStatus(item.coin);
+        const analysed = item.coin.id === selectedAssetId;
+        const handoffUrl = analysed ? coinspotUrl(item.coin) : null;
+        const action = handoffUrl
+            ? `<a class="table-action" href="${handoffUrl}" target="_blank" rel="noopener noreferrer">CoinSpot</a>`
+            : supported === "Supported" && !analysed
+                ? `<button class="table-action" type="button" data-asset-id="${item.coin.id}">Analyse</button>`
+                : "Watch only";
+        return `
+            <tr>
+                <td class="num">${index + 1}</td>
+                <td>${coinCell(item.coin)}</td>
+                <td><span class="badge ${state.klass}">${state.label}</span></td>
+                <td>${confirmationFor(item, state.label)}</td>
+                <td>${riskFor(item)}</td>
+                <td>${liquidityFor(item)}</td>
+                <td>${signalAgeFor(state.label)}</td>
+                <td>${invalidationFor(state.label)}</td>
+                <td>${supported}</td>
+                <td>${action}</td>
+            </tr>
+        `;
+    }).join("");
 }
 
 function renderHoldingsAllocation(holdingRows, portfolioValue) {

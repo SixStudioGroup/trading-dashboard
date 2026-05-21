@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ZenCloud Crypto Dashboard</title>
-    <link rel="stylesheet" href="styles.css?v=holdings-manager-20260521">
+    <link rel="stylesheet" href="styles.css?v=trade-guide-20260522">
 </head>
 <body data-page="dashboard">
     <header class="topbar">
@@ -53,6 +53,31 @@
                         <tr><td colspan="7" class="loading-cell">Loading ranked opportunities...</td></tr>
                     </tbody>
                 </table>
+                <div class="trade-guide">
+                    <div class="trade-guide-header">
+                        <h2 class="panel-title">Top 10 Trade Guide</h2>
+                        <p class="panel-subtitle">Decision-support checklist for ranked assets</p>
+                    </div>
+                    <table class="compact-table trade-guide-table">
+                        <thead>
+                            <tr>
+                                <th class="num">Rank</th>
+                                <th>Asset</th>
+                                <th>State</th>
+                                <th>Confirmation</th>
+                                <th>Risk</th>
+                                <th>Liquidity</th>
+                                <th>Signal Age</th>
+                                <th>Invalidation</th>
+                                <th>CoinSpot Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="trade-guide-body">
+                            <tr><td colspan="10" class="loading-cell">Loading trade guide...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </section>
 
             <section class="panel analysis-panel">
@@ -227,6 +252,6 @@
         </details>
     </main>
 
-    <script src="app.js?v=holdings-manager-20260521"></script>
+    <script src="app.js?v=trade-guide-20260522"></script>
 </body>
 </html>

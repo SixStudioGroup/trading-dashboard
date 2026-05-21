@@ -197,6 +197,30 @@ a:hover { text-decoration: underline; }
 
 .panel-body { padding: 12px; }
 
+.trade-guide {
+    border-top: 1px solid var(--line);
+}
+
+.trade-guide-header {
+    padding: 10px 12px;
+    background: #fbfcfd;
+}
+
+.trade-guide-table th,
+.trade-guide-table td {
+    font-size: 11px;
+    padding: 6px;
+}
+
+.trade-guide-table .coin {
+    min-width: 92px;
+}
+
+.watch-only {
+    color: var(--muted);
+    font-weight: 700;
+}
+
 .flat-header {
     border-top: 1px solid var(--line);
     border-bottom: 1px solid var(--line);
