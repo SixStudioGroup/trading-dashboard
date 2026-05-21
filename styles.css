@@ -562,6 +562,76 @@ a:hover { text-decoration: underline; }
     margin-bottom: 12px;
 }
 
+.reports-shell {
+    max-width: 1320px;
+}
+
+.reports-tabs {
+    margin-top: 0;
+}
+
+.report-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.report-date-control {
+    display: grid;
+    gap: 5px;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.report-date-control input,
+.review-field input,
+.review-field select {
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: #fff;
+    color: var(--text);
+    font: inherit;
+    padding: 7px 8px;
+}
+
+.report-note {
+    margin: 0 10px 10px;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.report-table td {
+    vertical-align: top;
+    white-space: normal;
+}
+
+.review-fields {
+    display: grid;
+    gap: 6px;
+    min-width: 190px;
+}
+
+.review-field {
+    display: grid;
+    gap: 4px;
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.rule-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #44576a;
+    font-weight: 700;
+}
+
 .journal-form {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -652,6 +722,28 @@ a:hover { text-decoration: underline; }
     color: #34495e;
     font-weight: 700;
     padding: 2px 5px;
+}
+
+.rule-banner {
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    background: #fbfcfd;
+}
+
+.rule-banner strong {
+    color: #34495e;
+    font-size: 15px;
+}
+
+.rule-banner span {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
 }
 
 .disclaimer-card {

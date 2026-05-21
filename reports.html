@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports - ZenCloud Crypto Dashboard</title>
+    <link rel="stylesheet" href="styles.css?v=reports-20260522">
+</head>
+<body data-page="reports">
+    <header class="topbar">
+        <a class="brand" href="index.html" aria-label="ZenCloud Crypto Dashboard">
+            <span class="brand-mark">Z</span>
+            <span>ZenCloud Crypto Dashboard</span>
+        </a>
+        <nav class="navlinks" aria-label="Main navigation">
+            <a href="index.html">Dashboard</a>
+            <a href="logs.html">Market Logs</a>
+            <a href="alerts.html">Alerts</a>
+            <a href="journal.html">Trade Journal</a>
+            <a class="active" href="reports.html">Reports</a>
+            <a href="guide.html">User Guide</a>
+        </nav>
+    </header>
+
+    <main class="shell command-shell reports-shell">
+        <section class="welcome">
+            <div>
+                <h1>Reports</h1>
+                <p>Executive review from manual Trade Journal and Holdings records. No private exchange data is fetched.</p>
+            </div>
+            <div class="status-card">
+                <span class="status-dot"></span>
+                <span id="market-status">Loading live data...</span>
+            </div>
+        </section>
+
+        <section class="panel secondary-tabs reports-tabs" id="reports-tabs">
+            <div class="tab-bar" role="tablist" aria-label="Reports">
+                <button class="tab-button" type="button" data-report-target="daily-report-tab">Daily</button>
+                <button class="tab-button active" type="button" data-report-target="weekly-report-tab">Weekly</button>
+                <button class="tab-button" type="button" data-report-target="trade-review-tab">Trades</button>
+                <button class="tab-button" type="button" data-report-target="position-report-tab">Positions</button>
+                <button class="tab-button" type="button" data-report-target="behaviour-report-tab">Behaviour</button>
+            </div>
+
+            <section class="tab-panel" id="daily-report-tab">
+                <div class="report-panel-header">
+                    <div>
+                        <h2 class="panel-title">Daily Trading Report</h2>
+                        <p class="panel-subtitle">Manual activity for the selected day</p>
+                    </div>
+                    <label class="report-date-control"><span>Date</span><input id="report-date" type="date"></label>
+                </div>
+                <div class="performance-grid" id="daily-report-summary"></div>
+                <p class="report-note" id="daily-report-note"></p>
+            </section>
+
+            <section class="tab-panel active" id="weekly-report-tab">
+                <div class="report-panel-header">
+                    <div>
+                        <h2 class="panel-title">Weekly Performance Report</h2>
+                        <p class="panel-subtitle">Calculated only from manually entered journal data</p>
+                    </div>
+                </div>
+                <div class="performance-grid" id="weekly-report-summary"></div>
+            </section>
+
+            <section class="tab-panel" id="trade-review-tab">
+                <div class="report-panel-header">
+                    <div>
+                        <h2 class="panel-title">Trade Review Report</h2>
+                        <p class="panel-subtitle">Closed trades with review fields stored in the Trade Journal</p>
+                    </div>
+                </div>
+                <table class="compact-table report-table">
+                    <thead>
+                        <tr>
+                            <th>Asset</th>
+                            <th>Entry reason</th>
+                            <th>Signal</th>
+                            <th>Invalidation</th>
+                            <th>Exit reason</th>
+                            <th class="num">Result AUD</th>
+                            <th class="num">Result %</th>
+                            <th>Rule followed</th>
+                            <th>Review</th>
+                        </tr>
+                    </thead>
+                    <tbody id="trade-review-body">
+                        <tr><td colspan="9" class="loading-cell">Loading trade review...</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="tab-panel" id="position-report-tab">
+                <div class="report-panel-header">
+                    <div>
+                        <h2 class="panel-title">Position Report</h2>
+                        <p class="panel-subtitle">Current holdings with live public market context where available</p>
+                    </div>
+                </div>
+                <table class="compact-table report-table">
+                    <thead>
+                        <tr>
+                            <th>Asset</th>
+                            <th class="num">Balance</th>
+                            <th class="num">Average entry</th>
+                            <th class="num">Current live price</th>
+                            <th class="num">Unrealised P/L AUD</th>
+                            <th class="num">Unrealised P/L %</th>
+                            <th>Holding duration</th>
+                            <th>Current signal</th>
+                            <th>Exit risk state</th>
+                        </tr>
+                    </thead>
+                    <tbody id="position-report-body">
+                        <tr><td colspan="9" class="loading-cell">Loading positions...</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="tab-panel" id="behaviour-report-tab">
+                <div class="report-panel-header">
+                    <div>
+                        <h2 class="panel-title">Behaviour Report</h2>
+                        <p class="panel-subtitle">Neutral review of journal patterns</p>
+                    </div>
+                </div>
+                <div class="performance-grid" id="behaviour-report-summary"></div>
+            </section>
+        </section>
+    </main>
+
+    <script src="app.js?v=reports-20260522"></script>
+</body>
+</html>

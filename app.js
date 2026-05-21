@@ -418,6 +418,9 @@ function normalizeTrade(trade = {}) {
         resultAud: Number.isFinite(resultAud) ? resultAud : null,
         resultPercent: Number.isFinite(resultPercent) ? resultPercent : null,
         notes: safeText(trade.notes, ""),
+        ruleFollowed: typeof trade.ruleFollowed === "boolean" ? trade.ruleFollowed : false,
+        mistakeType: safeText(trade.mistakeType, "Other"),
+        lessonLearned: safeText(trade.lessonLearned, ""),
         status: trade.status === "closed" ? "closed" : "open",
         updatedAt: safeText(trade.updatedAt, new Date().toISOString())
     };
@@ -1524,6 +1527,241 @@ function renderAlerts(model) {
     document.getElementById("alerts-body").innerHTML = rows || `<tr><td colspan="6" class="loading-cell">No threshold events in the current market state.</td></tr>`;
 }
 
+function localDateKey(value) {
+    const date = value ? new Date(value) : new Date();
+    if (Number.isNaN(date.getTime())) return formatDateTimeLocal(new Date()).slice(0, 10);
+    return formatDateTimeLocal(date).slice(0, 10);
+}
+
+function recordDateKey(value) {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    return formatDateTimeLocal(date).slice(0, 10);
+}
+
+function daysBetween(start, end) {
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) return null;
+    return Math.max(0, Math.round((endDate.getTime() - startDate.getTime()) / 86400000));
+}
+
+function average(values) {
+    const clean = values.filter(Number.isFinite);
+    return clean.length ? clean.reduce((total, value) => total + value, 0) / clean.length : 0;
+}
+
+function mostCommon(values, fallback = "Not enough data") {
+    const counts = values
+        .map(value => safeText(value, ""))
+        .filter(Boolean)
+        .reduce((acc, value) => {
+            acc[value] = (acc[value] || 0) + 1;
+            return acc;
+        }, {});
+    return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || fallback;
+}
+
+function reportMetric(label, value) {
+    return `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(String(value))}</strong></div>`;
+}
+
+function assetStateForReport(model, holding) {
+    const symbol = safeText(holding.symbol, "").toLowerCase();
+    const name = safeText(holding.name, "").toLowerCase();
+    const item = model.assets.find(row => row.coin.symbol.toLowerCase() === symbol)
+        || model.assets.find(row => row.coin.id.toLowerCase() === symbol || row.coin.name.toLowerCase() === name)
+        || null;
+    return item ? { item, state: guideStateFor(item).label, risk: riskFor(item) } : { item: null, state: "No Action", risk: "Unknown" };
+}
+
+function exitRiskForReport(stateRow, valuation) {
+    const item = stateRow.item;
+    if (!item || !valuation.market) return "Price unavailable";
+    const oneHour = finiteNumber(item.coin.price_change_percentage_1h_in_currency);
+    const day = finiteNumber(item.coin.price_change_percentage_24h);
+    if (stateRow.state === "Sell Risk" || stateRow.risk === "High" || oneHour < -1 || day < 0) return "Review Position";
+    return "No elevated exit risk";
+}
+
+function renderDailyReport(trades) {
+    const summary = document.getElementById("daily-report-summary");
+    const note = document.getElementById("daily-report-note");
+    if (!summary || !note) return;
+    const selectedDate = document.getElementById("report-date")?.value || localDateKey(new Date());
+    const opened = trades.filter(trade => recordDateKey(trade.entryDate) === selectedDate);
+    const closedToday = trades.filter(trade => trade.status === "closed" && recordDateKey(trade.exitDate) === selectedDate);
+    const closedWithResults = closedToday.filter(trade => Number.isFinite(trade.resultAud));
+    const best = closedWithResults.length ? [...closedWithResults].sort((a, b) => b.resultAud - a.resultAud)[0] : null;
+    const worst = closedWithResults.length ? [...closedWithResults].sort((a, b) => a.resultAud - b.resultAud)[0] : null;
+    const net = closedWithResults.reduce((total, trade) => total + trade.resultAud, 0);
+    const openPositions = trades.filter(trade => trade.status !== "closed").length;
+    const closedPositions = trades.filter(trade => trade.status === "closed").length;
+    summary.innerHTML = [
+        ["Date", selectedDate],
+        ["Trades opened", opened.length],
+        ["Trades closed", closedToday.length],
+        ["Open positions", openPositions],
+        ["Closed positions", closedPositions],
+        ["Best result", best ? formatSignedMoney(best.resultAud) : "Not recorded"],
+        ["Worst result", worst ? formatSignedMoney(worst.resultAud) : "Not recorded"],
+        ["Net AUD result", formatSignedMoney(net)]
+    ].map(([label, value]) => reportMetric(label, value)).join("");
+    note.textContent = opened.length || closedToday.length
+        ? "Daily notes: review entries, exits, and whether the plan was followed."
+        : "No trades logged for this day.";
+}
+
+function renderWeeklyReport() {
+    const el = document.getElementById("weekly-report-summary");
+    if (!el) return;
+    const metrics = performanceMetrics();
+    if (!metrics.enough) {
+        el.innerHTML = `<div class="empty-analysis compact-empty">Not enough closed trades yet.</div>`;
+        return;
+    }
+    el.innerHTML = [
+        ["Total trades", metrics.trades.length],
+        ["Open trades", metrics.open.length],
+        ["Closed trades", metrics.closed.length],
+        ["Win rate", `${metrics.winRate.toFixed(1)}%`],
+        ["Average gain", `${metrics.avgGain.toFixed(2)}%`],
+        ["Average loss", `${metrics.avgLoss.toFixed(2)}%`],
+        ["Net AUD result", formatSignedMoney(metrics.net)],
+        ["Best signal type", metrics.bestSignal],
+        ["Worst signal type", metrics.worstSignal],
+        ["Most traded asset", metrics.mostTraded]
+    ].map(([label, value]) => reportMetric(label, value)).join("");
+}
+
+function renderTradeReviewReport(trades) {
+    const body = document.getElementById("trade-review-body");
+    if (!body) return;
+    const closed = trades.filter(trade => trade.status === "closed");
+    const mistakeOptions = ["No plan", "Entered too late", "Exited too early", "Ignored invalidation", "Oversized position", "Chased movement", "Other"];
+    body.innerHTML = closed.length ? closed.map(trade => `
+        <tr>
+            <td>${escapeHtml(trade.symbol)} / ${escapeHtml(trade.name)}</td>
+            <td>${escapeHtml(trade.reasonEntry)}</td>
+            <td>${escapeHtml(trade.signalState)}</td>
+            <td>${escapeHtml(trade.plannedInvalidation)}</td>
+            <td>${escapeHtml(trade.exitReason || "Manual close")}</td>
+            <td class="num ${trade.resultAud > 0 ? "positive" : trade.resultAud < 0 ? "negative" : "neutral"}">${trade.resultAud === null ? "Not recorded" : formatSignedMoney(trade.resultAud)}</td>
+            <td class="num ${trade.resultPercent > 0 ? "positive" : trade.resultPercent < 0 ? "negative" : "neutral"}">${trade.resultPercent === null ? "Not recorded" : formatSignedPercent(trade.resultPercent)}</td>
+            <td>
+                <label class="rule-toggle">
+                    <input type="checkbox" data-review-rule="${escapeHtml(trade.id)}" ${trade.ruleFollowed ? "checked" : ""}>
+                    <span>${trade.ruleFollowed ? "Yes" : "No"}</span>
+                </label>
+            </td>
+            <td>
+                <div class="review-fields">
+                    <label class="review-field">Mistake type
+                        <select data-review-mistake="${escapeHtml(trade.id)}">
+                            ${mistakeOptions.map(option => `<option ${trade.mistakeType === option ? "selected" : ""}>${option}</option>`).join("")}
+                        </select>
+                    </label>
+                    <label class="review-field">Lesson learned
+                        <input type="text" data-review-lesson="${escapeHtml(trade.id)}" value="${escapeHtml(trade.lessonLearned)}" placeholder="Optional">
+                    </label>
+                    <button class="table-action" type="button" data-save-review="${escapeHtml(trade.id)}">Save Review</button>
+                </div>
+            </td>
+        </tr>
+    `).join("") : `<tr><td colspan="9" class="loading-cell">No closed trades to review.</td></tr>`;
+    body.querySelectorAll("[data-save-review]").forEach(button => {
+        button.addEventListener("click", event => {
+            const id = event.currentTarget.dataset.saveReview;
+            updateTrade(id, {
+                ruleFollowed: Boolean(document.querySelector(`[data-review-rule="${id}"]`)?.checked),
+                mistakeType: document.querySelector(`[data-review-mistake="${id}"]`)?.value || "Other",
+                lessonLearned: document.querySelector(`[data-review-lesson="${id}"]`)?.value || ""
+            });
+            if (currentReportModel) renderReports(currentReportModel);
+        });
+    });
+}
+
+function renderPositionReport(model) {
+    const body = document.getElementById("position-report-body");
+    if (!body) return;
+    const rows = manualHoldings.map(holding => {
+        const normalized = normalizeHolding(holding);
+        const valuation = holdingValuation(model.markets, normalized);
+        const unrealized = unrealizedFor({ holding: normalized, market: valuation.market });
+        const stateRow = assetStateForReport(model, normalized);
+        return { holding: normalized, valuation, unrealized, stateRow };
+    }).filter(row => row.holding.symbol);
+    body.innerHTML = rows.length ? rows.map(row => `
+        <tr>
+            <td>${escapeHtml(row.holding.symbol)} / ${escapeHtml(row.holding.name)}</td>
+            <td class="num">${formatBalance(row.holding.balance)}</td>
+            <td class="num">${row.holding.avgEntryPrice ? formatPrice(row.holding.avgEntryPrice) : "Entry not set"}</td>
+            <td class="num">${row.valuation.market ? formatPrice(row.valuation.market.current_price) : "Price unavailable"}</td>
+            <td class="num ${row.unrealized.aud > 0 ? "positive" : row.unrealized.aud < 0 ? "negative" : "neutral"}">${row.unrealized.aud === null ? row.unrealized.label : formatSignedMoney(row.unrealized.aud)}</td>
+            <td class="num ${row.unrealized.percent > 0 ? "positive" : row.unrealized.percent < 0 ? "negative" : "neutral"}">${row.unrealized.percent === null ? row.unrealized.label : formatSignedPercent(row.unrealized.percent)}</td>
+            <td>${holdingDuration(row.holding.updatedAt)}</td>
+            <td>${escapeHtml(row.stateRow.state)}</td>
+            <td>${escapeHtml(exitRiskForReport(row.stateRow, row.valuation))}</td>
+        </tr>
+    `).join("") : `<tr><td colspan="9" class="loading-cell">No holdings recorded.</td></tr>`;
+}
+
+function renderBehaviourReport(trades) {
+    const el = document.getElementById("behaviour-report-summary");
+    if (!el) return;
+    const openedByDay = trades.reduce((acc, trade) => {
+        const key = recordDateKey(trade.entryDate);
+        if (!key) return acc;
+        acc[key] = (acc[key] || 0) + 1;
+        return acc;
+    }, {});
+    const closed = trades.filter(trade => trade.status === "closed");
+    const holdingDays = closed.map(trade => daysBetween(trade.entryDate, trade.exitDate)).filter(value => value !== null);
+    const withoutPlan = trades.filter(trade => !safeText(trade.reasonEntry, "") || trade.reasonEntry === "Manual trade plan").length;
+    const outsideSignal = trades.filter(trade => trade.signalState === "No Action").length;
+    const overtradingDays = Object.values(openedByDay).filter(count => count > 3).length;
+    el.innerHTML = [
+        ["Trades without plan", withoutPlan],
+        ["Trades outside ZenCloud signal", outsideSignal],
+        ["Overtrading days", overtradingDays],
+        ["Average holding time", holdingDays.length ? `${average(holdingDays).toFixed(1)} days` : "Not enough data"],
+        ["Most common mistake", mostCommon(trades.map(trade => trade.mistakeType), "Not enough data")],
+        ["Most common signal at entry", mostCommon(trades.map(trade => trade.signalState), "Not enough data")]
+    ].map(([label, value]) => reportMetric(label, value)).join("");
+}
+
+let currentReportModel = null;
+
+function renderReports(model) {
+    currentReportModel = model;
+    const trades = tradeJournal.map(normalizeTrade);
+    renderDailyReport(trades);
+    renderWeeklyReport();
+    renderTradeReviewReport(trades);
+    renderPositionReport(model);
+    renderBehaviourReport(trades);
+}
+
+function initReportsControls() {
+    const tabs = document.getElementById("reports-tabs");
+    if (tabs) {
+        tabs.querySelectorAll("[data-report-target]").forEach(button => {
+            button.addEventListener("click", event => {
+                const target = event.currentTarget.dataset.reportTarget;
+                tabs.querySelectorAll("[data-report-target]").forEach(tab => tab.classList.toggle("active", tab === event.currentTarget));
+                tabs.querySelectorAll(".tab-panel").forEach(panel => panel.classList.toggle("active", panel.id === target));
+            });
+        });
+    }
+    const dateInput = document.getElementById("report-date");
+    if (dateInput && !dateInput.value) dateInput.value = localDateKey(new Date());
+    dateInput?.addEventListener("change", () => {
+        if (currentReportModel) renderReports(currentReportModel);
+    });
+}
+
 function renderJournal() {
     const openBody = document.getElementById("open-trades-body");
     const closedBody = document.getElementById("closed-trades-body");
@@ -1652,6 +1890,7 @@ async function boot() {
     if (page === "dashboard") renderDashboard(model);
     if (page === "logs") renderLogs(model);
     if (page === "alerts") renderAlerts(model);
+    if (page === "reports") renderReports(model);
 }
 
 boot();
@@ -1660,4 +1899,5 @@ if (page === "dashboard") {
     initSecondaryTabs();
 }
 if (page === "journal") initJournalControls();
+if (page === "reports") initReportsControls();
 setInterval(boot, 60000);
