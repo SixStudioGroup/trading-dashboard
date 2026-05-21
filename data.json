@@ -1,8 +1,8 @@
 {
-  "last_updated": "2026-05-21T00:00:00Z",
-  "status": "Ready",
+  "last_updated": "2026-05-21T17:00:00Z",
+  "status": "Scanning",
   "active_asset": "BTC/USDT",
-  "current_price": 0,
-  "fvg_detected": false,
-  "trade_recommendation": "WAIT"
+  "current_price": 68250.75,
+  "fvg_detected": true,
+  "trade_recommendation": "BUY"
 }

@@ -1,28 +1,114 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Live Trading Dashboard</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZenCloud Trading Dashboard</title>
     <style>
-        body { font-family: sans-serif; background: #121212; color: #e0e0e0; padding: 40px; }
-        .card { background: #1e1e1e; border: 1px solid #333; padding: 25px; border-radius: 12px; max-width: 400px; }
-        h1 { margin-top: 0; color: #fff; }
-        .data-point { font-size: 1.2em; margin: 10px 0; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #0f0f0f;
+            color: #e0e0e0;
+            margin: 0;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+        }
+        .card {
+            background: #1e1e1e;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #333;
+        }
+        h1 { color: #00ff9d; margin: 0 0 10px 0; }
+        .value {
+            font-size: 2.2em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .positive { color: #00ff9d; }
+        .negative { color: #ff3b5c; }
+        nav {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        nav a {
+            color: #00cc7a;
+            margin: 0 15px;
+            text-decoration: none;
+        }
+        #status { font-size: 1.1em; }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h1>Dashboard</h1>
-        <div id="status">Loading data...</div>
+    <nav>
+        <a href="index.html">Dashboard</a> |
+        <a href="logs.html">Trade Logs</a>
+    </nav>
+
+    <div class="header">
+        <h1>ZenCloud Trading Dashboard</h1>
+        <p id="last-updated">Loading...</p>
     </div>
+
+    <div class="container">
+        <div class="card">
+            <h2>Market Status</h2>
+            <div id="status" class="value">Loading...</div>
+            <div id="asset" style="font-size:1.4em;"></div>
+        </div>
+
+        <div class="card">
+            <h2>Current Price</h2>
+            <div id="price" class="value">—</div>
+        </div>
+
+        <div class="card">
+            <h2>Signal</h2>
+            <div id="signal" class="value">—</div>
+        </div>
+
+        <div class="card">
+            <h2>FVG Detected</h2>
+            <div id="fvg" class="value">No</div>
+        </div>
+    </div>
+
     <script>
         fetch("data.json")
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) throw new Error("Data file not found");
+                return response.json();
+            })
             .then(data => {
-                document.getElementById("status").innerHTML = `
-                    <p class="data-point">Asset: ${data.active_asset}</p>
-                    <p class="data-point">Status: ${data.status}</p>
-                    <p class="data-point">Signal: <strong>${data.trade_recommendation}</strong></p>
-                `;
+                document.getElementById("last-updated").textContent = 
+                    "Last Updated: " + new Date(data.last_updated).toLocaleString();
+
+                document.getElementById("status").textContent = data.status;
+                document.getElementById("asset").textContent = data.active_asset;
+                
+                const priceEl = document.getElementById("price");
+                priceEl.textContent = data.current_price ? "$" + data.current_price.toLocaleString() : "—";
+
+                const signalEl = document.getElementById("signal");
+                signalEl.textContent = data.trade_recommendation;
+                signalEl.className = data.trade_recommendation.includes("BUY") ? "value positive" : 
+                                     (data.trade_recommendation.includes("SELL") ? "value negative" : "value");
+
+                document.getElementById("fvg").textContent = data.fvg_detected ? "Yes ✅" : "No";
+            })
+            .catch(err => {
+                console.error(err);
+                document.getElementById("status").innerHTML = "❌ Error loading data";
             });
     </script>
 </body>
