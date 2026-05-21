@@ -3,15 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alerts - ZenCloud</title>
+    <title>Trade Logs - ZenCloud</title>
     <style>
         body { font-family: 'Inter', sans-serif; background:#050505; color:#e0e0e0; padding:40px; }
         h1 { color:#00ff9d; }
+        table { width:100%; border-collapse: collapse; margin-top:20px; }
+        th, td { border-bottom: 1px solid #222; padding: 10px; text-align: left; }
+        th { color:#999; }
+        .buy { color:#00ff9d; }
+        .sell { color:#ff3b5c; }
     </style>
 </head>
 <body>
-    <h1>🔔 Trading Alerts</h1>
-    <p>Strong signals and price action alerts will appear here.</p>
-    <a href="index.html" style="color:#00ff9d;">← Back to Terminal</a>
+    <h1>📒 Trade Logs</h1>
+    <p>Track the trade ideas your group discusses through the day.</p>
+    <table>
+        <thead>
+            <tr><th>Time (AEST)</th><th>Coin</th><th>Signal</th><th>Note</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>09:45</td><td>DOT</td><td class="buy">BUY</td><td>Momentum breakout +2.39%.</td></tr>
+            <tr><td>11:10</td><td>ETH</td><td>WAIT</td><td>No clear trend yet.</td></tr>
+            <tr><td>14:25</td><td>ADA</td><td class="sell">SELL</td><td>Lost support, -0.42%.</td></tr>
+        </tbody>
+    </table>
+    <p style="margin-top:20px;"><a href="index.html" style="color:#00ff9d;">← Back to Terminal</a></p>
 </body>
 </html>
