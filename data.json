@@ -1,14 +1,46 @@
 {
   "last_updated": "2026-05-21T10:00:00Z",
-  "market_status": "Live",
-  "portfolio": "$15.44 AUD",
-  "coins": [
-    {"symbol": "BTC", "price": 110859.11, "change_24h": 0.24, "trend": "Neutral", "signal": "WAIT", "volume": "Very High"},
-    {"symbol": "ETH", "price": 3079.31, "change_24h": -0.16, "trend": "Neutral", "signal": "WAIT", "volume": "High"},
-    {"symbol": "BNB", "price": 943.65, "change_24h": 1.33, "trend": "Bullish", "signal": "WAIT", "volume": "High"},
-    {"symbol": "ADA", "price": 0.359956, "change_24h": -0.42, "trend": "Neutral", "signal": "WAIT", "volume": "Medium"},
-    {"symbol": "DOGE", "price": 0.152459, "change_24h": 1.60, "trend": "Bullish", "signal": "WAIT", "volume": "High"},
-    {"symbol": "DOT", "price": 1.84, "change_24h": 2.39, "trend": "Strong Bullish", "signal": "BUY", "volume": "High"},
-    {"symbol": "LTC", "price": 78.45, "change_24h": 0.18, "trend": "Neutral", "signal": "WAIT", "volume": "Medium"}
+  "portfolio": "$15.40",
+  "watchlist": [
+    {"coin": "Cardano", "buy": "$0.358968", "sell": "$0.349620", "market_cap": "$12.8B", "volume_24hr": "$514.0M", "change_24hr": "-0.41%"},
+    {"coin": "BNB", "buy": "$941.81", "sell": "$917.53", "market_cap": "$123.7B", "volume_24hr": "$1.6B", "change_24hr": "1.10%"},
+    {"coin": "Bitcoin", "buy": "$110,537.56", "sell": "$109,448.51", "market_cap": "$2.2T", "volume_24hr": "$38.1B", "change_24hr": "-0.08%"},
+    {"coin": "Dogecoin", "buy": "$0.151801", "sell": "$0.147893", "market_cap": "$25.2B", "volume_24hr": "$1.0B", "change_24hr": "1.20%"},
+    {"coin": "Polkadot", "buy": "$1.83", "sell": "$1.78", "market_cap": "$3.0B", "volume_24hr": "$137.4M", "change_24hr": "1.96%"},
+    {"coin": "Ethereum", "buy": "$3,068.50", "sell": "$2,989.60", "market_cap": "$363.1B", "volume_24hr": "$17.1B", "change_24hr": "-0.41%"},
+    {"coin": "Litecoin", "buy": "$77.95", "sell": "$75.89", "market_cap": "$5.9B", "volume_24hr": "$346.7M", "change_24hr": "-0.44%"},
+    {"coin": "Mithril", "buy": "$0.006367", "sell": "$0.002068", "market_cap": "$1.3M", "volume_24hr": "$0.00", "change_24hr": "0.00%"},
+    {"coin": "Stellar", "buy": "$0.208954", "sell": "$0.203453", "market_cap": "$6.9B", "volume_24hr": "$151.1M", "change_24hr": "1.24%"},
+    {"coin": "Theta", "buy": "$0.2940", "sell": "$0.2850", "market_cap": "$289.6M", "volume_24hr": "$13.0M", "change_24hr": "2.12%"}
+  ],
+  "wallets": [
+    {"coin": "Bitcoin", "balance": "0.0001393"},
+    {"coin": "Litecoin", "balance": "0"},
+    {"coin": "Ethereum", "balance": "0"},
+    {"coin": "Ethereum Classic", "balance": "0"},
+    {"coin": "BNB", "balance": "0"},
+    {"coin": "Tellor", "balance": "0"}
+  ],
+  "recent_movers": [
+    {"coin": "Avantis", "rate": "$0.232300", "last_hour": "10.07%"},
+    {"coin": "peaq", "rate": "$0.051200", "last_hour": "7.41%"},
+    {"coin": "DIA", "rate": "$0.277406", "last_hour": "5.04%"},
+    {"coin": "Syscoin", "rate": "$0.005980", "last_hour": "4.99%"},
+    {"coin": "Polkamarkets", "rate": "$0.005395", "last_hour": "4.96%"},
+    {"coin": "Realio", "rate": "$0.1305", "last_hour": "4.63%"}
+  ],
+  "todays_movers_up": [
+    {"coin": "peaq", "buy_rate": "$0.051200", "change_24hrs": "36.69%"},
+    {"coin": "Useless Coin", "buy_rate": "$0.114692", "change_24hrs": "24.92%"},
+    {"coin": "Avantis", "buy_rate": "$0.232300", "change_24hrs": "20.53%"},
+    {"coin": "Hyperliquid", "buy_rate": "$84.84", "change_24hrs": "19.33%"},
+    {"coin": "Grass", "buy_rate": "$0.5074", "change_24hrs": "15.60%"}
+  ],
+  "todays_movers_down": [
+    {"coin": "Aleph Zero", "buy_rate": "$0.010089", "change_24hrs": "-26.40%"},
+    {"coin": "Seedify.fund", "buy_rate": "$0.021599", "change_24hrs": "-24.64%"},
+    {"coin": "Solar", "buy_rate": "$0.001279", "change_24hrs": "-22.65%"},
+    {"coin": "Zeus Network", "buy_rate": "$0.006712", "change_24hrs": "-19.83%"},
+    {"coin": "LUKSO", "buy_rate": "$0.4115", "change_24hrs": "-19.15%"}
   ]
 }

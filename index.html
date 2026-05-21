@@ -3,281 +3,542 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZenCloud Terminal - CoinSpot Companion</title>
+    <title>CoinSpot Dashboard Mirror</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
-
         :root {
-            --primary: #00ff9d;
-            --bg: #050505;
-            --card: #0f0f0f;
-            --danger: #ff3b5c;
-            --warning: #ffd700;
+            --coinspot-blue: #0b79bf;
+            --coinspot-blue-dark: #08649e;
+            --page: #f3f6f8;
+            --panel: #ffffff;
+            --line: #d9e1e7;
+            --text: #2c3e50;
+            --muted: #71808d;
+            --green: #14a46c;
+            --red: #d84b4b;
+            --orange: #f5a623;
         }
 
         * { box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: #e0e0e0; margin: 0; }
 
-        nav {
-            background: rgba(10,10,10,0.98);
-            backdrop-filter: blur(12px);
-            padding: 18px 40px;
+        body {
+            margin: 0;
+            background: var(--page);
+            color: var(--text);
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 13px;
+        }
+
+        a { color: var(--coinspot-blue); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        .topbar {
+            height: 54px;
+            background: var(--coinspot-blue);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 26px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.18);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+        }
+
+        .brand-mark {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #fff;
+            color: var(--coinspot-blue);
+            display: grid;
+            place-items: center;
+            font-weight: 800;
+        }
+
+        .navlinks {
+            display: flex;
+            align-items: center;
+            gap: 22px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .navlinks a { color: #fff; }
+
+        .shell {
+            max-width: 1440px;
+            min-width: 1100px;
+            margin: 0 auto;
+            padding: 18px 24px 34px;
+        }
+
+        .welcome {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 3px;
+            padding: 16px 18px;
+            margin-bottom: 14px;
+        }
+
+        .welcome h1 {
+            margin: 0 0 8px;
+            font-size: 22px;
+            font-weight: 600;
+            color: #34495e;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1.45fr 0.85fr 0.8fr;
+            gap: 14px;
+            align-items: start;
+        }
+
+        .column {
+            display: grid;
+            gap: 14px;
+        }
+
+        .span-2 { grid-column: span 2; }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 3px;
+            box-shadow: 0 1px 2px rgba(15, 41, 61, 0.06);
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--line);
+            background: #fbfcfd;
+        }
+
+        .panel-title {
+            margin: 0;
+            color: #34495e;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .panel-subtitle {
+            margin: 3px 0 0;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .panel-body { padding: 12px; }
+
+        .quick-deposit {
+            min-height: 116px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid #222;
-            position: sticky;
-            top: 0;
-            z-index: 100;
+            gap: 16px;
         }
-        .logo { font-family: 'Space Grotesk', sans-serif; font-size: 1.8rem; font-weight: 700; color: var(--primary); }
-        nav a { color: #ccc; margin-left: 28px; text-decoration: none; font-weight: 500; }
-        nav a:hover { color: var(--primary); }
 
-        .header { padding: 40px 40px 20px; text-align: center; background: linear-gradient(#0a0a0a, #050505); }
-        h1 { font-family: 'Space Grotesk', sans-serif; font-size: 2.9rem; margin: 0; }
-        .balance { font-size: 2.8rem; font-weight: 700; color: var(--primary); margin: 10px 0; }
-
-        .layout {
-            max-width: 1680px;
-            margin: 0 auto;
-            padding: 0 40px 60px;
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 30px;
+        .deposit-button {
+            background: var(--orange);
+            color: #fff;
+            border-radius: 3px;
+            padding: 10px 18px;
+            font-weight: 700;
+            white-space: nowrap;
         }
-        #watchlist { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 22px; }
 
-        .card { background:#0f0f0f; border:1px solid #222; border-radius:16px; padding:24px; }
-        .pill { display:inline-block; padding:4px 10px; border-radius:9999px; font-size:0.75rem; font-weight:700; letter-spacing:0.03em; }
-        .buy { background: rgba(0,255,157,0.14); color: var(--primary); }
-        .wait { background: rgba(255,215,0,0.14); color: var(--warning); }
-        .sell { background: rgba(255,59,92,0.14); color: var(--danger); }
-        .small { color:#777; font-size:0.9rem; }
-        textarea {
+        table {
             width: 100%;
-            min-height: 160px;
-            background:#0b0b0b;
-            color:#ddd;
-            border:1px solid #2a2a2a;
-            border-radius:12px;
-            padding:12px;
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-        }
-        button {
-            background: var(--primary);
-            color:#000;
-            border:none;
-            border-radius:999px;
-            font-weight:700;
-            padding:10px 18px;
-            cursor:pointer;
-            margin-top:10px;
+            border-collapse: collapse;
+            table-layout: auto;
         }
 
-        @media (max-width: 900px) {
-            nav { padding: 16px 20px; flex-direction: column; gap: 12px; }
-            nav a { margin: 0 10px; }
-            .header { padding: 32px 20px 18px; }
-            h1 { font-size: 2rem; }
-            .balance { font-size: 2rem; }
-            .layout { grid-template-columns: 1fr; padding: 0 20px 40px; }
-            #watchlist { grid-template-columns: 1fr; }
+        th {
+            color: #637280;
+            background: #f6f8fa;
+            border-bottom: 1px solid var(--line);
+            font-size: 12px;
+            font-weight: 600;
+            padding: 8px 8px;
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        td {
+            border-bottom: 1px solid #edf1f4;
+            padding: 8px 8px;
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        tr:last-child td { border-bottom: none; }
+        .num { text-align: right; font-variant-numeric: tabular-nums; }
+        .positive { color: var(--green); font-weight: 600; }
+        .negative { color: var(--red); font-weight: 600; }
+        .neutral { color: var(--muted); font-weight: 600; }
+
+        .coin {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 116px;
+        }
+
+        .watchlist-table th,
+        .watchlist-table td,
+        .compact-table th,
+        .compact-table td {
+            font-size: 12px;
+            padding: 7px 6px;
+        }
+
+        .watchlist-table .coin,
+        .compact-table .coin {
+            min-width: 92px;
+        }
+
+        .coin-dot {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #e7eef3;
+            border: 1px solid #ccd8e0;
+            display: inline-block;
+        }
+
+        .dot-btc { background: #f7931a; border-color: #e0800e; }
+        .dot-eth { background: #627eea; border-color: #536bd1; }
+        .dot-bnb { background: #f3ba2f; border-color: #dca820; }
+        .dot-ada { background: #3468d1; border-color: #2754af; }
+        .dot-doge { background: #c2a633; border-color: #a78d24; }
+        .dot-dot { background: #e6007a; border-color: #c50069; }
+        .dot-ltc { background: #345d9d; border-color: #294b80; }
+        .dot-xlm { background: #101820; border-color: #101820; }
+        .dot-theta { background: #2ab8e6; border-color: #1c98c1; }
+
+        .portfolio-value {
+            font-size: 30px;
+            font-weight: 600;
+            margin: 2px 0 10px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+            color: var(--coinspot-blue);
+            font-weight: 600;
+        }
+
+        .chart {
+            height: 172px;
+            border: 1px solid #edf1f4;
+            background: linear-gradient(#fff, #f8fbfd);
+            position: relative;
+        }
+
+        .chart svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .chart-axis {
+            position: absolute;
+            color: #8794a0;
+            font-size: 11px;
+        }
+
+        .holdings-split {
+            display: grid;
+            grid-template-columns: 112px 1fr;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .pie {
+            width: 104px;
+            height: 104px;
+            border-radius: 50%;
+            background: conic-gradient(var(--coinspot-blue) 0 100%);
+            display: grid;
+            place-items: center;
+            color: #fff;
+            font-weight: 700;
+        }
+
+        .coin-rail {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 10px;
+            min-height: 90px;
+        }
+
+        .coin-tile {
+            min-height: 72px;
+            border: 1px solid #e6ecef;
+            border-radius: 3px;
+            background: #fbfcfd;
+            display: grid;
+            place-items: center;
+        }
+
+        .coin-tile .coin-dot {
+            width: 30px;
+            height: 30px;
+        }
+
+        .two-tables {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+
+        .two-tables table:first-child {
+            border-right: none;
+            border-bottom: 1px solid var(--line);
+        }
+
+        @media (max-width: 1180px) {
+            .shell { min-width: 0; }
+            .dashboard-grid { grid-template-columns: 1fr; }
+            .span-2 { grid-column: auto; }
+            .coin-rail { grid-template-columns: repeat(4, 1fr); }
         }
     </style>
 </head>
 <body>
-    <nav>
-        <div class="logo">ZEN CLOUD</div>
-        <div>
-            <a href="index.html">Terminal</a>
+    <header class="topbar">
+        <div class="brand">
+            <span class="brand-mark">C</span>
+            <span>CoinSpot</span>
+        </div>
+        <nav class="navlinks">
+            <a href="https://www.coinspot.com.au/my/dashboard">Terminal</a>
             <a href="logs.html">Trade Logs</a>
             <a href="alerts.html">Alerts</a>
-        </div>
-    </nav>
+        </nav>
+    </header>
 
-    <div class="header">
-        <h1>Day Trading Terminal</h1>
-        <p style="color:#777; margin:8px 0 0;">CoinSpot Companion - Real-time Momentum Scanner</p>
-        <div class="balance" id="total-balance">$0.00 AUD</div>
-        <p id="last-updated" style="color:#555;">Last Updated: Loading...</p>
-    </div>
+    <main class="shell">
+        <section class="welcome">
+            <h1>Welcome to CoinSpot.</h1>
+            <div>You currently have a deposit limit of $10,000 AUD. <a href="https://www.coinspot.com.au/my/limits">Click here</a> if you would like to increase your limit.</div>
+        </section>
 
-    <div class="layout">
-        <div>
-            <div class="card" style="margin-bottom:22px;">
-                <h3 style="margin-top:0;color:#00ff9d;">Paste CoinSpot dashboard text</h3>
-                <p class="small">Paste your watchlist or movers text from CoinSpot and click parse. This avoids sharing login credentials.</p>
-                <textarea id="coinspot-raw" placeholder="Paste CoinSpot dashboard text here..."></textarea>
-                <button onclick="parseCoinspotText()">Parse & Update Board</button>
-                <p id="parse-status" class="small"></p>
-            </div>
-
-            <div id="watchlist"></div>
-        </div>
-
-        <div>
-            <div class="card" style="margin-bottom:24px;">
-                <h3 style="color:#00ff9d; margin-top:0;">Top Gainers</h3>
-                <div id="gainers"></div>
-            </div>
-            <div class="card">
-                <h3 style="color:#ff3b5c; margin-top:0;">Top Losers</h3>
-                <div id="losers"></div>
-            </div>
-        </div>
-    </div>
-
-    <script src="data.js"></script>
-    <script>
-        const fallbackDashboardData = {
-            last_updated: new Date().toISOString(),
-            portfolio: "$0.00 AUD",
-            coins: []
-        };
-
-        const coinNameToSymbol = {
-            "cardano": "ADA",
-            "bnb": "BNB",
-            "bitcoin": "BTC",
-            "dogecoin": "DOGE",
-            "polkadot": "DOT",
-            "ethereum": "ETH",
-            "litecoin": "LTC",
-            "stellar": "XLM",
-            "theta": "THETA",
-            "xrp": "XRP",
-            "solana": "SOL"
-        };
-
-        function getDashboardData() {
-            const data = window.dashboardData;
-            if (!data || !Array.isArray(data.coins)) return fallbackDashboardData;
-            return {
-                ...fallbackDashboardData,
-                ...data,
-                coins: data.coins
-            };
-        }
-
-        function toSymbol(rawName) {
-            const key = String(rawName).toLowerCase().trim();
-            if (coinNameToSymbol[key]) return coinNameToSymbol[key];
-            const cleaned = String(rawName).replace(/[^A-Za-z0-9 ]/g, "").trim();
-            if (/^[A-Za-z0-9]{2,8}$/.test(cleaned)) return cleaned.toUpperCase();
-            return cleaned.split(/\s+/).map(word => word[0]).join("").toUpperCase().slice(0,6);
-        }
-
-        function inferSignal(change) {
-            if (change >= 2) return "BUY";
-            if (change <= -2) return "SELL";
-            return "WAIT";
-        }
-
-        function formatPrice(price) {
-            const numeric = Number(price);
-            if (!Number.isFinite(numeric)) return "0";
-            return numeric.toLocaleString("en-AU", { maximumFractionDigits: numeric < 1 ? 6 : 2 });
-        }
-
-        function renderDashboard(data = getDashboardData()) {
-            if (!data || !Array.isArray(data.coins)) return;
-
-            document.getElementById("last-updated").textContent =
-                "Last Updated: " + new Date(data.last_updated || Date.now()).toLocaleString("en-AU");
-            document.getElementById("total-balance").textContent = data.portfolio || "$0.00 AUD";
-
-            const watchlistEl = document.getElementById("watchlist");
-            watchlistEl.innerHTML = "";
-
-            data.coins.forEach(coin => {
-                const change = Number(coin.change_24h) || 0;
-                const isPos = change >= 0;
-                const signal = coin.signal || inferSignal(change);
-                const signalClass = signal === "BUY" ? "buy" : signal === "SELL" ? "sell" : "wait";
-                const safeSymbol = String(coin.symbol || "").replace(/[^A-Z0-9]/gi, "").toUpperCase();
-                watchlistEl.innerHTML += `
-                    <div class="card">
-                        <div style="font-size:1.4rem; font-weight:600;">${safeSymbol || "N/A"}/AUD</div>
-                        <div style="font-size:2.2rem; font-weight:700; margin:12px 0;">$${formatPrice(coin.price)}</div>
-                        <div style="font-size:1.2rem; color:${isPos ? "#00ff9d" : "#ff3b5c"};">${isPos ? "+" : ""}${change}%</div>
-                        <div style="margin:12px 0;">Signal: <span class="pill ${signalClass}">${signal}</span></div>
-                        <a href="https://www.coinspot.com.au/buy/${safeSymbol.toLowerCase()}" target="_blank" rel="noopener noreferrer"
-                           style="background:#00ff9d; color:black; padding:12px 24px; border-radius:9999px; text-decoration:none; display:inline-block; margin-top:12px; font-weight:600;">
-                            TRADE ON COINSPOT
-                        </a>
+        <section class="dashboard-grid">
+            <div class="column">
+                <section class="panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">Quick Deposit</h2>
+                        <p class="panel-subtitle">Deposit instantly into your CoinSpot account</p>
                     </div>
-                `;
-            });
+                    <div class="panel-body quick-deposit">
+                        <div>
+                            <strong>Deposit instantly into your CoinSpot account</strong>
+                            <p class="panel-subtitle">Use PayID, bank transfer, or card from your CoinSpot account.</p>
+                        </div>
+                        <a class="deposit-button" href="https://www.coinspot.com.au/my/deposit">Quick Deposit</a>
+                    </div>
+                </section>
 
-            const sorted = [...data.coins].sort((a, b) => (Number(b.change_24h) || 0) - (Number(a.change_24h) || 0));
-            document.getElementById("gainers").innerHTML = sorted.slice(0,5)
-                .map(coin => `<p><strong>${coin.symbol}</strong> <span style="color:#00ff9d;">+${Number(coin.change_24h) || 0}%</span></p>`).join("");
-            document.getElementById("losers").innerHTML = sorted.slice(-5).reverse()
-                .map(coin => `<p><strong>${coin.symbol}</strong> <span style="color:#ff3b5c;">${Number(coin.change_24h) || 0}%</span></p>`).join("");
-        }
+                <section class="panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">My Watchlist</h2>
+                    </div>
+                    <table class="watchlist-table">
+                        <thead>
+                            <tr>
+                                <th>Coin</th>
+                                <th class="num">Buy</th>
+                                <th class="num">Sell</th>
+                                <th class="num">Market Cap</th>
+                                <th class="num">Volume (24hr)</th>
+                                <th class="num">Change (24hr)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><span class="coin"><span class="coin-dot dot-ada"></span>Cardano</span></td><td class="num">$0.358968</td><td class="num">$0.349620</td><td class="num">$12.8B</td><td class="num">$514.0M</td><td class="num negative">-0.41%</td></tr>
+                            <tr><td><span class="coin"><span class="coin-dot dot-bnb"></span>BNB</span></td><td class="num">$941.81</td><td class="num">$917.53</td><td class="num">$123.7B</td><td class="num">$1.6B</td><td class="num positive">1.10%</td></tr>
+                            <tr><td><span class="coin"><span class="coin-dot dot-btc"></span>Bitcoin</span></td><td class="num">$110,537.56</td><td class="num">$109,448.51</td><td class="num">$2.2T</td><td class="num">$38.1B</td><td class="num negative">-0.08%</td></tr>
+                            <tr><td><span class="coin"><span class="coin-dot dot-doge"></span>Dogecoin</span></td><td class="num">$0.151801</td><td class="num">$0.147893</td><td class="num">$25.2B</td><td class="num">$1.0B</td><td class="num positive">1.20%</td></tr>
+                            <tr><td><span class="coin"><span class="coin-dot dot-dot"></span>Polkadot</span></td><td class="num">$1.83</td><td class="num">$1.78</td><td class="num">$3.0B</td><td class="num">$137.4M</td><td class="num positive">1.96%</td></tr>
+                            <tr><td><span class="coin"><span class="coin-dot dot-eth"></span>Ethereum</span></td><td class="num">$3,068.50</td><td class="num">$2,989.60</td><td class="num">$363.1B</td><td class="num">$17.1B</td><td class="num negative">-0.41%</td></tr>
+                            <tr><td><span class="coin"><span class="coin-dot dot-ltc"></span>Litecoin</span></td><td class="num">$77.95</td><td class="num">$75.89</td><td class="num">$5.9B</td><td class="num">$346.7M</td><td class="num negative">-0.44%</td></tr>
+                            <tr><td><span class="coin"><span class="coin-dot"></span>Mithril</span></td><td class="num">$0.006367</td><td class="num">$0.002068</td><td class="num">$1.3M</td><td class="num">$0.00</td><td class="num neutral">0.00%</td></tr>
+                            <tr><td><span class="coin"><span class="coin-dot dot-xlm"></span>Stellar</span></td><td class="num">$0.208954</td><td class="num">$0.203453</td><td class="num">$6.9B</td><td class="num">$151.1M</td><td class="num positive">1.24%</td></tr>
+                            <tr><td><span class="coin"><span class="coin-dot dot-theta"></span>Theta</span></td><td class="num">$0.2940</td><td class="num">$0.2850</td><td class="num">$289.6M</td><td class="num">$13.0M</td><td class="num positive">2.12%</td></tr>
+                        </tbody>
+                    </table>
+                </section>
 
-        function parseCoinspotText() {
-            const raw = document.getElementById("coinspot-raw").value;
-            const lines = raw.split("\n").map(line => line.trim()).filter(Boolean);
-            const watchlistCoins = [];
-            const walletHoldings = [];
-            let portfolio = getDashboardData().portfolio || "$0.00 AUD";
+                <section class="panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">Wallets</h2>
+                    </div>
+                    <table class="compact-table">
+                        <thead><tr><th>Coin</th><th class="num">Balance</th></tr></thead>
+                        <tbody>
+                            <tr><td><span class="coin"><span class="coin-dot dot-btc"></span>Bitcoin</span></td><td class="num">0.0001393</td></tr>
+                            <tr><td><span class="coin"><span class="coin-dot dot-ltc"></span>Litecoin</span></td><td class="num">0</td></tr>
+                            <tr><td><span class="coin"><span class="coin-dot dot-eth"></span>Ethereum</span></td><td class="num">0</td></tr>
+                            <tr><td><span class="coin"><span class="coin-dot"></span>Ethereum Classic</span></td><td class="num">0</td></tr>
+                            <tr><td><span class="coin"><span class="coin-dot dot-bnb"></span>BNB</span></td><td class="num">0</td></tr>
+                            <tr><td><span class="coin"><span class="coin-dot"></span>Tellor</span></td><td class="num">0</td></tr>
+                        </tbody>
+                    </table>
+                </section>
+            </div>
 
-            const wlRegex = /^([A-Za-z0-9 .-]+)\s+\$?([0-9,]+(?:\.[0-9]+)?)\s+\$?([0-9,]+(?:\.[0-9]+)?)\s+\$[0-9.,]+[MBT]?\s+\$[0-9.,]+[MBT]?\s+(-?[0-9.]+)%/;
-            const moverRegex = /^([A-Za-z0-9 .-]+)\s+\$?([0-9,]+(?:\.[0-9]+)?)\s+(-?[0-9.]+)%/;
-            const walletRegex = /^([A-Za-z0-9 .-]+)\s+([0-9.]+)$/;
+            <div class="column">
+                <section class="panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">My Portfolio</h2>
+                    </div>
+                    <div class="panel-body">
+                        <div class="portfolio-value">$15.40</div>
+                        <div class="tabs"><span>1D</span><span>1W</span><span>1M</span><span>3M</span><span>6M</span><span>1Y</span></div>
+                        <div class="chart">
+                            <svg viewBox="0 0 420 172" preserveAspectRatio="none" aria-label="Portfolio chart">
+                                <line x1="28" y1="24" x2="392" y2="24" stroke="#edf1f4"/>
+                                <line x1="28" y1="55" x2="392" y2="55" stroke="#edf1f4"/>
+                                <line x1="28" y1="86" x2="392" y2="86" stroke="#edf1f4"/>
+                                <line x1="28" y1="117" x2="392" y2="117" stroke="#edf1f4"/>
+                                <line x1="28" y1="148" x2="392" y2="148" stroke="#edf1f4"/>
+                                <path d="M30 142 C70 136, 92 130, 118 126 S170 120, 205 105 S260 82, 295 74 S350 63, 392 50" fill="none" stroke="#0b79bf" stroke-width="3"/>
+                                <path d="M30 142 C70 136, 92 130, 118 126 S170 120, 205 105 S260 82, 295 74 S350 63, 392 50 L392 148 L30 148 Z" fill="rgba(11,121,191,0.09)"/>
+                                <text x="30" y="166" fill="#8794a0" font-size="11">2. Mar</text>
+                                <text x="94" y="166" fill="#8794a0" font-size="11">16. Mar</text>
+                                <text x="164" y="166" fill="#8794a0" font-size="11">30. Mar</text>
+                                <text x="238" y="166" fill="#8794a0" font-size="11">13. Apr</text>
+                                <text x="302" y="166" fill="#8794a0" font-size="11">27. Apr</text>
+                                <text x="358" y="166" fill="#8794a0" font-size="11">11. May</text>
+                                <text x="398" y="149" fill="#8794a0" font-size="11">12</text>
+                                <text x="398" y="119" fill="#8794a0" font-size="11">13</text>
+                                <text x="398" y="89" fill="#8794a0" font-size="11">14</text>
+                                <text x="398" y="59" fill="#8794a0" font-size="11">15</text>
+                                <text x="398" y="29" fill="#8794a0" font-size="11">16</text>
+                            </svg>
+                        </div>
+                    </div>
+                </section>
 
-            for (const line of lines) {
-                if (line.startsWith("$") && line.includes(".")) portfolio = `${line.replace(/\s+/g, "")} AUD`;
+                <section class="panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">My Holdings</h2>
+                    </div>
+                    <div class="panel-body holdings-split">
+                        <div class="pie">BTC<br>100%</div>
+                        <table>
+                            <tbody>
+                                <tr><td><span class="coin"><span class="coin-dot dot-btc"></span>BTC</span></td><td class="num">$15.40</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
 
-                const wlMatch = line.match(wlRegex);
-                if (wlMatch) {
-                    const change = parseFloat(wlMatch[4]);
-                    watchlistCoins.push({
-                        symbol: toSymbol(wlMatch[1]),
-                        price: parseFloat(wlMatch[2].replace(/,/g, "")),
-                        change_24h: change,
-                        signal: inferSignal(change)
-                    });
-                    continue;
-                }
+                <section class="panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">Popular Now</h2>
+                        <p class="panel-subtitle">What people are buying right now</p>
+                    </div>
+                    <div class="panel-body coin-rail">
+                        <span class="coin-tile"><span class="coin-dot dot-btc"></span></span>
+                        <span class="coin-tile"><span class="coin-dot dot-eth"></span></span>
+                        <span class="coin-tile"><span class="coin-dot dot-bnb"></span></span>
+                        <span class="coin-tile"><span class="coin-dot dot-doge"></span></span>
+                        <span class="coin-tile"><span class="coin-dot dot-ada"></span></span>
+                        <span class="coin-tile"><span class="coin-dot dot-xlm"></span></span>
+                        <span class="coin-tile"><span class="coin-dot dot-ltc"></span></span>
+                        <span class="coin-tile"><span class="coin-dot dot-theta"></span></span>
+                    </div>
+                </section>
 
-                const moverMatch = line.match(moverRegex);
-                if (moverMatch && watchlistCoins.length < 15) {
-                    const change = parseFloat(moverMatch[3]);
-                    watchlistCoins.push({
-                        symbol: toSymbol(moverMatch[1]),
-                        price: parseFloat(moverMatch[2].replace(/,/g, "")),
-                        change_24h: change,
-                        signal: inferSignal(change)
-                    });
-                    continue;
-                }
+                <section class="panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">Popular Today</h2>
+                        <p class="panel-subtitle">The most popular coins purchased today delivered instantly to your wallet.</p>
+                    </div>
+                    <div class="panel-body coin-rail">
+                        <span class="coin-tile"><span class="coin-dot dot-btc"></span></span>
+                        <span class="coin-tile"><span class="coin-dot dot-eth"></span></span>
+                        <span class="coin-tile"><span class="coin-dot dot-doge"></span></span>
+                        <span class="coin-tile"><span class="coin-dot dot-dot"></span></span>
+                        <span class="coin-tile"><span class="coin-dot dot-ada"></span></span>
+                        <span class="coin-tile"><span class="coin-dot dot-bnb"></span></span>
+                        <span class="coin-tile"><span class="coin-dot dot-xlm"></span></span>
+                        <span class="coin-tile"><span class="coin-dot"></span></span>
+                    </div>
+                </section>
+            </div>
 
-                const walletMatch = line.match(walletRegex);
-                if (walletMatch) walletHoldings.push(walletMatch[1]);
-            }
+            <div class="column">
+                <section class="panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">Recent Movers</h2>
+                        <p class="panel-subtitle">The biggest movers in the last hour</p>
+                    </div>
+                    <table class="compact-table">
+                        <thead><tr><th>Coin</th><th class="num">Rate</th><th class="num">Last hour</th></tr></thead>
+                        <tbody>
+                            <tr><td><span class="coin"><span class="coin-dot"></span>Avantis</span></td><td class="num">$0.232300</td><td class="num positive">10.07%</td></tr>
+                            <tr><td><span class="coin"><span class="coin-dot"></span>peaq</span></td><td class="num">$0.051200</td><td class="num positive">7.41%</td></tr>
+                            <tr><td><span class="coin"><span class="coin-dot"></span>DIA</span></td><td class="num">$0.277406</td><td class="num positive">5.04%</td></tr>
+                            <tr><td><span class="coin"><span class="coin-dot"></span>Syscoin</span></td><td class="num">$0.005980</td><td class="num positive">4.99%</td></tr>
+                            <tr><td><span class="coin"><span class="coin-dot"></span>Polkamarkets</span></td><td class="num">$0.005395</td><td class="num positive">4.96%</td></tr>
+                            <tr><td><span class="coin"><span class="coin-dot"></span>Realio</span></td><td class="num">$0.1305</td><td class="num positive">4.63%</td></tr>
+                        </tbody>
+                    </table>
+                </section>
 
-            if (watchlistCoins.length === 0) {
-                document.getElementById("parse-status").textContent = "No rows detected. Paste lines that include price + 24h change.";
-                return;
-            }
+                <section class="panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">New Coins</h2>
+                    </div>
+                    <div class="panel-body coin-rail" style="grid-template-columns: repeat(4, 1fr);">
+                        <span class="coin-tile"><span class="coin-dot"></span></span>
+                        <span class="coin-tile"><span class="coin-dot"></span></span>
+                        <span class="coin-tile"><span class="coin-dot"></span></span>
+                        <span class="coin-tile"><span class="coin-dot"></span></span>
+                    </div>
+                </section>
 
-            window.dashboardData = {
-                ...getDashboardData(),
-                last_updated: new Date().toISOString(),
-                portfolio,
-                coins: watchlistCoins
-            };
-
-            renderDashboard(window.dashboardData);
-            document.getElementById("parse-status").textContent =
-                `Parsed ${watchlistCoins.length} assets${walletHoldings.length ? ` - Wallet entries: ${walletHoldings.length}` : ""}.`;
-        }
-
-        renderDashboard();
-        setInterval(() => renderDashboard(), 30000);
-    </script>
+                <section class="panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">Today's Movers</h2>
+                    </div>
+                    <div class="two-tables">
+                        <table class="compact-table">
+                            <thead><tr><th>Coin</th><th class="num">Buy Rate</th><th class="num">Change (24hrs)</th></tr></thead>
+                            <tbody>
+                                <tr><td><span class="coin"><span class="coin-dot"></span>peaq</span></td><td class="num">$0.051200</td><td class="num positive">36.69%</td></tr>
+                                <tr><td><span class="coin"><span class="coin-dot"></span>Useless Coin</span></td><td class="num">$0.114692</td><td class="num positive">24.92%</td></tr>
+                                <tr><td><span class="coin"><span class="coin-dot"></span>Avantis</span></td><td class="num">$0.232300</td><td class="num positive">20.53%</td></tr>
+                                <tr><td><span class="coin"><span class="coin-dot"></span>Hyperliquid</span></td><td class="num">$84.84</td><td class="num positive">19.33%</td></tr>
+                                <tr><td><span class="coin"><span class="coin-dot"></span>Grass</span></td><td class="num">$0.5074</td><td class="num positive">15.60%</td></tr>
+                            </tbody>
+                        </table>
+                        <table class="compact-table">
+                            <thead><tr><th>Coin</th><th class="num">Buy Rate</th><th class="num">Change (24hrs)</th></tr></thead>
+                            <tbody>
+                                <tr><td><span class="coin"><span class="coin-dot"></span>Aleph Zero</span></td><td class="num">$0.010089</td><td class="num negative">-26.40%</td></tr>
+                                <tr><td><span class="coin"><span class="coin-dot"></span>Seedify.fund</span></td><td class="num">$0.021599</td><td class="num negative">-24.64%</td></tr>
+                                <tr><td><span class="coin"><span class="coin-dot"></span>Solar</span></td><td class="num">$0.001279</td><td class="num negative">-22.65%</td></tr>
+                                <tr><td><span class="coin"><span class="coin-dot"></span>Zeus Network</span></td><td class="num">$0.006712</td><td class="num negative">-19.83%</td></tr>
+                                <tr><td><span class="coin"><span class="coin-dot"></span>LUKSO</span></td><td class="num">$0.4115</td><td class="num negative">-19.15%</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </section>
+    </main>
 </body>
 </html>
