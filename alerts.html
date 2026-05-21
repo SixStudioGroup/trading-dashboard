@@ -3,15 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alerts - ZenCloud</title>
-    <style>
-        body { font-family: 'Inter', sans-serif; background:#050505; color:#e0e0e0; padding:40px; }
-        h1 { color:#00ff9d; }
-    </style>
+    <title>Alerts - ZenCloud Crypto Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
-<body>
-    <h1>🔔 Trading Alerts</h1>
-    <p>Strong signals and price action alerts will appear here.</p>
-    <a href="index.html" style="color:#00ff9d;">← Back to Terminal</a>
+<body data-page="alerts">
+    <header class="topbar">
+        <a class="brand" href="index.html" aria-label="ZenCloud Crypto Dashboard">
+            <span class="brand-mark">Z</span>
+            <span>ZenCloud Crypto Dashboard</span>
+        </a>
+        <nav class="navlinks" aria-label="Main navigation">
+            <a href="index.html">Dashboard</a>
+            <a href="logs.html">Market Logs</a>
+            <a class="active" href="alerts.html">Alerts</a>
+            <a class="external-link" href="https://www.coinspot.com.au/my/dashboard" target="_blank" rel="noopener noreferrer">Open CoinSpot</a>
+        </nav>
+    </header>
+
+    <main class="shell">
+        <section class="welcome">
+            <div>
+                <h1>Alerts</h1>
+                <p>Live momentum, sell-risk, and volume alerts across the same market data used by the dashboard.</p>
+            </div>
+            <div class="status-card">
+                <span class="status-dot"></span>
+                <span id="market-status">Loading live data...</span>
+            </div>
+        </section>
+
+        <section class="wide-grid">
+            <section class="panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">Live Alerts</h2>
+                    <p class="panel-subtitle">Alert rules refresh automatically with the live feed.</p>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Severity</th>
+                            <th>Coin</th>
+                            <th class="num">Price</th>
+                            <th class="num">1hr</th>
+                            <th class="num">24hr</th>
+                            <th>Alert</th>
+                        </tr>
+                    </thead>
+                    <tbody id="alerts-body">
+                        <tr><td colspan="6" class="loading-cell">Loading live alerts...</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">Alert Rules</h2>
+                    <p class="panel-subtitle">Transparent rules used to classify the live market.</p>
+                </div>
+                <div class="panel-body rules-grid">
+                    <div class="rule-card strong">Strong Buy: 24hr above 5% and 1hr positive</div>
+                    <div class="rule-card watch">Watch: 24hr between 2% and 5%</div>
+                    <div class="rule-card risk">Sell Risk: 24hr below -3%</div>
+                    <div class="rule-card volume">Volume Alert: top live AUD volume assets</div>
+                </div>
+            </section>
+        </section>
+    </main>
+
+    <script src="app.js"></script>
 </body>
 </html>

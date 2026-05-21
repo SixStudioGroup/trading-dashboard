@@ -3,31 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trade Logs - ZenCloud</title>
-    <style>
-        body { font-family: 'Inter', sans-serif; background:#050505; color:#e0e0e0; padding:40px; }
-        h1 { color:#00ff9d; }
-        table { width:100%; border-collapse: collapse; margin-top:20px; }
-        th, td { border-bottom: 1px solid #222; padding: 10px; text-align: left; }
-        th { color:#999; }
-        .buy { color:#00ff9d; }
-        .sell { color:#ff3b5c; }
-        a { color:#00ff9d; }
-    </style>
+    <title>Market Logs - ZenCloud Crypto Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
-<body>
-    <h1>Trade Logs</h1>
-    <p>Track the trade ideas your group discusses through the day.</p>
-    <table>
-        <thead>
-            <tr><th>Time (AEST)</th><th>Coin</th><th>Signal</th><th>Note</th></tr>
-        </thead>
-        <tbody>
-            <tr><td>09:45</td><td>DOT</td><td class="buy">BUY</td><td>Momentum breakout +2.39%.</td></tr>
-            <tr><td>11:10</td><td>ETH</td><td>WAIT</td><td>No clear trend yet.</td></tr>
-            <tr><td>14:25</td><td>ADA</td><td class="sell">SELL</td><td>Lost support, -0.42%.</td></tr>
-        </tbody>
-    </table>
-    <p style="margin-top:20px;"><a href="index.html">Back to Terminal</a></p>
+<body data-page="logs">
+    <header class="topbar">
+        <a class="brand" href="index.html" aria-label="ZenCloud Crypto Dashboard">
+            <span class="brand-mark">Z</span>
+            <span>ZenCloud Crypto Dashboard</span>
+        </a>
+        <nav class="navlinks" aria-label="Main navigation">
+            <a href="index.html">Dashboard</a>
+            <a class="active" href="logs.html">Market Logs</a>
+            <a href="alerts.html">Alerts</a>
+            <a class="external-link" href="https://www.coinspot.com.au/my/dashboard" target="_blank" rel="noopener noreferrer">Open CoinSpot</a>
+        </nav>
+    </header>
+
+    <main class="shell">
+        <section class="welcome">
+            <div>
+                <h1>Market Logs</h1>
+                <p>Live market scan log generated from AUD price, volume, 1hr movement, and 24hr movement.</p>
+            </div>
+            <div class="status-card">
+                <span class="status-dot"></span>
+                <span id="market-status">Loading live data...</span>
+            </div>
+        </section>
+
+        <section class="wide-grid">
+            <section class="panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">Live Trade Ideas</h2>
+                    <p class="panel-subtitle">Signals are derived from live momentum and volume, not stored manually.</p>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Time (AEST)</th>
+                            <th>Coin</th>
+                            <th class="num">Price</th>
+                            <th class="num">1hr</th>
+                            <th class="num">24hr</th>
+                            <th>Signal</th>
+                            <th>Note</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logs-body">
+                        <tr><td colspan="7" class="loading-cell">Loading live market logs...</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">Live Watchlist Snapshot</h2>
+                    <p class="panel-subtitle">Same live feed and visual language as the dashboard.</p>
+                </div>
+                <table class="watchlist-table">
+                    <thead>
+                        <tr>
+                            <th>Coin</th>
+                            <th class="num">Buy</th>
+                            <th class="num">Sell</th>
+                            <th class="num">Volume (24hr)</th>
+                            <th class="num">Change (24hr)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logs-watchlist-body">
+                        <tr><td colspan="5" class="loading-cell">Loading live snapshot...</td></tr>
+                    </tbody>
+                </table>
+            </section>
+        </section>
+    </main>
+
+    <script src="app.js"></script>
 </body>
 </html>
