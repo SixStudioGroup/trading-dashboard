@@ -221,6 +221,83 @@ a:hover { text-decoration: underline; }
     font-weight: 700;
 }
 
+.guide-shell {
+    max-width: 1180px;
+}
+
+.guide-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.guide-card {
+    overflow: hidden;
+}
+
+.guide-card p {
+    margin: 0;
+    color: #44576a;
+    line-height: 1.55;
+    white-space: normal;
+}
+
+.guide-card p + p {
+    margin-top: 10px;
+}
+
+.workflow-card,
+.disclaimer-card {
+    grid-column: 1 / -1;
+}
+
+.workflow-list {
+    margin: 0;
+    padding-left: 22px;
+    columns: 2;
+    column-gap: 34px;
+    color: #44576a;
+    line-height: 1.65;
+}
+
+.workflow-list li,
+.guide-rules li {
+    break-inside: avoid;
+    margin-bottom: 4px;
+}
+
+.state-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.guide-rules {
+    margin: 0;
+    padding-left: 18px;
+    color: #44576a;
+    line-height: 1.6;
+}
+
+.status-inline {
+    display: inline-flex;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: #fbfcfd;
+    color: #34495e;
+    font-weight: 700;
+    padding: 2px 5px;
+}
+
+.disclaimer-card {
+    border-color: rgba(216,75,75,0.28);
+}
+
+.disclaimer-card .panel-header {
+    background: var(--red-bg);
+}
+
 .flat-header {
     border-top: 1px solid var(--line);
     border-bottom: 1px solid var(--line);
@@ -634,6 +711,7 @@ tr:last-child td { border-bottom: none; }
     .shell { min-width: 0; }
     .dashboard-grid,
     .decision-grid,
+    .guide-grid,
     .two-column,
     .three-column,
     .holdings-form { grid-template-columns: 1fr; }
@@ -660,6 +738,7 @@ tr:last-child td { border-bottom: none; }
     .quick-deposit { align-items: flex-start; flex-direction: column; }
     .coin-rail,
     .rules-grid { grid-template-columns: repeat(2, 1fr); }
+    .workflow-list { columns: 1; }
     table { min-width: 680px; }
     .panel { overflow-x: auto; }
 }

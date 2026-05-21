@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Guide - ZenCloud Crypto Dashboard</title>
+    <link rel="stylesheet" href="styles.css?v=user-guide-20260522">
+</head>
+<body data-page="guide">
+    <header class="topbar">
+        <a class="brand" href="index.html" aria-label="ZenCloud Crypto Dashboard">
+            <span class="brand-mark">Z</span>
+            <span>ZenCloud Crypto Dashboard</span>
+        </a>
+        <nav class="navlinks" aria-label="Main navigation">
+            <a href="index.html">Dashboard</a>
+            <a href="logs.html">Market Logs</a>
+            <a href="alerts.html">Alerts</a>
+            <a class="active" href="guide.html">User Guide</a>
+        </nav>
+    </header>
+
+    <main class="shell guide-shell">
+        <section class="welcome">
+            <div>
+                <h1>User Guide</h1>
+                <p>Operate ZenCloud as a lightweight decision terminal: scan, analyse, then use an external execution handoff only when ready.</p>
+            </div>
+        </section>
+
+        <section class="guide-grid">
+            <article class="panel guide-card">
+                <div class="panel-header">
+                    <h2 class="panel-title">What ZenCloud Is</h2>
+                    <p class="panel-subtitle">A decision terminal, not an execution venue</p>
+                </div>
+                <div class="panel-body">
+                    <p>ZenCloud compresses live crypto market data into ranked opportunities, telemetry, and threshold events. It is designed to reduce noise and help users follow a deliberate process before leaving the portal for external execution.</p>
+                </div>
+            </article>
+
+            <article class="panel guide-card workflow-card">
+                <div class="panel-header">
+                    <h2 class="panel-title">10-Step Workflow</h2>
+                    <p class="panel-subtitle">Use this order every session</p>
+                </div>
+                <div class="panel-body">
+                    <ol class="workflow-list">
+                        <li>Open Dashboard.</li>
+                        <li>Check Opportunity Queue first.</li>
+                        <li>Review only top-ranked assets.</li>
+                        <li>Click Analyse on one asset.</li>
+                        <li>Check signal state.</li>
+                        <li>Confirm 1hr and 24hr alignment.</li>
+                        <li>Review Portfolio and Holdings.</li>
+                        <li>Open CoinSpot only after analysis.</li>
+                        <li>Update Manage Holdings after external trades.</li>
+                        <li>Use Logs and Alerts for verification, not execution.</li>
+                    </ol>
+                </div>
+            </article>
+
+            <article class="panel guide-card">
+                <div class="panel-header">
+                    <h2 class="panel-title">Dashboard / Opportunity Queue</h2>
+                    <p class="panel-subtitle">Primary decision surface</p>
+                </div>
+                <div class="panel-body">
+                    <p>Start with the Opportunity Queue. It ranks assets from the scoring layer and shows the state, score, price, 1hr movement, and 24hr movement. Treat it as the first scan surface, not as a general market explorer.</p>
+                    <div class="state-row" aria-label="Signal states">
+                        <span class="badge strong">Breakout</span>
+                        <span class="badge watch">Watch</span>
+                        <span class="badge sell">Sell Risk</span>
+                        <span class="badge volume">Volume Spike</span>
+                        <span class="badge wait">No Action</span>
+                    </div>
+                </div>
+            </article>
+
+            <article class="panel guide-card">
+                <div class="panel-header">
+                    <h2 class="panel-title">Analyse Before Execution</h2>
+                    <p class="panel-subtitle">One asset at a time</p>
+                </div>
+                <div class="panel-body">
+                    <p>Click Analyse before considering any external action. The analysis panel isolates one asset so you can review signal state, score context, price movement, volume, and portfolio exposure before the execution handoff appears.</p>
+                </div>
+            </article>
+
+            <article class="panel guide-card">
+                <div class="panel-header">
+                    <h2 class="panel-title">Market Logs</h2>
+                    <p class="panel-subtitle">Telemetry and traceability</p>
+                </div>
+                <div class="panel-body">
+                    <p>Market Logs show timestamped system observations. Use them to verify what the system observed and when. Logs are read-only telemetry and should not be treated as a second decision surface.</p>
+                </div>
+            </article>
+
+            <article class="panel guide-card">
+                <div class="panel-header">
+                    <h2 class="panel-title">Alerts</h2>
+                    <p class="panel-subtitle">Threshold events only</p>
+                </div>
+                <div class="panel-body">
+                    <p>Alerts are event-driven outputs for important threshold changes: Breakout, Watch, Sell Risk, and Volume Spike. Use alerts to notice state transitions, then return to Dashboard for analysis.</p>
+                </div>
+            </article>
+
+            <article class="panel guide-card">
+                <div class="panel-header">
+                    <h2 class="panel-title">Manage Holdings</h2>
+                    <p class="panel-subtitle">Manual local portfolio tracking</p>
+                </div>
+                <div class="panel-body">
+                    <p>Holdings are entered manually and stored locally in your browser under localStorage. After an external trade, update Manage Holdings so Portfolio and My Holdings reflect your current balance.</p>
+                    <p>Clearing browser storage, using another device, or opening a different browser profile may reset local holdings.</p>
+                </div>
+            </article>
+
+            <article class="panel guide-card">
+                <div class="panel-header">
+                    <h2 class="panel-title">Fallback Snapshot</h2>
+                    <p class="panel-subtitle">When live data is unavailable</p>
+                </div>
+                <div class="panel-body">
+                    <p>If the live API fails, the portal shows <span class="status-inline">Live API unavailable - fallback snapshot</span>. The app should remain usable, clearly labelled, and safe to scan until live data returns.</p>
+                </div>
+            </article>
+
+            <article class="panel guide-card">
+                <div class="panel-header">
+                    <h2 class="panel-title">Behavioural Rules</h2>
+                    <p class="panel-subtitle">Keep the workflow deliberate</p>
+                </div>
+                <div class="panel-body">
+                    <ul class="guide-rules">
+                        <li>Dashboard is the primary decision surface.</li>
+                        <li>Logs and Alerts are verification layers, not execution layers.</li>
+                        <li>Review only a small number of ranked assets.</li>
+                        <li>No external execution handoff before analysis.</li>
+                    </ul>
+                </div>
+            </article>
+
+            <article class="panel guide-card disclaimer-card">
+                <div class="panel-header">
+                    <h2 class="panel-title">Important Disclaimer</h2>
+                    <p class="panel-subtitle">Decision-support only</p>
+                </div>
+                <div class="panel-body">
+                    <p>ZenCloud is a decision-support tool only. It does not provide financial advice, execute trades, or guarantee outcomes. All trades are executed externally through CoinSpot at the user's discretion.</p>
+                </div>
+            </article>
+        </section>
+    </main>
+</body>
+</html>
