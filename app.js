@@ -344,6 +344,12 @@ function setStatus(message, isLive = true) {
     });
 }
 
+function setLastUpdatedLabel() {
+    const el = document.getElementById("last-updated");
+    if (!el) return;
+    el.textContent = new Date().toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit" });
+}
+
 async function getMarkets() {
     const params = new URLSearchParams({
         vs_currency: "aud",
@@ -364,51 +370,18 @@ async function getMarkets() {
         const data = await response.json();
         if (!Array.isArray(data) || !data.length) throw new Error("Empty market payload");
         setStatus(`Live data updated ${new Date().toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit" })}`);
+        setLastUpdatedLabel();
         return normalizeMarkets(data);
     } catch (error) {
         warnFallbackOnce();
         setStatus(FALLBACK_STATUS, false);
+        setLastUpdatedLabel();
         return fallbackMarkets();
     }
 }
 
 function sellPrice(price) {
     return finiteNumber(price) * 0.99015;
-}
-
-function renderChart(coin) {
-    const svg = document.getElementById("portfolio-chart");
-    if (!svg) return;
-    const prices = normalizeSparkline(coin).price.slice(-32);
-    const min = Math.min(...prices);
-    const max = Math.max(...prices);
-    const width = 420;
-    const height = 172;
-    const padX = 28;
-    const padTop = 20;
-    const padBottom = 24;
-    const plotW = width - 56;
-    const plotH = height - padTop - padBottom;
-    const points = prices.map((price, index) => {
-        const x = padX + (index / Math.max(prices.length - 1, 1)) * plotW;
-        const y = padTop + (1 - ((price - min) / Math.max(max - min, 0.000001))) * plotH;
-        return [x, y];
-    });
-    const line = points.map(([x, y], index) => `${index === 0 ? "M" : "L"}${x.toFixed(1)} ${y.toFixed(1)}`).join(" ");
-    const area = `${line} L${points[points.length - 1][0].toFixed(1)} ${height - padBottom} L${padX} ${height - padBottom} Z`;
-
-    svg.innerHTML = `
-        <line x1="28" y1="24" x2="392" y2="24" stroke="#edf1f4"/>
-        <line x1="28" y1="55" x2="392" y2="55" stroke="#edf1f4"/>
-        <line x1="28" y1="86" x2="392" y2="86" stroke="#edf1f4"/>
-        <line x1="28" y1="117" x2="392" y2="117" stroke="#edf1f4"/>
-        <line x1="28" y1="148" x2="392" y2="148" stroke="#edf1f4"/>
-        <path d="${area}" fill="rgba(8,120,186,0.10)"/>
-        <path d="${line}" fill="none" stroke="#0878ba" stroke-width="3"/>
-        <text x="30" y="166" fill="#8794a0" font-size="11">7D</text>
-        <text x="180" y="166" fill="#8794a0" font-size="11">Live AUD</text>
-        <text x="342" y="166" fill="#8794a0" font-size="11">Now</text>
-    `;
 }
 
 function renderDashboard(model) {
@@ -424,7 +397,7 @@ function renderDashboard(model) {
     });
     const portfolioValue = holdingRows.reduce((total, row) => total + (row.value ?? 0), 0);
     const pricedRows = holdingRows.filter(row => row.value !== null && row.holding.balance > 0);
-    const chartCoin = pricedRows[0]?.market || byId(markets, "bitcoin") || watchlist[0]?.coin;
+    updateCommandStatus(holdingRows, portfolioValue);
 
     document.getElementById("opportunities-body").innerHTML = opportunityRows.map(item => `
         <tr class="${item.coin.id === selectedAssetId ? "selected-row" : ""}">
@@ -437,6 +410,7 @@ function renderDashboard(model) {
             <td><button class="table-action" type="button" data-asset-id="${item.coin.id}">Analyse</button></td>
         </tr>
     `).join("");
+    renderBestSwingMover(rankedAssets);
     renderTradeGuide(opportunityRows);
 
     const selectedCoinspotUrl = selected ? coinspotUrl(selected.coin) : null;
@@ -490,7 +464,6 @@ function renderDashboard(model) {
     document.getElementById("portfolio-value").textContent = formatPrice(portfolioValue);
     renderHoldingsAllocation(holdingRows, portfolioValue);
     renderHoldingsManager(markets, holdingRows);
-    renderChart(chartCoin);
 
     const highVolume = [...markets].sort((a, b) => b.total_volume - a.total_volume).slice(0, 8);
     document.getElementById("popular-now").innerHTML = highVolume.map(tile).join("");
@@ -507,6 +480,99 @@ function renderDashboard(model) {
     `).join("");
 
     renderTodayMovers(markets);
+
+    const newCoins = [...markets]
+        .filter(coin => coin.current_price > 0 && coin.total_volume > 0)
+        .slice(-8)
+        .reverse();
+    document.getElementById("new-coins-body").innerHTML = newCoins.map(coin => `
+        <tr>
+            <td>${coinCell(coin)}</td>
+            <td class="num">${formatPrice(coin.current_price)}</td>
+            <td class="num">${formatBig(coin.total_volume)}</td>
+            <td class="num ${percentClass(coin.price_change_percentage_24h)}">${formatPercent(coin.price_change_percentage_24h)}</td>
+        </tr>
+    `).join("") || `<tr><td colspan="4" class="loading-cell">No scan candidates available.</td></tr>`;
+}
+
+function updateCommandStatus(holdingRows, portfolioValue) {
+    const portfolioEl = document.getElementById("status-portfolio-value");
+    const holdingEl = document.getElementById("status-holding-summary");
+    if (portfolioEl) portfolioEl.textContent = formatPrice(portfolioValue);
+    if (!holdingEl) return;
+    const activeRows = holdingRows.filter(row => row.holding.balance > 0);
+    if (!activeRows.length) {
+        holdingEl.textContent = "No active holdings";
+        return;
+    }
+    const lead = [...activeRows].sort((a, b) => (b.value ?? 0) - (a.value ?? 0))[0];
+    const valueText = lead.value === null ? "Price unavailable" : formatPrice(lead.value);
+    holdingEl.textContent = `${lead.holding.symbol} ${formatBalance(lead.holding.balance)} / ${valueText}`;
+}
+
+function swingReasonFor(item) {
+    const state = guideStateFor(item).label;
+    const liquidity = liquidityFor(item);
+    if (state === "Breakout") return "Positive 24hr move with 1hr confirmation.";
+    if (state === "Volume Spike") return "Volume expansion with tradable liquidity.";
+    if (liquidity === "Suitable") return "Momentum and liquidity are aligned.";
+    return "Early positive state with controlled risk.";
+}
+
+function swingCandidateFor(items) {
+    return items.find(item => {
+        const coin = item.coin;
+        const state = guideStateFor(item).label;
+        const risk = riskFor(item);
+        const liquidity = liquidityFor(item);
+        const oneHour = finiteNumber(coin.price_change_percentage_1h_in_currency);
+        const day = finiteNumber(coin.price_change_percentage_24h);
+        const volume = finiteNumber(coin.total_volume);
+        return day > 0
+            && oneHour > -1
+            && volume >= 25000000
+            && Number.isFinite(coin.current_price)
+            && coin.current_price > 0
+            && risk !== "High"
+            && liquidity !== "Avoid"
+            && ["Breakout", "Watch", "Volume Spike"].includes(state);
+    }) || null;
+}
+
+function renderBestSwingMover(items) {
+    const el = document.getElementById("best-swing-mover");
+    if (!el) return;
+    const candidate = swingCandidateFor(items);
+    if (!candidate) {
+        el.innerHTML = `
+            <div class="swing-header">
+                <span>Best Swing Mover</span>
+                <span class="badge wait">No Action</span>
+            </div>
+            <div class="swing-empty">No clear swing candidate right now.</div>
+        `;
+        return;
+    }
+    const state = guideStateFor(candidate);
+    const risk = riskFor(candidate);
+    const liquidity = liquidityFor(candidate);
+    el.innerHTML = `
+        <div class="swing-header">
+            <span>Best Swing Mover</span>
+            <button class="table-action" type="button" data-asset-id="${candidate.coin.id}">Analyse</button>
+        </div>
+        <div class="swing-body">
+            <div class="swing-asset">${coinCell(candidate.coin)} <span class="badge ${state.klass}">${state.label}</span></div>
+            <div class="swing-metrics">
+                <span><small>Swing score</small><strong>${candidate.decision.score}</strong></span>
+                <span><small>1hr</small><strong class="${percentClass(candidate.coin.price_change_percentage_1h_in_currency)}">${formatPercent(candidate.coin.price_change_percentage_1h_in_currency)}</strong></span>
+                <span><small>24hr</small><strong class="${percentClass(candidate.coin.price_change_percentage_24h)}">${formatPercent(candidate.coin.price_change_percentage_24h)}</strong></span>
+                <span><small>Liquidity</small><strong>${liquidity}</strong></span>
+                <span><small>Risk</small><strong>${risk}</strong></span>
+            </div>
+            <p>${swingReasonFor(candidate)}</p>
+        </div>
+    `;
 }
 
 function guideStateFor(item) {
@@ -741,6 +807,22 @@ function initHoldingsControls() {
     }
 }
 
+function initSecondaryTabs() {
+    const tabs = document.getElementById("secondary-tabs");
+    if (!tabs) return;
+    tabs.querySelectorAll("[data-tab-target]").forEach(button => {
+        button.addEventListener("click", event => {
+            const targetId = event.currentTarget.dataset.tabTarget;
+            tabs.querySelectorAll("[data-tab-target]").forEach(tab => {
+                tab.classList.toggle("active", tab === event.currentTarget);
+            });
+            tabs.querySelectorAll(".tab-panel").forEach(panel => {
+                panel.classList.toggle("active", panel.id === targetId);
+            });
+        });
+    });
+}
+
 function renderTodayMovers(markets) {
     const sorted = [...markets].filter(coin => Number.isFinite(coin.price_change_percentage_24h));
     const up = sorted.sort((a, b) => b.price_change_percentage_24h - a.price_change_percentage_24h).slice(0, 5);
@@ -904,5 +986,8 @@ async function boot() {
 }
 
 boot();
-if (page === "dashboard") initHoldingsControls();
+if (page === "dashboard") {
+    initHoldingsControls();
+    initSecondaryTabs();
+}
 setInterval(boot, 60000);

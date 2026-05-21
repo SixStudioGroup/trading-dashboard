@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ZenCloud Crypto Dashboard</title>
-    <link rel="stylesheet" href="styles.css?v=user-guide-20260522">
+    <link rel="stylesheet" href="styles.css?v=command-centre-20260522">
 </head>
 <body data-page="dashboard">
     <header class="topbar">
@@ -20,23 +20,38 @@
         </nav>
     </header>
 
-    <main class="shell">
-        <section class="welcome">
-            <div>
-                <h1>ZenCloud Crypto Dashboard</h1>
-                <p>Scan ranked opportunities, analyse one asset, then execute deliberately.</p>
+    <main class="shell command-shell">
+        <section class="command-status">
+            <div class="command-title">
+                <h1>ZenCloud</h1>
+                <span>Decision terminal</span>
             </div>
-            <div class="status-card">
+            <div class="status-card compact-status">
                 <span class="status-dot"></span>
                 <span id="market-status">Loading live data...</span>
             </div>
+            <div class="status-metric">
+                <span>Updated</span>
+                <strong id="last-updated">Pending</strong>
+            </div>
+            <div class="status-metric">
+                <span>Portfolio</span>
+                <strong id="status-portfolio-value">$0.00</strong>
+            </div>
+            <div class="status-metric status-holding">
+                <span>Holding</span>
+                <strong id="status-holding-summary">No active holdings</strong>
+            </div>
         </section>
 
-        <section class="decision-grid">
-            <section class="panel">
+        <section class="decision-grid command-grid">
+            <section class="panel opportunity-panel">
                 <div class="panel-header">
                     <h2 class="panel-title">Opportunity Queue</h2>
                     <p class="panel-subtitle">Ranked by the scoring engine</p>
+                </div>
+                <div class="swing-mover" id="best-swing-mover">
+                    <div class="loading-cell">Loading swing candidate...</div>
                 </div>
                 <table class="watchlist-table">
                     <thead>
@@ -54,31 +69,6 @@
                         <tr><td colspan="7" class="loading-cell">Loading ranked opportunities...</td></tr>
                     </tbody>
                 </table>
-                <div class="trade-guide">
-                    <div class="trade-guide-header">
-                        <h2 class="panel-title">Top 10 Trade Guide</h2>
-                        <p class="panel-subtitle">Decision-support checklist for ranked assets</p>
-                    </div>
-                    <table class="compact-table trade-guide-table">
-                        <thead>
-                            <tr>
-                                <th class="num">Rank</th>
-                                <th>Asset</th>
-                                <th>State</th>
-                                <th>Confirmation</th>
-                                <th>Risk</th>
-                                <th>Liquidity</th>
-                                <th>Signal Age</th>
-                                <th>Invalidation</th>
-                                <th>CoinSpot Status</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="trade-guide-body">
-                            <tr><td colspan="10" class="loading-cell">Loading trade guide...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
             </section>
 
             <section class="panel analysis-panel">
@@ -92,79 +82,135 @@
             </section>
         </section>
 
-        <details class="panel collapsible-panel" open>
-            <summary>
-                <span>Watchlist</span>
-                <small>Ranked subset of tracked assets</small>
-            </summary>
-            <table class="watchlist-table">
+        <section class="panel trade-guide-panel">
+            <div class="trade-guide-header">
+                <h2 class="panel-title">Top 10 Trade Guide</h2>
+                <p class="panel-subtitle">Decision-support checklist for ranked assets</p>
+            </div>
+            <table class="compact-table trade-guide-table">
                 <thead>
                     <tr>
-                        <th>Coin</th>
-                        <th>Signal</th>
-                        <th class="num">Score</th>
-                        <th class="num">Buy</th>
-                        <th class="num">Sell</th>
-                        <th class="num">Change (24hr)</th>
+                        <th class="num">Rank</th>
+                        <th>Asset</th>
+                        <th>State</th>
+                        <th>Confirmation</th>
+                        <th>Risk</th>
+                        <th>Liquidity</th>
+                        <th>Signal Age</th>
+                        <th>Invalidation</th>
+                        <th>CoinSpot Status</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
-                <tbody id="watchlist-body">
-                    <tr><td colspan="6" class="loading-cell">Loading watchlist...</td></tr>
+                <tbody id="trade-guide-body">
+                    <tr><td colspan="10" class="loading-cell">Loading trade guide...</td></tr>
                 </tbody>
             </table>
-        </details>
+        </section>
 
-        <details class="panel collapsible-panel">
-            <summary>
-                <span>Portfolio And Wallets</span>
-                <small>Holdings context</small>
-            </summary>
-            <div class="support-grid two-column">
-                <section>
-                    <div class="panel-header flat-header">
-                        <h2 class="panel-title">My Portfolio</h2>
-                        <p class="panel-subtitle">Manual holdings valued from live AUD prices</p>
-                    </div>
-                    <div class="panel-body">
-                        <div class="portfolio-value" id="portfolio-value">$0.00</div>
-                        <div class="tabs"><span>1D</span><span>1W</span><span>1M</span><span>3M</span><span>6M</span><span>1Y</span></div>
-                        <div class="chart">
-                            <svg id="portfolio-chart" viewBox="0 0 420 172" preserveAspectRatio="none" aria-label="Portfolio chart"></svg>
-                        </div>
-                    </div>
-                </section>
+        <section class="panel secondary-tabs" id="secondary-tabs">
+            <div class="tab-bar" role="tablist" aria-label="Secondary dashboard views">
+                <button class="tab-button" type="button" data-tab-target="watchlist-tab">Watchlist</button>
+                <button class="tab-button active" type="button" data-tab-target="portfolio-tab">Portfolio</button>
+                <button class="tab-button" type="button" data-tab-target="movers-tab">Movers</button>
+                <button class="tab-button" type="button" data-tab-target="attention-tab">Market Attention</button>
+                <button class="tab-button" type="button" data-tab-target="new-coins-tab">New Coins</button>
+                <button class="tab-button" type="button" data-tab-target="manage-holdings-tab">Manage Holdings</button>
+            </div>
 
-                <section>
-                    <div class="panel-header flat-header">
-                        <h2 class="panel-title">Wallets</h2>
-                        <p class="panel-subtitle">Balances with live AUD value</p>
-                    </div>
-                    <table class="compact-table">
-                        <thead><tr><th>Coin</th><th class="num">Balance</th><th class="num">Live Value</th></tr></thead>
-                        <tbody id="wallets-body">
-                            <tr><td colspan="3" class="loading-cell">Loading wallet values...</td></tr>
-                        </tbody>
-                    </table>
+            <div class="tab-panel" id="watchlist-tab">
+                <table class="watchlist-table">
+                    <thead>
+                        <tr>
+                            <th>Coin</th>
+                            <th>Signal</th>
+                            <th class="num">Score</th>
+                            <th class="num">Price</th>
+                            <th class="num">Sell Est.</th>
+                            <th class="num">24hr</th>
+                        </tr>
+                    </thead>
+                    <tbody id="watchlist-body">
+                        <tr><td colspan="6" class="loading-cell">Loading watchlist...</td></tr>
+                    </tbody>
+                </table>
+            </div>
 
-                    <div class="panel-header flat-header">
-                        <h2 class="panel-title">My Holdings</h2>
+            <div class="tab-panel active" id="portfolio-tab">
+                <div class="portfolio-compact">
+                    <div class="portfolio-summary-card">
+                        <span>My Portfolio</span>
+                        <strong id="portfolio-value">$0.00</strong>
+                        <small>Manual holdings valued from live AUD prices</small>
                     </div>
-                    <div class="panel-body holdings-split">
+                    <div class="holdings-split compact-holdings">
                         <div class="pie" id="holdings-pie">0%</div>
                         <table>
                             <tbody id="holdings-body">
-                                <tr><td colspan="2" class="loading-cell">Loading holdings...</td></tr>
+                                <tr><td colspan="3" class="loading-cell">Loading holdings...</td></tr>
                             </tbody>
                         </table>
                     </div>
-                </section>
+                </div>
+                <table class="compact-table">
+                    <thead><tr><th>Coin</th><th class="num">Balance</th><th class="num">Live Value</th></tr></thead>
+                    <tbody id="wallets-body">
+                        <tr><td colspan="3" class="loading-cell">Loading wallet values...</td></tr>
+                    </tbody>
+                </table>
             </div>
 
-            <section class="manage-holdings">
-                <div class="panel-header flat-header">
-                    <h2 class="panel-title">Manage Holdings</h2>
-                    <p class="panel-subtitle">Manual portfolio tracking only</p>
+            <div class="tab-panel" id="movers-tab">
+                <div class="tab-grid two-column">
+                    <section>
+                        <div class="panel-header flat-header">
+                            <h2 class="panel-title">1hr Movers</h2>
+                            <p class="panel-subtitle">Largest short-term movement</p>
+                        </div>
+                        <table class="compact-table">
+                            <thead><tr><th>Coin</th><th class="num">Price</th><th class="num">1hr</th></tr></thead>
+                            <tbody id="recent-movers-body">
+                                <tr><td colspan="3" class="loading-cell">Loading movers...</td></tr>
+                            </tbody>
+                        </table>
+                    </section>
+                    <section>
+                        <div class="panel-header flat-header">
+                            <h2 class="panel-title">24hr Movers</h2>
+                            <p class="panel-subtitle">Top live gainers and decliners</p>
+                        </div>
+                        <div class="two-tables">
+                            <table class="compact-table">
+                                <thead><tr><th>Coin</th><th class="num">Price</th><th class="num">24hr</th></tr></thead>
+                                <tbody id="today-up-body"></tbody>
+                            </table>
+                            <table class="compact-table">
+                                <thead><tr><th>Coin</th><th class="num">Price</th><th class="num">24hr</th></tr></thead>
+                                <tbody id="today-down-body"></tbody>
+                            </table>
+                        </div>
+                    </section>
                 </div>
+            </div>
+
+            <div class="tab-panel" id="attention-tab">
+                <div class="panel-header flat-header">
+                    <h2 class="panel-title">Market Attention</h2>
+                    <p class="panel-subtitle">High-volume assets from the live scan</p>
+                </div>
+                <div class="panel-body coin-rail compact-rail" id="popular-now"></div>
+            </div>
+
+            <div class="tab-panel" id="new-coins-tab">
+                <table class="compact-table">
+                    <thead><tr><th>Coin</th><th class="num">Price</th><th class="num">Volume</th><th class="num">24hr</th></tr></thead>
+                    <tbody id="new-coins-body">
+                        <tr><td colspan="4" class="loading-cell">Loading scan candidates...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="tab-panel" id="manage-holdings-tab">
                 <form class="holdings-form" id="holdings-form">
                     <label>
                         <span>Symbol</span>
@@ -203,56 +249,10 @@
                         <tr><td colspan="6" class="loading-cell">Loading managed holdings...</td></tr>
                     </tbody>
                 </table>
-            </section>
-        </details>
-
-        <details class="panel collapsible-panel">
-            <summary>
-                <span>Market Context</span>
-                <small>Secondary scan inputs</small>
-            </summary>
-            <div class="support-grid three-column">
-                <section>
-                    <div class="panel-header flat-header">
-                        <h2 class="panel-title">Recent Movers</h2>
-                        <p class="panel-subtitle">Largest live 1hr moves</p>
-                    </div>
-                    <table class="compact-table">
-                        <thead><tr><th>Coin</th><th class="num">Rate</th><th class="num">Last hour</th></tr></thead>
-                        <tbody id="recent-movers-body">
-                            <tr><td colspan="3" class="loading-cell">Loading movers...</td></tr>
-                        </tbody>
-                    </table>
-                </section>
-
-                <section>
-                    <div class="panel-header flat-header">
-                        <h2 class="panel-title">Top Volume</h2>
-                        <p class="panel-subtitle">Highest live 24hr volume</p>
-                    </div>
-                    <div class="panel-body coin-rail" id="popular-now"></div>
-                </section>
-
-                <section>
-                    <div class="panel-header flat-header">
-                        <h2 class="panel-title">Today's Movers</h2>
-                        <p class="panel-subtitle">Top live 24hr gainers and losers</p>
-                    </div>
-                    <div class="two-tables">
-                        <table class="compact-table">
-                            <thead><tr><th>Coin</th><th class="num">Buy Rate</th><th class="num">Change (24hrs)</th></tr></thead>
-                            <tbody id="today-up-body"></tbody>
-                        </table>
-                        <table class="compact-table">
-                            <thead><tr><th>Coin</th><th class="num">Buy Rate</th><th class="num">Change (24hrs)</th></tr></thead>
-                            <tbody id="today-down-body"></tbody>
-                        </table>
-                    </div>
-                </section>
             </div>
-        </details>
+        </section>
     </main>
 
-    <script src="app.js?v=user-guide-20260522"></script>
+    <script src="app.js?v=command-centre-20260522"></script>
 </body>
 </html>
