@@ -208,6 +208,10 @@ a:hover { text-decoration: underline; }
     padding: 12px;
 }
 
+.manage-holdings {
+    padding: 0 12px 12px;
+}
+
 .two-column { grid-template-columns: minmax(0, 1fr) minmax(320px, 0.85fr); }
 .three-column { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
@@ -284,6 +288,16 @@ a:hover { text-decoration: underline; }
     background: #e2f0f8;
 }
 
+.danger-action {
+    border-color: rgba(216,75,75,0.24);
+    background: var(--red-bg);
+    color: var(--red);
+}
+
+.danger-action:hover {
+    background: #ffe7e7;
+}
+
 table {
     width: 100%;
     border-collapse: collapse;
@@ -349,6 +363,58 @@ tr:last-child td { border-bottom: none; }
     font-size: 30px;
     font-weight: 600;
     margin: 2px 0 10px;
+}
+
+.holdings-form {
+    display: grid;
+    grid-template-columns: 0.6fr 1fr 0.7fr 1fr auto;
+    gap: 10px;
+    align-items: end;
+    padding: 12px 0;
+}
+
+.holdings-form label {
+    display: grid;
+    gap: 5px;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.holdings-form input,
+.inline-balance,
+.inline-note {
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: #fff;
+    color: var(--text);
+    font: inherit;
+    padding: 7px 8px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.form-message {
+    grid-column: 1 / -1;
+    margin: -2px 0 0;
+    min-height: 16px;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.form-message.error {
+    color: var(--red);
+    font-weight: 600;
+}
+
+.holdings-table {
+    border-top: 1px solid var(--line);
 }
 
 .tabs {
@@ -545,7 +611,8 @@ tr:last-child td { border-bottom: none; }
     .dashboard-grid,
     .decision-grid,
     .two-column,
-    .three-column { grid-template-columns: 1fr; }
+    .three-column,
+    .holdings-form { grid-template-columns: 1fr; }
     .analysis-panel { position: static; }
     .coin-rail { grid-template-columns: repeat(4, 1fr); }
     .rules-grid { grid-template-columns: repeat(2, 1fr); }

@@ -26,17 +26,22 @@ const FALLBACK_SPARKLINE = [12, 12.4, 12.8, 13, 13.4, 14.2, 14.8, 15.1, 15.4];
 const FALLBACK_STATUS = "Live API unavailable - fallback snapshot";
 let fallbackWarningShown = false;
 
-const HOLDINGS = [
-    { id: "bitcoin", symbol: "BTC", balance: 0.0001393 },
-    { id: "litecoin", symbol: "LTC", balance: 0 },
-    { id: "ethereum", symbol: "ETH", balance: 0 },
-    { id: "ethereum-classic", symbol: "ETC", balance: 0 },
-    { id: "binancecoin", symbol: "BNB", balance: 0 },
-    { id: "tellor", symbol: "TRB", balance: 0 }
+const DEFAULT_HOLDINGS = [
+    { symbol: "BTC", name: "Bitcoin", balance: 0.0001393, note: "Default sample holding", updatedAt: "2026-05-21T00:00:00+10:00" },
+    { symbol: "LTC", name: "Litecoin", balance: 0, note: "Default sample holding", updatedAt: "2026-05-21T00:00:00+10:00" },
+    { symbol: "ETH", name: "Ethereum", balance: 0, note: "Default sample holding", updatedAt: "2026-05-21T00:00:00+10:00" },
+    { symbol: "ETC", name: "Ethereum Classic", balance: 0, note: "Default sample holding", updatedAt: "2026-05-21T00:00:00+10:00" },
+    { symbol: "BNB", name: "BNB", balance: 0, note: "Default sample holding", updatedAt: "2026-05-21T00:00:00+10:00" },
+    { symbol: "TRB", name: "Tellor", balance: 0, note: "Default sample holding", updatedAt: "2026-05-21T00:00:00+10:00" }
 ];
 
 const page = document.body.dataset.page;
+const HOLDINGS_STORAGE_KEY = "zencloud.manualHoldings.v1";
+let holdingsStorageInitialized = false;
+let usingDefaultHoldings = false;
 let selectedAssetId = null;
+let currentDashboardModel = null;
+let manualHoldings = loadHoldings();
 
 const compactMoney = new Intl.NumberFormat("en-AU", {
     style: "currency",
@@ -75,6 +80,117 @@ function safeText(value, fallback) {
     return typeof value === "string" && value.trim() ? value.trim() : fallback;
 }
 
+function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "\"": "&quot;",
+        "'": "&#39;"
+    }[char]));
+}
+
+function storageAvailable() {
+    try {
+        const key = "__zencloud_storage_test__";
+        window.localStorage.setItem(key, key);
+        window.localStorage.removeItem(key);
+        return true;
+    } catch (error) {
+        return false;
+    }
+}
+
+function normalizeHolding(holding = {}) {
+    const symbol = safeText(holding.symbol, "").toUpperCase();
+    const name = safeText(holding.name, symbol || "Unknown Asset");
+    return {
+        symbol,
+        name,
+        balance: Math.max(0, finiteNumber(holding.balance)),
+        note: safeText(holding.note, ""),
+        updatedAt: safeText(holding.updatedAt, new Date().toISOString())
+    };
+}
+
+function defaultHoldings() {
+    return DEFAULT_HOLDINGS.map(normalizeHolding);
+}
+
+function isDefaultSampleSet(holdings) {
+    if (!Array.isArray(holdings) || holdings.length !== DEFAULT_HOLDINGS.length) return false;
+    const defaults = defaultHoldings();
+    return defaults.every(defaultHolding => {
+        const match = holdings.find(holding => holding.symbol === defaultHolding.symbol);
+        return match
+            && match.note === defaultHolding.note
+            && match.balance === defaultHolding.balance;
+    });
+}
+
+function loadHoldings() {
+    if (!storageAvailable()) {
+        usingDefaultHoldings = true;
+        return defaultHoldings();
+    }
+    try {
+        const stored = window.localStorage.getItem(HOLDINGS_STORAGE_KEY);
+        if (stored === null) {
+            usingDefaultHoldings = true;
+            return defaultHoldings();
+        }
+        holdingsStorageInitialized = true;
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+            usingDefaultHoldings = false;
+            return parsed.map(normalizeHolding).filter(holding => holding.symbol);
+        }
+        usingDefaultHoldings = true;
+        return defaultHoldings();
+    } catch (error) {
+        usingDefaultHoldings = true;
+        return defaultHoldings();
+    }
+}
+
+function saveHoldings(holdings) {
+    manualHoldings = Array.isArray(holdings)
+        ? holdings.map(normalizeHolding).filter(holding => holding.symbol)
+        : [];
+    holdingsStorageInitialized = true;
+    usingDefaultHoldings = false;
+    if (storageAvailable()) {
+        try {
+            window.localStorage.setItem(HOLDINGS_STORAGE_KEY, JSON.stringify(manualHoldings));
+        } catch (error) {
+            setHoldingsMessage("Holdings updated for this session only.");
+        }
+    }
+}
+
+function setHoldingsMessage(message, isError = false) {
+    const el = document.getElementById("holdings-message");
+    if (!el) return;
+    el.textContent = message;
+    el.classList.toggle("error", isError);
+}
+
+function formatBalance(value) {
+    const numeric = finiteNumber(value);
+    return numeric.toLocaleString("en-AU", { maximumFractionDigits: 10 });
+}
+
+function formatTimestamp(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "Not recorded";
+    return date.toLocaleString("en-AU", {
+        day: "2-digit",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit"
+    });
+}
+
 function percentClass(value) {
     const numeric = Number(value);
     if (numeric > 0) return "positive";
@@ -84,6 +200,40 @@ function percentClass(value) {
 
 function byId(markets, id) {
     return Array.isArray(markets) ? markets.find(item => item.id === id) : undefined;
+}
+
+function marketForHolding(markets, holding) {
+    const symbol = safeText(holding.symbol, "").toLowerCase();
+    const name = safeText(holding.name, "").toLowerCase();
+    if (!Array.isArray(markets)) return null;
+    return markets.find(coin => coin.symbol.toLowerCase() === symbol)
+        || markets.find(coin => coin.id.toLowerCase() === symbol || coin.id.toLowerCase() === name)
+        || markets.find(coin => coin.name.toLowerCase() === name)
+        || null;
+}
+
+function holdingDisplayCoin(markets, holding) {
+    const market = marketForHolding(markets, holding);
+    return market || {
+        id: holding.symbol.toLowerCase(),
+        symbol: holding.symbol.toLowerCase(),
+        name: holding.name,
+        current_price: 0,
+        market_cap: 0,
+        total_volume: 0,
+        price_change_percentage_24h: 0,
+        price_change_percentage_1h_in_currency: 0,
+        image: "",
+        sparkline_in_7d: { price: FALLBACK_SPARKLINE }
+    };
+}
+
+function holdingValuation(markets, holding) {
+    const market = marketForHolding(markets, holding);
+    if (!market || !Number.isFinite(market.current_price) || market.current_price <= 0) {
+        return { market: null, value: null };
+    }
+    return { market, value: holding.balance * market.current_price };
 }
 
 function coinspotUrl(coin) {
@@ -96,7 +246,7 @@ function coinCell(coin) {
     const icon = safeCoin.image
         ? `<img class="coin-icon" src="${safeCoin.image}" alt="">`
         : `<span class="coin-icon"></span>`;
-    return `<span class="coin">${icon}${safeCoin.name}</span>`;
+    return `<span class="coin">${icon}${escapeHtml(safeCoin.name)}</span>`;
 }
 
 function normalizeSparkline(coin) {
@@ -157,7 +307,7 @@ async function getMarkets() {
     const params = new URLSearchParams({
         vs_currency: "aud",
         order: "market_cap_desc",
-        per_page: "100",
+        per_page: "250",
         page: "1",
         sparkline: "true",
         price_change_percentage: "1h,24h"
@@ -221,15 +371,19 @@ function renderChart(coin) {
 }
 
 function renderDashboard(model) {
+    currentDashboardModel = model;
     const { markets, rankedAssets } = model;
     const watchlist = rankedAssets.filter(item => WATCHLIST_IDS.includes(item.coin.id));
     const opportunityRows = rankedAssets.slice(0, 10);
     const selected = rankedAssets.find(item => item.coin.id === selectedAssetId);
-    const btc = byId(markets, "bitcoin") || watchlist[0]?.coin;
-    const portfolioValue = HOLDINGS.reduce((total, holding) => {
-        const coin = byId(markets, holding.id);
-        return total + (coin ? coin.current_price * holding.balance : 0);
-    }, 0);
+    const holdingRows = manualHoldings.map(holding => {
+        const displayCoin = holdingDisplayCoin(markets, holding);
+        const valuation = holdingValuation(markets, holding);
+        return { holding, displayCoin, ...valuation };
+    });
+    const portfolioValue = holdingRows.reduce((total, row) => total + (row.value ?? 0), 0);
+    const pricedRows = holdingRows.filter(row => row.value !== null && row.holding.balance > 0);
+    const chartCoin = pricedRows[0]?.market || byId(markets, "bitcoin") || watchlist[0]?.coin;
 
     document.getElementById("opportunities-body").innerHTML = opportunityRows.map(item => `
         <tr class="${item.coin.id === selectedAssetId ? "selected-row" : ""}">
@@ -280,22 +434,18 @@ function renderDashboard(model) {
         </tr>
     `).join("");
 
-    document.getElementById("wallets-body").innerHTML = HOLDINGS.map(holding => {
-        const coin = byId(markets, holding.id) || { name: holding.symbol, current_price: 0, image: "" };
-        return `
-            <tr>
-                <td>${coinCell({ ...coin, name: coin.name || holding.symbol })}</td>
-                <td class="num">${holding.balance}</td>
-                <td class="num">${formatPrice(holding.balance * (coin.current_price || 0))}</td>
-            </tr>
-        `;
-    }).join("");
+    document.getElementById("wallets-body").innerHTML = holdingRows.length ? holdingRows.map(row => `
+        <tr>
+            <td>${coinCell(row.displayCoin)}</td>
+            <td class="num">${formatBalance(row.holding.balance)}</td>
+            <td class="num">${row.value === null ? "Price unavailable" : formatPrice(row.value)}</td>
+        </tr>
+    `).join("") : `<tr><td colspan="3" class="loading-cell">No manual holdings saved.</td></tr>`;
 
     document.getElementById("portfolio-value").textContent = formatPrice(portfolioValue);
-    document.getElementById("holdings-body").innerHTML = `
-        <tr><td>${coinCell({ ...btc, name: "BTC" })}</td><td class="num">${formatPrice(portfolioValue)}</td></tr>
-    `;
-    renderChart(btc);
+    renderHoldingsAllocation(holdingRows, portfolioValue);
+    renderHoldingsManager(markets, holdingRows);
+    renderChart(chartCoin);
 
     const highVolume = [...markets].sort((a, b) => b.total_volume - a.total_volume).slice(0, 8);
     document.getElementById("popular-now").innerHTML = highVolume.map(tile).join("");
@@ -312,6 +462,155 @@ function renderDashboard(model) {
     `).join("");
 
     renderTodayMovers(markets);
+}
+
+function renderHoldingsAllocation(holdingRows, portfolioValue) {
+    const pie = document.getElementById("holdings-pie");
+    const body = document.getElementById("holdings-body");
+    if (!pie || !body) return;
+
+    const activeRows = holdingRows.filter(row => row.holding.balance > 0);
+    const valuedRows = activeRows.filter(row => row.value !== null);
+    const lead = valuedRows.sort((a, b) => b.value - a.value)[0] || activeRows[0];
+    const leadPercent = lead && portfolioValue > 0 && lead.value !== null
+        ? Math.round((lead.value / portfolioValue) * 100)
+        : activeRows.length === 1 ? 100 : 0;
+    pie.innerHTML = lead ? `${lead.holding.symbol}<br>${leadPercent}%` : "0%";
+
+    if (!activeRows.length) {
+        body.innerHTML = `<tr><td colspan="3" class="loading-cell">No active holdings.</td></tr>`;
+        return;
+    }
+
+    body.innerHTML = activeRows.map(row => {
+        const allocation = row.value !== null && portfolioValue > 0
+            ? `${((row.value / portfolioValue) * 100).toFixed(1)}%`
+            : "Price unavailable";
+        return `
+            <tr>
+                <td>${coinCell(row.displayCoin)}</td>
+                <td class="num">${allocation}</td>
+                <td class="num">${row.value === null ? "Price unavailable" : formatPrice(row.value)}</td>
+            </tr>
+        `;
+    }).join("");
+}
+
+function renderHoldingsManager(markets, holdingRows) {
+    const body = document.getElementById("manage-holdings-body");
+    if (!body) return;
+
+    body.innerHTML = holdingRows.length ? holdingRows.map(row => `
+        <tr>
+            <td>${coinCell(row.displayCoin)}</td>
+            <td class="num"><input class="inline-balance" type="number" min="0" step="any" value="${row.holding.balance}" data-balance-symbol="${escapeHtml(row.holding.symbol)}"></td>
+            <td class="num">${row.value === null ? "Price unavailable" : formatPrice(row.value)}</td>
+            <td><input class="inline-note" type="text" value="${escapeHtml(row.holding.note)}" data-note-symbol="${escapeHtml(row.holding.symbol)}" placeholder="None"></td>
+            <td>${formatTimestamp(row.holding.updatedAt)}</td>
+            <td>
+                <button class="table-action" type="button" data-save-holding="${escapeHtml(row.holding.symbol)}">Save</button>
+                <button class="table-action danger-action" type="button" data-remove-holding="${escapeHtml(row.holding.symbol)}">Remove</button>
+            </td>
+        </tr>
+    `).join("") : `<tr><td colspan="6" class="loading-cell">No manual holdings saved.</td></tr>`;
+
+    body.querySelectorAll("[data-save-holding]").forEach(button => {
+        button.addEventListener("click", event => {
+            const symbol = event.currentTarget.dataset.saveHolding;
+            const balanceInput = body.querySelector(`[data-balance-symbol="${symbol}"]`);
+            const noteInput = body.querySelector(`[data-note-symbol="${symbol}"]`);
+            updateHoldingBalance(symbol, balanceInput?.value, noteInput?.value);
+        });
+    });
+
+    body.querySelectorAll("[data-remove-holding]").forEach(button => {
+        button.addEventListener("click", event => {
+            removeHolding(event.currentTarget.dataset.removeHolding);
+        });
+    });
+}
+
+function rerenderDashboard() {
+    if (currentDashboardModel) renderDashboard(currentDashboardModel);
+}
+
+function upsertHolding({ symbol, name, balance, note }) {
+    const cleanSymbol = safeText(symbol, "").toUpperCase();
+    const cleanName = safeText(name, cleanSymbol);
+    const cleanBalance = Number(balance);
+    if (!cleanSymbol) {
+        setHoldingsMessage("Enter a coin symbol.", true);
+        return;
+    }
+    if (!/^[A-Z0-9.-]+$/.test(cleanSymbol)) {
+        setHoldingsMessage("Symbol can use letters, numbers, dots, or hyphens.", true);
+        return;
+    }
+    if (!Number.isFinite(cleanBalance) || cleanBalance < 0) {
+        setHoldingsMessage("Balance must be a non-negative number.", true);
+        return;
+    }
+
+    const nextHolding = normalizeHolding({
+        symbol: cleanSymbol,
+        name: cleanName,
+        balance: cleanBalance,
+        note: safeText(note, ""),
+        updatedAt: new Date().toISOString()
+    });
+    const sourceHoldings = usingDefaultHoldings || isDefaultSampleSet(manualHoldings) ? [] : manualHoldings;
+    const remaining = sourceHoldings.filter(holding => holding.symbol !== cleanSymbol);
+    saveHoldings([...remaining, nextHolding]);
+    setHoldingsMessage(`${cleanSymbol} holding saved.`);
+    rerenderDashboard();
+}
+
+function updateHoldingBalance(symbol, balance, note) {
+    const cleanSymbol = safeText(symbol, "").toUpperCase();
+    const existing = manualHoldings.find(holding => holding.symbol === cleanSymbol);
+    if (!existing) return;
+    upsertHolding({
+        ...existing,
+        balance,
+        note
+    });
+}
+
+function removeHolding(symbol) {
+    const cleanSymbol = safeText(symbol, "").toUpperCase();
+    saveHoldings(manualHoldings.filter(holding => holding.symbol !== cleanSymbol));
+    setHoldingsMessage(`${cleanSymbol} holding removed.`);
+    rerenderDashboard();
+}
+
+function resetHoldings() {
+    saveHoldings(defaultHoldings());
+    setHoldingsMessage("Default holdings restored.");
+    rerenderDashboard();
+}
+
+function initHoldingsControls() {
+    const form = document.getElementById("holdings-form");
+    if (form) {
+        form.addEventListener("submit", event => {
+            event.preventDefault();
+            const formData = new FormData(form);
+            upsertHolding({
+                symbol: formData.get("symbol"),
+                name: formData.get("name"),
+                balance: formData.get("balance"),
+                note: formData.get("note")
+            });
+            if (!document.getElementById("holdings-message")?.classList.contains("error")) {
+                form.reset();
+            }
+        });
+    }
+
+    const resetButton = document.getElementById("reset-holdings");
+    if (resetButton) {
+        resetButton.addEventListener("click", resetHoldings);
+    }
 }
 
 function renderTodayMovers(markets) {
@@ -477,4 +776,5 @@ async function boot() {
 }
 
 boot();
+if (page === "dashboard") initHoldingsControls();
 setInterval(boot, 60000);

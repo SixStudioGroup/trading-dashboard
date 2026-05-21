@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ZenCloud Crypto Dashboard</title>
-    <link rel="stylesheet" href="styles.css?v=fallback-safe-20260521">
+    <link rel="stylesheet" href="styles.css?v=holdings-manager-20260521">
 </head>
 <body data-page="dashboard">
     <header class="topbar">
@@ -97,7 +97,7 @@
                 <section>
                     <div class="panel-header flat-header">
                         <h2 class="panel-title">My Portfolio</h2>
-                        <p class="panel-subtitle">BTC holding valued from live AUD price</p>
+                        <p class="panel-subtitle">Manual holdings valued from live AUD prices</p>
                     </div>
                     <div class="panel-body">
                         <div class="portfolio-value" id="portfolio-value">$0.00</div>
@@ -124,7 +124,7 @@
                         <h2 class="panel-title">My Holdings</h2>
                     </div>
                     <div class="panel-body holdings-split">
-                        <div class="pie">BTC<br>100%</div>
+                        <div class="pie" id="holdings-pie">0%</div>
                         <table>
                             <tbody id="holdings-body">
                                 <tr><td colspan="2" class="loading-cell">Loading holdings...</td></tr>
@@ -133,6 +133,51 @@
                     </div>
                 </section>
             </div>
+
+            <section class="manage-holdings">
+                <div class="panel-header flat-header">
+                    <h2 class="panel-title">Manage Holdings</h2>
+                    <p class="panel-subtitle">Manual portfolio tracking only</p>
+                </div>
+                <form class="holdings-form" id="holdings-form">
+                    <label>
+                        <span>Symbol</span>
+                        <input id="holding-symbol" name="symbol" type="text" autocomplete="off" placeholder="FET" required>
+                    </label>
+                    <label>
+                        <span>Coin Name</span>
+                        <input id="holding-name" name="name" type="text" autocomplete="off" placeholder="Artificial Superintelligence Alliance" required>
+                    </label>
+                    <label>
+                        <span>Balance</span>
+                        <input id="holding-balance" name="balance" type="number" min="0" step="any" placeholder="0.00" required>
+                    </label>
+                    <label>
+                        <span>Note</span>
+                        <input id="holding-note" name="note" type="text" autocomplete="off" placeholder="Optional">
+                    </label>
+                    <div class="form-actions">
+                        <button class="button-primary" type="submit">Add Holding</button>
+                        <button class="table-action" id="reset-holdings" type="button">Reset Defaults</button>
+                    </div>
+                    <p class="form-message" id="holdings-message" aria-live="polite"></p>
+                </form>
+                <table class="compact-table holdings-table">
+                    <thead>
+                        <tr>
+                            <th>Coin</th>
+                            <th class="num">Balance</th>
+                            <th class="num">Live Value</th>
+                            <th>Note</th>
+                            <th>Last Updated</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="manage-holdings-body">
+                        <tr><td colspan="6" class="loading-cell">Loading managed holdings...</td></tr>
+                    </tbody>
+                </table>
+            </section>
         </details>
 
         <details class="panel collapsible-panel">
@@ -182,6 +227,6 @@
         </details>
     </main>
 
-    <script src="app.js?v=fallback-safe-20260521"></script>
+    <script src="app.js?v=holdings-manager-20260521"></script>
 </body>
 </html>
