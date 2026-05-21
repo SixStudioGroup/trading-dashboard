@@ -171,6 +171,10 @@ function loadHoldings() {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed)) {
             const normalized = parsed.map(normalizeHolding).filter(holding => holding.symbol);
+            if (!normalized.length) {
+                usingDefaultHoldings = true;
+                return defaultHoldings();
+            }
             if (isLegacyDefaultSampleSet(normalized)) {
                 usingDefaultHoldings = true;
                 return defaultHoldings();
