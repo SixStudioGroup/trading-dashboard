@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ZenCloud Crypto Dashboard</title>
-    <link rel="stylesheet" href="styles.css?v=command-centre-20260522">
+    <link rel="stylesheet" href="styles.css?v=swing-os-20260522">
 </head>
 <body data-page="dashboard">
     <header class="topbar">
@@ -16,6 +16,7 @@
             <a class="active" href="index.html">Dashboard</a>
             <a href="logs.html">Market Logs</a>
             <a href="alerts.html">Alerts</a>
+            <a href="journal.html">Trade Journal</a>
             <a href="guide.html">User Guide</a>
         </nav>
     </header>
@@ -52,6 +53,9 @@
                 </div>
                 <div class="swing-mover" id="best-swing-mover">
                     <div class="loading-cell">Loading swing candidate...</div>
+                </div>
+                <div class="swing-mover exit-risk" id="highest-exit-risk">
+                    <div class="loading-cell">Loading held-asset risk...</div>
                 </div>
                 <table class="watchlist-table">
                     <thead>
@@ -116,6 +120,7 @@
                 <button class="tab-button" type="button" data-tab-target="attention-tab">Market Attention</button>
                 <button class="tab-button" type="button" data-tab-target="new-coins-tab">New Coins</button>
                 <button class="tab-button" type="button" data-tab-target="manage-holdings-tab">Manage Holdings</button>
+                <button class="tab-button" type="button" data-tab-target="review-tab">Review</button>
             </div>
 
             <div class="tab-panel" id="watchlist-tab">
@@ -132,6 +137,16 @@
                     </thead>
                     <tbody id="watchlist-body">
                         <tr><td colspan="6" class="loading-cell">Loading watchlist...</td></tr>
+                    </tbody>
+                </table>
+                <div class="panel-header flat-header">
+                    <h2 class="panel-title">Analysis Watchlist</h2>
+                    <p class="panel-subtitle">Assets added from Asset Analysis</p>
+                </div>
+                <table class="compact-table">
+                    <thead><tr><th>Asset</th><th>Reason</th><th>Watched Signal</th><th>Current Signal</th><th>Change</th><th>Actions</th></tr></thead>
+                    <tbody id="analysis-watchlist-body">
+                        <tr><td colspan="6" class="loading-cell">No watched assets yet.</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -153,9 +168,9 @@
                     </div>
                 </div>
                 <table class="compact-table">
-                    <thead><tr><th>Coin</th><th class="num">Balance</th><th class="num">Live Value</th></tr></thead>
+                    <thead><tr><th>Coin</th><th class="num">Balance</th><th class="num">Live Price</th><th class="num">Entry</th><th class="num">Unrealised</th><th>Held</th></tr></thead>
                     <tbody id="wallets-body">
-                        <tr><td colspan="3" class="loading-cell">Loading wallet values...</td></tr>
+                        <tr><td colspan="6" class="loading-cell">Loading wallet values...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -225,6 +240,10 @@
                         <input id="holding-balance" name="balance" type="number" min="0" step="any" placeholder="0.00" required>
                     </label>
                     <label>
+                        <span>Avg Entry</span>
+                        <input id="holding-entry" name="avgEntryPrice" type="number" min="0" step="any" placeholder="Optional">
+                    </label>
+                    <label>
                         <span>Note</span>
                         <input id="holding-note" name="note" type="text" autocomplete="off" placeholder="Optional">
                     </label>
@@ -239,20 +258,52 @@
                         <tr>
                             <th>Coin</th>
                             <th class="num">Balance</th>
-                            <th class="num">Live Value</th>
+                            <th class="num">Entry</th>
+                            <th class="num">Live Price</th>
+                            <th class="num">Unrealised</th>
                             <th>Note</th>
-                            <th>Last Updated</th>
+                            <th>Held</th>
+                            <th>Updated</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="manage-holdings-body">
-                        <tr><td colspan="6" class="loading-cell">Loading managed holdings...</td></tr>
+                        <tr><td colspan="8" class="loading-cell">Loading managed holdings...</td></tr>
                     </tbody>
                 </table>
+            </div>
+
+            <div class="tab-panel" id="review-tab">
+                <div class="tab-grid two-column">
+                    <section>
+                        <div class="panel-header flat-header">
+                            <h2 class="panel-title">Session Checklist</h2>
+                            <p class="panel-subtitle">Manual operating loop</p>
+                        </div>
+                        <div class="panel-body checklist" id="session-checklist"></div>
+                    </section>
+                    <section>
+                        <div class="panel-header flat-header">
+                            <h2 class="panel-title">Signal Change History</h2>
+                            <p class="panel-subtitle">Recent locally observed transitions</p>
+                        </div>
+                        <table class="compact-table">
+                            <thead><tr><th>Asset</th><th>Transition</th><th class="num">Score</th><th>Time</th></tr></thead>
+                            <tbody id="signal-history-body">
+                                <tr><td colspan="4" class="loading-cell">No signal transitions recorded yet.</td></tr>
+                            </tbody>
+                        </table>
+                    </section>
+                </div>
+                <div class="panel-header flat-header">
+                    <h2 class="panel-title">Performance Summary</h2>
+                    <p class="panel-subtitle">Calculated from manual Trade Journal entries</p>
+                </div>
+                <div class="performance-grid" id="dashboard-performance-summary"></div>
             </div>
         </section>
     </main>
 
-    <script src="app.js?v=command-centre-20260522"></script>
+    <script src="app.js?v=swing-os-20260522"></script>
 </body>
 </html>

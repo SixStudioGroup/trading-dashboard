@@ -294,6 +294,10 @@ a:hover { text-decoration: underline; }
     padding: 9px 10px;
 }
 
+.exit-risk {
+    background: #fffdf7;
+}
+
 .swing-header {
     display: flex;
     align-items: center;
@@ -437,6 +441,148 @@ a:hover { text-decoration: underline; }
 .compact-rail {
     min-height: 0;
     grid-template-columns: repeat(8, minmax(68px, 1fr));
+}
+
+.invalidation-box,
+.trade-plan-box,
+.position-helper {
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: #fbfcfd;
+    padding: 9px;
+    margin-top: 10px;
+    display: grid;
+    gap: 8px;
+}
+
+.invalidation-box {
+    background: var(--amber-bg);
+}
+
+.invalidation-box strong,
+.mini-title {
+    color: #34495e;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.invalidation-box span {
+    color: #6f5a1b;
+    font-size: 12px;
+}
+
+.trade-plan-box label,
+.position-helper label,
+.journal-form label {
+    display: grid;
+    gap: 4px;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.trade-plan-box input,
+.trade-plan-box textarea,
+.position-helper input,
+.position-helper select,
+.journal-form input,
+.journal-form select {
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: #fff;
+    color: var(--text);
+    font: inherit;
+    padding: 6px 7px;
+}
+
+.trade-plan-box textarea {
+    min-height: 48px;
+    resize: vertical;
+}
+
+.size-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.helper-output {
+    color: #44576a;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.checklist {
+    display: grid;
+    gap: 7px;
+}
+
+.check-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #44576a;
+}
+
+.performance-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    padding: 10px;
+}
+
+.performance-grid div {
+    border: 1px solid #edf1f4;
+    border-radius: 3px;
+    background: #fbfcfd;
+    padding: 8px;
+    display: grid;
+    gap: 4px;
+}
+
+.performance-grid span {
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.performance-grid strong {
+    color: #34495e;
+    font-size: 13px;
+}
+
+.compact-empty {
+    min-height: 0;
+    padding: 14px;
+}
+
+.journal-panel {
+    margin-bottom: 12px;
+}
+
+.journal-form {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    padding: 12px;
+    align-items: end;
+}
+
+.journal-form .form-actions,
+.journal-form .form-message {
+    grid-column: 1 / -1;
+}
+
+.close-price {
+    max-width: 96px;
+    margin-bottom: 4px;
+}
+
+.close-reason {
+    max-width: 150px;
+    margin-bottom: 4px;
 }
 
 .guide-shell {
@@ -920,6 +1066,8 @@ tr:last-child td { border-bottom: none; }
     .decision-grid,
     .guide-grid,
     .portfolio-compact,
+    .performance-grid,
+    .journal-form,
     .two-column,
     .three-column,
     .holdings-form { grid-template-columns: 1fr; }
@@ -954,6 +1102,7 @@ tr:last-child td { border-bottom: none; }
     .coin-rail,
     .rules-grid { grid-template-columns: repeat(2, 1fr); }
     .swing-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .size-grid { grid-template-columns: 1fr; }
     .workflow-list { columns: 1; }
     table { min-width: 680px; }
     .panel { overflow-x: auto; }

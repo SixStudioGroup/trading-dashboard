@@ -55,11 +55,30 @@ const COINSPOT_SYMBOLS = {
 
 const page = document.body.dataset.page;
 const HOLDINGS_STORAGE_KEY = "zencloud.manualHoldings.v1";
+const TRADE_JOURNAL_STORAGE_KEY = "zencloud.tradeJournal.v1";
+const ANALYSIS_WATCHLIST_STORAGE_KEY = "zencloud.watchlist.v1";
+const SIGNAL_HISTORY_STORAGE_KEY = "zencloud.signalHistory.v1";
+const SESSION_CHECKLIST_STORAGE_KEY = "zencloud.sessionChecklist.v1";
+const SESSION_CHECKLIST_ITEMS = [
+    "Check Opportunity Queue",
+    "Review holdings",
+    "Analyse one asset",
+    "Create trade plan",
+    "Execute externally if appropriate",
+    "Update holdings",
+    "Log trade",
+    "Review alerts"
+];
 let holdingsStorageInitialized = false;
 let usingDefaultHoldings = false;
 let selectedAssetId = null;
+let planConfirmedAssetId = null;
 let currentDashboardModel = null;
 let manualHoldings = loadHoldings();
+let tradeJournal = loadCollection(TRADE_JOURNAL_STORAGE_KEY);
+let analysisWatchlist = loadCollection(ANALYSIS_WATCHLIST_STORAGE_KEY);
+let signalHistory = loadCollection(SIGNAL_HISTORY_STORAGE_KEY);
+let sessionChecklist = loadChecklist();
 
 const compactMoney = new Intl.NumberFormat("en-AU", {
     style: "currency",
@@ -119,13 +138,52 @@ function storageAvailable() {
     }
 }
 
+function loadCollection(key) {
+    if (!storageAvailable()) return [];
+    try {
+        const stored = window.localStorage.getItem(key);
+        const parsed = stored ? JSON.parse(stored) : [];
+        return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+        return [];
+    }
+}
+
+function saveCollection(key, rows) {
+    const cleanRows = Array.isArray(rows) ? rows : [];
+    if (storageAvailable()) {
+        try {
+            window.localStorage.setItem(key, JSON.stringify(cleanRows));
+        } catch (error) {
+            console.warn("Local storage update skipped.");
+        }
+    }
+    return cleanRows;
+}
+
+function loadChecklist() {
+    const stored = loadCollection(SESSION_CHECKLIST_STORAGE_KEY);
+    if (!stored.length) {
+        return SESSION_CHECKLIST_ITEMS.map(label => ({ label, checked: false }));
+    }
+    const byLabel = new Map(stored.map(item => [safeText(item.label, ""), Boolean(item.checked)]));
+    return SESSION_CHECKLIST_ITEMS.map(label => ({ label, checked: byLabel.get(label) || false }));
+}
+
+function saveChecklist() {
+    sessionChecklist = saveCollection(SESSION_CHECKLIST_STORAGE_KEY, sessionChecklist);
+}
+
 function normalizeHolding(holding = {}) {
     const symbol = safeText(holding.symbol, "").toUpperCase();
     const name = safeText(holding.name, symbol || "Unknown Asset");
+    const rawEntry = Number(holding.avgEntryPrice);
+    const avgEntryPrice = Number.isFinite(rawEntry) && rawEntry > 0 ? rawEntry : null;
     return {
         symbol,
         name,
         balance: Math.max(0, finiteNumber(holding.balance)),
+        avgEntryPrice,
         note: safeText(holding.note, ""),
         updatedAt: safeText(holding.updatedAt, new Date().toISOString())
     };
@@ -228,6 +286,35 @@ function formatTimestamp(value) {
     });
 }
 
+function formatDateTimeLocal(value) {
+    const date = value ? new Date(value) : new Date();
+    if (Number.isNaN(date.getTime())) return "";
+    const offset = date.getTimezoneOffset();
+    const local = new Date(date.getTime() - offset * 60000);
+    return local.toISOString().slice(0, 16);
+}
+
+function holdingDuration(updatedAt) {
+    const date = new Date(updatedAt);
+    if (Number.isNaN(date.getTime())) return "Not recorded";
+    const days = Math.max(0, Math.floor((Date.now() - date.getTime()) / 86400000));
+    if (days === 0) return "Today";
+    if (days === 1) return "1 day";
+    return `${days} days`;
+}
+
+function formatSignedMoney(value) {
+    if (!Number.isFinite(value)) return "$0.00";
+    const sign = value > 0 ? "+" : "";
+    return `${sign}${formatPrice(value)}`;
+}
+
+function formatSignedPercent(value) {
+    if (!Number.isFinite(value)) return "0.00%";
+    const sign = value > 0 ? "+" : "";
+    return `${sign}${value.toFixed(2)}%`;
+}
+
 function percentClass(value) {
     const numeric = Number(value);
     if (numeric > 0) return "positive";
@@ -273,6 +360,16 @@ function holdingValuation(markets, holding) {
     return { market, value: holding.balance * market.current_price };
 }
 
+function unrealizedFor(row) {
+    const entry = Number(row.holding.avgEntryPrice);
+    const live = row.market?.current_price;
+    if (!Number.isFinite(entry) || entry <= 0) return { aud: null, percent: null, label: "Entry not set" };
+    if (!Number.isFinite(live) || live <= 0) return { aud: null, percent: null, label: "Price unavailable" };
+    const aud = (live - entry) * row.holding.balance;
+    const percent = ((live - entry) / entry) * 100;
+    return { aud, percent, label: `${formatSignedMoney(aud)} / ${formatSignedPercent(percent)}` };
+}
+
 function coinspotUrl(coin) {
     const symbol = safeText(coin?.symbol, "").toUpperCase();
     return COINSPOT_SYMBOLS[symbol] || null;
@@ -288,6 +385,106 @@ function coinCell(coin) {
         ? `<img class="coin-icon" src="${safeCoin.image}" alt="">`
         : `<span class="coin-icon"></span>`;
     return `<span class="coin">${icon}${escapeHtml(safeCoin.name)}</span>`;
+}
+
+function compactCoinName(coin) {
+    const safeCoin = normalizeMarket(coin);
+    return `${safeCoin.symbol.toUpperCase()} / ${safeCoin.name}`;
+}
+
+function journalId() {
+    return `TJ-${Date.now().toString(36).toUpperCase()}`;
+}
+
+function normalizeTrade(trade = {}) {
+    const entryPrice = Number(trade.entryPrice);
+    const positionSize = Number(trade.positionSize);
+    const exitPrice = Number(trade.exitPrice);
+    const resultAud = Number(trade.resultAud);
+    const resultPercent = Number(trade.resultPercent);
+    return {
+        id: safeText(trade.id, journalId()),
+        symbol: safeText(trade.symbol, "").toUpperCase(),
+        name: safeText(trade.name, safeText(trade.symbol, "").toUpperCase() || "Unknown Asset"),
+        entryDate: safeText(trade.entryDate, new Date().toISOString()),
+        entryPrice: Number.isFinite(entryPrice) && entryPrice >= 0 ? entryPrice : 0,
+        positionSize: Number.isFinite(positionSize) && positionSize >= 0 ? positionSize : 0,
+        signalState: safeText(trade.signalState, "No Action"),
+        reasonEntry: safeText(trade.reasonEntry, "Manual trade plan"),
+        plannedInvalidation: safeText(trade.plannedInvalidation, "Review if risk state triggered"),
+        exitDate: safeText(trade.exitDate, ""),
+        exitPrice: Number.isFinite(exitPrice) && exitPrice >= 0 ? exitPrice : null,
+        exitReason: safeText(trade.exitReason, ""),
+        resultAud: Number.isFinite(resultAud) ? resultAud : null,
+        resultPercent: Number.isFinite(resultPercent) ? resultPercent : null,
+        notes: safeText(trade.notes, ""),
+        status: trade.status === "closed" ? "closed" : "open",
+        updatedAt: safeText(trade.updatedAt, new Date().toISOString())
+    };
+}
+
+function saveTradeJournal() {
+    tradeJournal = saveCollection(TRADE_JOURNAL_STORAGE_KEY, tradeJournal.map(normalizeTrade));
+}
+
+function addTrade(trade) {
+    tradeJournal = [normalizeTrade(trade), ...tradeJournal];
+    saveTradeJournal();
+}
+
+function updateTrade(id, patch) {
+    tradeJournal = tradeJournal.map(trade => trade.id === id ? normalizeTrade({ ...trade, ...patch, updatedAt: new Date().toISOString() }) : trade);
+    saveTradeJournal();
+}
+
+function deleteTrade(id) {
+    tradeJournal = tradeJournal.filter(trade => trade.id !== id);
+    saveTradeJournal();
+}
+
+function closeTrade(id, exitPrice, exitReason) {
+    const trade = tradeJournal.find(row => row.id === id);
+    if (!trade) return;
+    const cleanExit = Number(exitPrice);
+    if (!Number.isFinite(cleanExit) || cleanExit < 0 || trade.entryPrice <= 0) return;
+    const units = trade.positionSize / Math.max(trade.entryPrice, 0.000001);
+    const resultAud = (cleanExit - trade.entryPrice) * units;
+    const resultPercent = ((cleanExit - trade.entryPrice) / trade.entryPrice) * 100;
+    updateTrade(id, {
+        status: "closed",
+        exitDate: new Date().toISOString(),
+        exitPrice: cleanExit,
+        exitReason,
+        resultAud,
+        resultPercent
+    });
+}
+
+function normalizeWatchItem(item = {}) {
+    return {
+        id: safeText(item.id, `${safeText(item.symbol, "asset").toLowerCase()}-${Date.now()}`),
+        assetId: safeText(item.assetId, ""),
+        symbol: safeText(item.symbol, "").toUpperCase(),
+        name: safeText(item.name, safeText(item.symbol, "").toUpperCase() || "Unknown Asset"),
+        reason: safeText(item.reason, "Manual watch"),
+        signalAtWatch: safeText(item.signalAtWatch, "No Action"),
+        watchedAt: safeText(item.watchedAt, new Date().toISOString())
+    };
+}
+
+function saveAnalysisWatchlist() {
+    analysisWatchlist = saveCollection(ANALYSIS_WATCHLIST_STORAGE_KEY, analysisWatchlist.map(normalizeWatchItem));
+}
+
+function addAnalysisWatch(item) {
+    const clean = normalizeWatchItem(item);
+    analysisWatchlist = [clean, ...analysisWatchlist.filter(row => row.symbol !== clean.symbol)];
+    saveAnalysisWatchlist();
+}
+
+function removeAnalysisWatch(id) {
+    analysisWatchlist = analysisWatchlist.filter(item => item.id !== id);
+    saveAnalysisWatchlist();
 }
 
 function normalizeSparkline(coin) {
@@ -411,29 +608,12 @@ function renderDashboard(model) {
         </tr>
     `).join("");
     renderBestSwingMover(rankedAssets);
+    renderHighestExitRisk(rankedAssets, holdingRows);
     renderTradeGuide(opportunityRows);
 
-    const selectedCoinspotUrl = selected ? coinspotUrl(selected.coin) : null;
-    document.getElementById("analysis-panel").innerHTML = selected ? `
-            <div class="analysis-heading">
-                ${coinCell(selected.coin)}
-                <span class="badge ${selected.decision.klass}">${selected.decision.label}</span>
-            </div>
-            <dl class="metric-grid">
-                <div><dt>Score</dt><dd>${selected.decision.score}</dd></div>
-                <div><dt>Price</dt><dd>${formatPrice(selected.coin.current_price)}</dd></div>
-                <div><dt>1hr</dt><dd class="${percentClass(selected.coin.price_change_percentage_1h_in_currency)}">${formatPercent(selected.coin.price_change_percentage_1h_in_currency)}</dd></div>
-                <div><dt>24hr</dt><dd class="${percentClass(selected.coin.price_change_percentage_24h)}">${formatPercent(selected.coin.price_change_percentage_24h)}</dd></div>
-                <div><dt>Volume</dt><dd>${formatBig(selected.coin.total_volume)}</dd></div>
-                <div><dt>Sell Est.</dt><dd>${formatPrice(sellPrice(selected.coin.current_price))}</dd></div>
-            </dl>
-            <div class="execution-bar">
-                <span>Execution opens only for the selected asset.</span>
-                ${selectedCoinspotUrl
-                    ? `<a class="button-primary" href="${selectedCoinspotUrl}" target="_blank" rel="noopener noreferrer">Open CoinSpot</a>`
-                    : `<span class="watch-only">Watch only</span>`}
-            </div>
-        ` : `<div class="empty-analysis">Select an asset from the opportunity queue to inspect price action, score context, and execution.</div>`;
+    document.getElementById("analysis-panel").innerHTML = selected
+        ? analysisHtml(selected, portfolioValue)
+        : `<div class="empty-analysis">Select an asset from the Opportunity Queue to inspect structure, plan the trade, and unlock execution handoff.</div>`;
 
     document.querySelectorAll("[data-asset-id]").forEach(button => {
         button.addEventListener("click", event => {
@@ -453,13 +633,19 @@ function renderDashboard(model) {
         </tr>
     `).join("");
 
-    document.getElementById("wallets-body").innerHTML = holdingRows.length ? holdingRows.map(row => `
-        <tr>
-            <td>${coinCell(row.displayCoin)}</td>
-            <td class="num">${formatBalance(row.holding.balance)}</td>
-            <td class="num">${row.value === null ? "Price unavailable" : formatPrice(row.value)}</td>
-        </tr>
-    `).join("") : `<tr><td colspan="3" class="loading-cell">No manual holdings saved.</td></tr>`;
+    document.getElementById("wallets-body").innerHTML = holdingRows.length ? holdingRows.map(row => {
+        const unrealized = unrealizedFor(row);
+        return `
+            <tr>
+                <td>${coinCell(row.displayCoin)}</td>
+                <td class="num">${formatBalance(row.holding.balance)}</td>
+                <td class="num">${row.market ? formatPrice(row.market.current_price) : "Price unavailable"}</td>
+                <td class="num">${row.holding.avgEntryPrice ? formatPrice(row.holding.avgEntryPrice) : "Entry not set"}</td>
+                <td class="num ${unrealized.aud > 0 ? "positive" : unrealized.aud < 0 ? "negative" : "neutral"}">${unrealized.label}</td>
+                <td>${holdingDuration(row.holding.updatedAt)}</td>
+            </tr>
+        `;
+    }).join("") : `<tr><td colspan="6" class="loading-cell">No manual holdings saved.</td></tr>`;
 
     document.getElementById("portfolio-value").textContent = formatPrice(portfolioValue);
     renderHoldingsAllocation(holdingRows, portfolioValue);
@@ -493,6 +679,11 @@ function renderDashboard(model) {
             <td class="num ${percentClass(coin.price_change_percentage_24h)}">${formatPercent(coin.price_change_percentage_24h)}</td>
         </tr>
     `).join("") || `<tr><td colspan="4" class="loading-cell">No scan candidates available.</td></tr>`;
+    renderAnalysisWatchlist(rankedAssets);
+    renderSignalHistory();
+    renderSessionChecklist();
+    renderPerformanceSummary("dashboard-performance-summary");
+    attachAnalysisControls(selected, portfolioValue);
 }
 
 function updateCommandStatus(holdingRows, portfolioValue) {
@@ -508,6 +699,119 @@ function updateCommandStatus(holdingRows, portfolioValue) {
     const lead = [...activeRows].sort((a, b) => (b.value ?? 0) - (a.value ?? 0))[0];
     const valueText = lead.value === null ? "Price unavailable" : formatPrice(lead.value);
     holdingEl.textContent = `${lead.holding.symbol} ${formatBalance(lead.holding.balance)} / ${valueText}`;
+}
+
+function analysisHtml(selected, portfolioValue) {
+    const state = guideStateFor(selected);
+    const confirmed = planConfirmedAssetId === selected.coin.id;
+    const selectedCoinspotUrl = confirmed ? coinspotUrl(selected.coin) : null;
+    const defaultSize = Math.max(0, portfolioValue * 0.1);
+    return `
+        <div class="analysis-heading">
+            ${coinCell(selected.coin)}
+            <span class="badge ${state.klass}">${state.label}</span>
+        </div>
+        <dl class="metric-grid">
+            <div><dt>Score</dt><dd>${selected.decision.score}</dd></div>
+            <div><dt>Price</dt><dd>${formatPrice(selected.coin.current_price)}</dd></div>
+            <div><dt>1hr</dt><dd class="${percentClass(selected.coin.price_change_percentage_1h_in_currency)}">${formatPercent(selected.coin.price_change_percentage_1h_in_currency)}</dd></div>
+            <div><dt>24hr</dt><dd class="${percentClass(selected.coin.price_change_percentage_24h)}">${formatPercent(selected.coin.price_change_percentage_24h)}</dd></div>
+            <div><dt>Volume</dt><dd>${formatBig(selected.coin.total_volume)}</dd></div>
+            <div><dt>Risk</dt><dd>${riskFor(selected)}</dd></div>
+        </dl>
+        <div class="invalidation-box">
+            <strong>Invalidation</strong>
+            <span>${invalidationSentence(state.label)}</span>
+        </div>
+        <div class="trade-plan-box">
+            <div class="mini-title">Trade Plan</div>
+            <label>Why now?<textarea id="plan-reason">${escapeHtml(swingReasonFor(selected))}</textarea></label>
+            <label>Entry trigger<input id="plan-trigger" type="text" value="${escapeHtml(state.label)} confirmation"></label>
+            <label>Invalidation<input id="plan-invalidation" type="text" value="${escapeHtml(invalidationSentence(state.label))}"></label>
+            <label>Target review time<input id="plan-review" type="datetime-local" value="${formatDateTimeLocal(Date.now() + 86400000)}"></label>
+            <label>Intended position size<input id="plan-size" type="number" min="0" step="any" value="${defaultSize.toFixed(2)}"></label>
+            <label>Notes<textarea id="plan-notes" placeholder="Manual notes"></textarea></label>
+            <div class="form-actions">
+                <button class="table-action" type="button" id="confirm-plan">Confirm Plan</button>
+                <button class="table-action" type="button" id="save-plan-journal">Save to Journal</button>
+                <button class="table-action" type="button" id="add-analysis-watch">Add to Watch</button>
+            </div>
+        </div>
+        <div class="position-helper">
+            <div class="mini-title">Position Size Helper</div>
+            <div class="size-grid">
+                <label>Portfolio value<input id="size-portfolio" type="number" min="0" step="any" value="${portfolioValue.toFixed(2)}"></label>
+                <label>Allocation %<input id="size-allocation" type="number" min="0" step="any" value="10"></label>
+                <label>Risk level<select id="size-risk"><option>${riskFor(selected)}</option><option>Low</option><option>Medium</option><option>High</option></select></label>
+                <label>Max risk AUD<input id="size-risk-amount" type="number" min="0" step="any" value="${Math.max(0, portfolioValue * 0.02).toFixed(2)}"></label>
+            </div>
+            <div class="helper-output" id="size-output">Sizing helper only. Final trade decision is external.</div>
+        </div>
+        <div class="execution-bar">
+            <span>${confirmed ? "Trade plan confirmed. Execution handoff is available for this asset." : "Confirm a trade plan before execution handoff."}</span>
+            ${selectedCoinspotUrl
+                ? `<a class="button-primary" href="${selectedCoinspotUrl}" target="_blank" rel="noopener noreferrer">Open CoinSpot</a>`
+                : confirmed ? `<span class="watch-only">CoinSpot link unavailable</span>` : `<span class="watch-only">Plan required</span>`}
+        </div>
+    `;
+}
+
+function attachAnalysisControls(selected, portfolioValue) {
+    if (!selected) return;
+    const updateSizing = () => {
+        const out = document.getElementById("size-output");
+        if (!out) return;
+        const portfolio = Math.max(0, finiteNumber(document.getElementById("size-portfolio")?.value, portfolioValue));
+        const allocation = Math.max(0, finiteNumber(document.getElementById("size-allocation")?.value, 0));
+        const maxRisk = Math.max(0, finiteNumber(document.getElementById("size-risk-amount")?.value, 0));
+        const position = portfolio * (allocation / 100);
+        const capped = maxRisk > 0 ? Math.min(position, maxRisk / 0.1) : position;
+        const units = selected.coin.current_price > 0 ? capped / selected.coin.current_price : 0;
+        const after = portfolio > 0 ? (capped / portfolio) * 100 : 0;
+        out.textContent = `Suggested position ${formatPrice(capped)} / est. ${formatBalance(units)} ${selected.coin.symbol.toUpperCase()} / allocation ${after.toFixed(1)}%. Sizing helper only. Final trade decision is external.`;
+    };
+    ["size-portfolio", "size-allocation", "size-risk-amount", "size-risk"].forEach(id => {
+        document.getElementById(id)?.addEventListener("input", updateSizing);
+        document.getElementById(id)?.addEventListener("change", updateSizing);
+    });
+    updateSizing();
+    document.getElementById("confirm-plan")?.addEventListener("click", () => {
+        planConfirmedAssetId = selected.coin.id;
+        renderDashboard(currentDashboardModel);
+    });
+    document.getElementById("save-plan-journal")?.addEventListener("click", () => {
+        planConfirmedAssetId = selected.coin.id;
+        addTrade(planTradeFromSelection(selected));
+        renderDashboard(currentDashboardModel);
+    });
+    document.getElementById("add-analysis-watch")?.addEventListener("click", () => {
+        const state = guideStateFor(selected).label;
+        addAnalysisWatch({
+            assetId: selected.coin.id,
+            symbol: selected.coin.symbol,
+            name: selected.coin.name,
+            signalAtWatch: state,
+            reason: safeText(document.getElementById("plan-reason")?.value, swingReasonFor(selected)),
+            watchedAt: new Date().toISOString()
+        });
+        renderDashboard(currentDashboardModel);
+    });
+}
+
+function planTradeFromSelection(selected) {
+    const state = guideStateFor(selected).label;
+    return {
+        symbol: selected.coin.symbol,
+        name: selected.coin.name,
+        entryDate: new Date().toISOString(),
+        entryPrice: selected.coin.current_price,
+        positionSize: Math.max(0, finiteNumber(document.getElementById("plan-size")?.value)),
+        signalState: state,
+        reasonEntry: safeText(document.getElementById("plan-reason")?.value, swingReasonFor(selected)),
+        plannedInvalidation: safeText(document.getElementById("plan-invalidation")?.value, invalidationSentence(state)),
+        notes: safeText(document.getElementById("plan-notes")?.value, ""),
+        status: "open"
+    };
 }
 
 function swingReasonFor(item) {
@@ -575,6 +879,184 @@ function renderBestSwingMover(items) {
     `;
 }
 
+function exitRiskCandidateFor(items, holdingRows) {
+    const held = holdingRows.filter(row => row.holding.balance > 0);
+    const candidates = held.map(row => {
+        const item = items.find(asset => asset.coin.symbol.toUpperCase() === row.holding.symbol || asset.coin.name.toLowerCase() === row.holding.name.toLowerCase());
+        return item ? { item, holding: row.holding } : null;
+    }).filter(Boolean);
+    const risky = candidates.filter(({ item }) => {
+        const state = guideStateFor(item).label;
+        return state === "Sell Risk" || riskFor(item) === "High" || finiteNumber(item.coin.price_change_percentage_1h_in_currency) < -1 || finiteNumber(item.coin.price_change_percentage_24h) < 0;
+    });
+    return risky.sort((a, b) => {
+        const stateWeight = item => guideStateFor(item).label === "Sell Risk" ? 3 : riskFor(item) === "High" ? 2 : 1;
+        return stateWeight(b.item) - stateWeight(a.item) || Math.abs(b.item.coin.price_change_percentage_24h) - Math.abs(a.item.coin.price_change_percentage_24h);
+    })[0] || null;
+}
+
+function renderHighestExitRisk(items, holdingRows) {
+    const el = document.getElementById("highest-exit-risk");
+    if (!el) return;
+    const candidate = exitRiskCandidateFor(items, holdingRows);
+    if (!candidate) {
+        el.innerHTML = `
+            <div class="swing-header">
+                <span>Highest Exit Risk</span>
+                <span class="badge wait">No Action</span>
+            </div>
+            <div class="swing-empty">No held asset is currently showing elevated exit risk.</div>
+        `;
+        return;
+    }
+    const { item } = candidate;
+    const state = guideStateFor(item);
+    const reason = state.label === "Sell Risk" ? "Risk state triggered; review position." : "Held asset structure has weakened.";
+    el.innerHTML = `
+        <div class="swing-header">
+            <span>Highest Exit Risk</span>
+            <button class="table-action" type="button" data-asset-id="${item.coin.id}">Review Position</button>
+        </div>
+        <div class="swing-body">
+            <div class="swing-asset">${coinCell(item.coin)} <span class="badge ${state.klass}">${state.label}</span></div>
+            <div class="swing-metrics">
+                <span><small>1hr</small><strong class="${percentClass(item.coin.price_change_percentage_1h_in_currency)}">${formatPercent(item.coin.price_change_percentage_1h_in_currency)}</strong></span>
+                <span><small>24hr</small><strong class="${percentClass(item.coin.price_change_percentage_24h)}">${formatPercent(item.coin.price_change_percentage_24h)}</strong></span>
+                <span><small>Risk</small><strong>${riskFor(item)}</strong></span>
+            </div>
+            <p>${reason}</p>
+        </div>
+    `;
+}
+
+function renderAnalysisWatchlist(items) {
+    const body = document.getElementById("analysis-watchlist-body");
+    if (!body) return;
+    const rows = analysisWatchlist.map(normalizeWatchItem);
+    body.innerHTML = rows.length ? rows.map(row => {
+        const item = items.find(asset => asset.coin.id === row.assetId || asset.coin.symbol.toUpperCase() === row.symbol);
+        const current = item ? guideStateFor(item).label : "No Action";
+        const order = { "Sell Risk": 0, "No Action": 1, Watch: 2, "Volume Spike": 3, Breakout: 4 };
+        const delta = (order[current] || 0) > (order[row.signalAtWatch] || 0)
+            ? "Improved"
+            : (order[current] || 0) < (order[row.signalAtWatch] || 0) ? "Weakened" : "Neutral";
+        return `
+            <tr>
+                <td>${escapeHtml(row.symbol)} / ${escapeHtml(row.name)}</td>
+                <td>${escapeHtml(row.reason)}</td>
+                <td>${escapeHtml(row.signalAtWatch)}</td>
+                <td>${escapeHtml(current)}</td>
+                <td>${delta}</td>
+                <td><button class="table-action danger-action" type="button" data-remove-watch="${escapeHtml(row.id)}">Remove</button></td>
+            </tr>
+        `;
+    }).join("") : `<tr><td colspan="6" class="loading-cell">No watched assets yet.</td></tr>`;
+    body.querySelectorAll("[data-remove-watch]").forEach(button => {
+        button.addEventListener("click", event => {
+            removeAnalysisWatch(event.currentTarget.dataset.removeWatch);
+            renderDashboard(currentDashboardModel);
+        });
+    });
+}
+
+function renderSignalHistory() {
+    const body = document.getElementById("signal-history-body");
+    if (!body) return;
+    const rows = signalHistory.slice(0, 12);
+    body.innerHTML = rows.length ? rows.map(row => `
+        <tr>
+            <td>${escapeHtml(row.symbol || "")}</td>
+            <td>${escapeHtml(row.previousState || "Unknown")} -> ${escapeHtml(row.currentState || "Unknown")}</td>
+            <td class="num">${Number.isFinite(Number(row.currentScore)) ? Number(row.currentScore) : "Unknown"}</td>
+            <td>${formatTimestamp(row.timestamp)}</td>
+        </tr>
+    `).join("") : `<tr><td colspan="4" class="loading-cell">No signal transitions recorded yet.</td></tr>`;
+}
+
+function renderSessionChecklist() {
+    const el = document.getElementById("session-checklist");
+    if (!el) return;
+    el.innerHTML = `
+        ${sessionChecklist.map((item, index) => `
+            <label class="check-row">
+                <input type="checkbox" data-check-index="${index}" ${item.checked ? "checked" : ""}>
+                <span>${escapeHtml(item.label)}</span>
+            </label>
+        `).join("")}
+        <button class="table-action" type="button" id="reset-checklist">Reset Checklist</button>
+    `;
+    el.querySelectorAll("[data-check-index]").forEach(input => {
+        input.addEventListener("change", event => {
+            sessionChecklist[Number(event.currentTarget.dataset.checkIndex)].checked = event.currentTarget.checked;
+            saveChecklist();
+        });
+    });
+    document.getElementById("reset-checklist")?.addEventListener("click", () => {
+        sessionChecklist = SESSION_CHECKLIST_ITEMS.map(label => ({ label, checked: false }));
+        saveChecklist();
+        renderSessionChecklist();
+    });
+}
+
+function performanceMetrics() {
+    const trades = tradeJournal.map(normalizeTrade);
+    const closed = trades.filter(trade => trade.status === "closed" && Number.isFinite(trade.resultAud));
+    const open = trades.filter(trade => trade.status !== "closed");
+    if (!closed.length) return { trades, open, closed, enough: false };
+    const wins = closed.filter(trade => trade.resultAud > 0);
+    const gains = wins.map(trade => trade.resultPercent || 0);
+    const losses = closed.filter(trade => trade.resultAud < 0).map(trade => trade.resultPercent || 0);
+    const best = [...closed].sort((a, b) => b.resultAud - a.resultAud)[0];
+    const worst = [...closed].sort((a, b) => a.resultAud - b.resultAud)[0];
+    const net = closed.reduce((total, trade) => total + trade.resultAud, 0);
+    const mostTraded = Object.entries(trades.reduce((acc, trade) => {
+        acc[trade.symbol] = (acc[trade.symbol] || 0) + 1;
+        return acc;
+    }, {})).sort((a, b) => b[1] - a[1])[0]?.[0] || "Not enough data";
+    const bySignal = Object.entries(closed.reduce((acc, trade) => {
+        acc[trade.signalState] = acc[trade.signalState] || [];
+        acc[trade.signalState].push(trade.resultAud);
+        return acc;
+    }, {})).map(([signal, values]) => ({ signal, avg: values.reduce((a, b) => a + b, 0) / values.length }));
+    return {
+        trades, open, closed, enough: true,
+        winRate: (wins.length / closed.length) * 100,
+        avgGain: gains.length ? gains.reduce((a, b) => a + b, 0) / gains.length : 0,
+        avgLoss: losses.length ? losses.reduce((a, b) => a + b, 0) / losses.length : 0,
+        best,
+        worst,
+        net,
+        mostTraded,
+        bestSignal: bySignal.sort((a, b) => b.avg - a.avg)[0]?.signal || "Not enough data",
+        worstSignal: bySignal.sort((a, b) => a.avg - b.avg)[0]?.signal || "Not enough data"
+    };
+}
+
+function renderPerformanceSummary(targetId) {
+    const el = document.getElementById(targetId);
+    if (!el) return;
+    const metrics = performanceMetrics();
+    if (!metrics.enough) {
+        el.innerHTML = `<div class="empty-analysis compact-empty">Not enough closed trades yet.</div>`;
+        return;
+    }
+    const cells = [
+        ["Trades", metrics.trades.length],
+        ["Open", metrics.open.length],
+        ["Closed", metrics.closed.length],
+        ["Win rate", `${metrics.winRate.toFixed(1)}%`],
+        ["Avg gain", `${metrics.avgGain.toFixed(2)}%`],
+        ["Avg loss", `${metrics.avgLoss.toFixed(2)}%`],
+        ["Best", formatSignedMoney(metrics.best.resultAud)],
+        ["Worst", formatSignedMoney(metrics.worst.resultAud)],
+        ["Net AUD", formatSignedMoney(metrics.net)],
+        ["Most traded", metrics.mostTraded],
+        ["Best signal", metrics.bestSignal],
+        ["Worst signal", metrics.worstSignal]
+    ];
+    el.innerHTML = cells.map(([label, value]) => `<div><span>${label}</span><strong>${value}</strong></div>`).join("");
+}
+
 function guideStateFor(item) {
     if (item.state.trendState === "trend_breakout") return { label: "Breakout", klass: "strong" };
     if (item.state.trendState === "trend_downside") return { label: "Sell Risk", klass: "sell" };
@@ -628,6 +1110,57 @@ function invalidationFor(stateLabel) {
     return invalidations[stateLabel] || "Unknown";
 }
 
+function invalidationSentence(stateLabel) {
+    const invalidations = {
+        Breakout: "Invalid if 1hr momentum turns negative.",
+        Watch: "Invalid if 24hr move falls below 2%.",
+        "Sell Risk": "Risk state triggered; review position.",
+        "Volume Spike": "Invalid if volume drops below threshold.",
+        "No Action": "Review if a new threshold state appears."
+    };
+    return invalidations[stateLabel] || "Review if risk state triggered.";
+}
+
+function recordSignalHistory(assets) {
+    if (!Array.isArray(assets) || !assets.length) return;
+    const previousRows = loadCollection(SIGNAL_HISTORY_STORAGE_KEY);
+    const latestByAsset = new Map();
+    previousRows.forEach(row => {
+        if (!latestByAsset.has(row.assetId)) latestByAsset.set(row.assetId, row);
+    });
+    const nextRows = [...previousRows];
+    assets.forEach(item => {
+        const current = guideStateFor(item).label;
+        const previous = latestByAsset.get(item.coin.id);
+        if (!previous) {
+            nextRows.unshift({
+                assetId: item.coin.id,
+                symbol: item.coin.symbol.toUpperCase(),
+                name: item.coin.name,
+                previousState: "Untracked",
+                currentState: current,
+                previousScore: null,
+                currentScore: item.decision.score,
+                timestamp: new Date().toISOString()
+            });
+            return;
+        }
+        if (previous.currentState !== current || Number(previous.currentScore) !== item.decision.score) {
+            nextRows.unshift({
+                assetId: item.coin.id,
+                symbol: item.coin.symbol.toUpperCase(),
+                name: item.coin.name,
+                previousState: previous.currentState,
+                currentState: current,
+                previousScore: Number(previous.currentScore),
+                currentScore: item.decision.score,
+                timestamp: new Date().toISOString()
+            });
+        }
+    });
+    signalHistory = saveCollection(SIGNAL_HISTORY_STORAGE_KEY, nextRows.slice(0, 80));
+}
+
 function renderTradeGuide(items) {
     const body = document.getElementById("trade-guide-body");
     if (!body) return;
@@ -635,12 +1168,12 @@ function renderTradeGuide(items) {
         const state = guideStateFor(item);
         const supported = coinspotStatus(item.coin);
         const analysed = item.coin.id === selectedAssetId;
-        const handoffUrl = analysed ? coinspotUrl(item.coin) : null;
+        const handoffUrl = analysed && planConfirmedAssetId === item.coin.id ? coinspotUrl(item.coin) : null;
         const action = handoffUrl
             ? `<a class="table-action" href="${handoffUrl}" target="_blank" rel="noopener noreferrer">CoinSpot</a>`
             : supported === "Supported" && !analysed
                 ? `<button class="table-action" type="button" data-asset-id="${item.coin.id}">Analyse</button>`
-                : "Watch only";
+                : analysed && supported === "Supported" ? "Plan required" : "Watch only";
         return `
             <tr>
                 <td class="num">${index + 1}</td>
@@ -698,22 +1231,26 @@ function renderHoldingsManager(markets, holdingRows) {
         <tr>
             <td>${coinCell(row.displayCoin)}</td>
             <td class="num"><input class="inline-balance" type="number" min="0" step="any" value="${row.holding.balance}" data-balance-symbol="${escapeHtml(row.holding.symbol)}"></td>
-            <td class="num">${row.value === null ? "Price unavailable" : formatPrice(row.value)}</td>
+            <td class="num"><input class="inline-balance" type="number" min="0" step="any" value="${row.holding.avgEntryPrice || ""}" data-entry-symbol="${escapeHtml(row.holding.symbol)}" placeholder="Entry not set"></td>
+            <td class="num">${row.market ? formatPrice(row.market.current_price) : "Price unavailable"}</td>
+            <td class="num ${unrealizedFor(row).aud > 0 ? "positive" : unrealizedFor(row).aud < 0 ? "negative" : "neutral"}">${unrealizedFor(row).label}</td>
             <td><input class="inline-note" type="text" value="${escapeHtml(row.holding.note)}" data-note-symbol="${escapeHtml(row.holding.symbol)}" placeholder="None"></td>
+            <td>${holdingDuration(row.holding.updatedAt)}</td>
             <td>${formatTimestamp(row.holding.updatedAt)}</td>
             <td>
                 <button class="table-action" type="button" data-save-holding="${escapeHtml(row.holding.symbol)}">Save</button>
                 <button class="table-action danger-action" type="button" data-remove-holding="${escapeHtml(row.holding.symbol)}">Remove</button>
             </td>
         </tr>
-    `).join("") : `<tr><td colspan="6" class="loading-cell">No manual holdings saved.</td></tr>`;
+    `).join("") : `<tr><td colspan="8" class="loading-cell">No manual holdings saved.</td></tr>`;
 
     body.querySelectorAll("[data-save-holding]").forEach(button => {
         button.addEventListener("click", event => {
             const symbol = event.currentTarget.dataset.saveHolding;
             const balanceInput = body.querySelector(`[data-balance-symbol="${symbol}"]`);
+            const entryInput = body.querySelector(`[data-entry-symbol="${symbol}"]`);
             const noteInput = body.querySelector(`[data-note-symbol="${symbol}"]`);
-            updateHoldingBalance(symbol, balanceInput?.value, noteInput?.value);
+            updateHoldingBalance(symbol, balanceInput?.value, noteInput?.value, entryInput?.value);
         });
     });
 
@@ -728,10 +1265,13 @@ function rerenderDashboard() {
     if (currentDashboardModel) renderDashboard(currentDashboardModel);
 }
 
-function upsertHolding({ symbol, name, balance, note }) {
+function upsertHolding({ symbol, name, balance, note, avgEntryPrice }) {
     const cleanSymbol = safeText(symbol, "").toUpperCase();
     const cleanName = safeText(name, cleanSymbol);
     const cleanBalance = Number(balance);
+    const cleanEntry = avgEntryPrice === "" || avgEntryPrice === null || typeof avgEntryPrice === "undefined"
+        ? null
+        : Number(avgEntryPrice);
     if (!cleanSymbol) {
         setHoldingsMessage("Enter a coin symbol.", true);
         return;
@@ -744,11 +1284,16 @@ function upsertHolding({ symbol, name, balance, note }) {
         setHoldingsMessage("Balance must be a non-negative number.", true);
         return;
     }
+    if (cleanEntry !== null && (!Number.isFinite(cleanEntry) || cleanEntry < 0)) {
+        setHoldingsMessage("Average entry must be a non-negative number.", true);
+        return;
+    }
 
     const nextHolding = normalizeHolding({
         symbol: cleanSymbol,
         name: cleanName,
         balance: cleanBalance,
+        avgEntryPrice: cleanEntry,
         note: safeText(note, ""),
         updatedAt: new Date().toISOString()
     });
@@ -759,14 +1304,15 @@ function upsertHolding({ symbol, name, balance, note }) {
     rerenderDashboard();
 }
 
-function updateHoldingBalance(symbol, balance, note) {
+function updateHoldingBalance(symbol, balance, note, avgEntryPrice) {
     const cleanSymbol = safeText(symbol, "").toUpperCase();
     const existing = manualHoldings.find(holding => holding.symbol === cleanSymbol);
     if (!existing) return;
     upsertHolding({
         ...existing,
         balance,
-        note
+        note,
+        avgEntryPrice
     });
 }
 
@@ -793,6 +1339,7 @@ function initHoldingsControls() {
                 symbol: formData.get("symbol"),
                 name: formData.get("name"),
                 balance: formData.get("balance"),
+                avgEntryPrice: formData.get("avgEntryPrice"),
                 note: formData.get("note")
             });
             if (!document.getElementById("holdings-message")?.classList.contains("error")) {
@@ -977,9 +1524,131 @@ function renderAlerts(model) {
     document.getElementById("alerts-body").innerHTML = rows || `<tr><td colspan="6" class="loading-cell">No threshold events in the current market state.</td></tr>`;
 }
 
+function renderJournal() {
+    const openBody = document.getElementById("open-trades-body");
+    const closedBody = document.getElementById("closed-trades-body");
+    if (!openBody || !closedBody) return;
+    const trades = tradeJournal.map(normalizeTrade);
+    const openRows = trades.filter(trade => trade.status !== "closed");
+    const closedRows = trades.filter(trade => trade.status === "closed");
+    openBody.innerHTML = openRows.length ? openRows.map(trade => `
+        <tr>
+            <td>${escapeHtml(trade.id)}</td>
+            <td>${escapeHtml(trade.symbol)} / ${escapeHtml(trade.name)}</td>
+            <td>${formatTimestamp(trade.entryDate)}</td>
+            <td class="num">${formatPrice(trade.entryPrice)}</td>
+            <td class="num">${formatPrice(trade.positionSize)}</td>
+            <td>${escapeHtml(trade.signalState)}</td>
+            <td>${escapeHtml(trade.plannedInvalidation)}</td>
+            <td>
+                <input class="inline-balance close-price" type="number" min="0" step="any" placeholder="Exit price" data-close-price="${escapeHtml(trade.id)}">
+                <input class="inline-note close-reason" type="text" placeholder="Exit reason" data-close-reason="${escapeHtml(trade.id)}">
+                <button class="table-action" type="button" data-close-trade="${escapeHtml(trade.id)}">Close</button>
+            </td>
+            <td>
+                <button class="table-action" type="button" data-edit-trade="${escapeHtml(trade.id)}">Edit</button>
+                <button class="table-action danger-action" type="button" data-delete-trade="${escapeHtml(trade.id)}">Delete</button>
+            </td>
+        </tr>
+    `).join("") : `<tr><td colspan="9" class="loading-cell">No open trades.</td></tr>`;
+    closedBody.innerHTML = closedRows.length ? closedRows.map(trade => `
+        <tr>
+            <td>${escapeHtml(trade.id)}</td>
+            <td>${escapeHtml(trade.symbol)} / ${escapeHtml(trade.name)}</td>
+            <td>${formatTimestamp(trade.entryDate)} @ ${formatPrice(trade.entryPrice)}</td>
+            <td>${formatTimestamp(trade.exitDate)} @ ${trade.exitPrice === null ? "Not recorded" : formatPrice(trade.exitPrice)}</td>
+            <td class="num ${trade.resultAud > 0 ? "positive" : trade.resultAud < 0 ? "negative" : "neutral"}">${trade.resultAud === null ? "Not recorded" : formatSignedMoney(trade.resultAud)}</td>
+            <td class="num ${trade.resultPercent > 0 ? "positive" : trade.resultPercent < 0 ? "negative" : "neutral"}">${trade.resultPercent === null ? "Not recorded" : formatSignedPercent(trade.resultPercent)}</td>
+            <td>${escapeHtml(trade.exitReason || "Manual close")}</td>
+            <td>
+                <button class="table-action" type="button" data-edit-trade="${escapeHtml(trade.id)}">Edit</button>
+                <button class="table-action danger-action" type="button" data-delete-trade="${escapeHtml(trade.id)}">Delete</button>
+            </td>
+        </tr>
+    `).join("") : `<tr><td colspan="8" class="loading-cell">No closed trades.</td></tr>`;
+    document.querySelectorAll("[data-close-trade]").forEach(button => {
+        button.addEventListener("click", event => {
+            const id = event.currentTarget.dataset.closeTrade;
+            closeTrade(id, document.querySelector(`[data-close-price="${id}"]`)?.value, document.querySelector(`[data-close-reason="${id}"]`)?.value || "Manual close");
+            renderJournal();
+        });
+    });
+    document.querySelectorAll("[data-delete-trade]").forEach(button => {
+        button.addEventListener("click", event => {
+            deleteTrade(event.currentTarget.dataset.deleteTrade);
+            renderJournal();
+        });
+    });
+    document.querySelectorAll("[data-edit-trade]").forEach(button => {
+        button.addEventListener("click", event => fillJournalForm(event.currentTarget.dataset.editTrade));
+    });
+    renderPerformanceSummary("journal-performance-summary");
+}
+
+function fillJournalForm(id) {
+    const trade = tradeJournal.map(normalizeTrade).find(row => row.id === id);
+    if (!trade) return;
+    document.getElementById("journal-id").value = trade.id;
+    document.getElementById("journal-symbol").value = trade.symbol;
+    document.getElementById("journal-name").value = trade.name;
+    document.getElementById("journal-entry-date").value = formatDateTimeLocal(trade.entryDate);
+    document.getElementById("journal-entry-price").value = trade.entryPrice;
+    document.getElementById("journal-position-size").value = trade.positionSize;
+    document.getElementById("journal-signal").value = trade.signalState;
+    document.getElementById("journal-reason").value = trade.reasonEntry;
+    document.getElementById("journal-invalidation").value = trade.plannedInvalidation;
+    document.getElementById("journal-notes").value = trade.notes;
+}
+
+function clearJournalForm() {
+    const form = document.getElementById("journal-form");
+    if (!form) return;
+    form.reset();
+    document.getElementById("journal-id").value = "";
+    document.getElementById("journal-entry-date").value = formatDateTimeLocal(new Date());
+}
+
+function initJournalControls() {
+    const form = document.getElementById("journal-form");
+    if (!form) return;
+    clearJournalForm();
+    form.addEventListener("submit", event => {
+        event.preventDefault();
+        const data = new FormData(form);
+        const id = safeText(data.get("id"), "");
+        const trade = normalizeTrade({
+            id: id || journalId(),
+            symbol: data.get("symbol"),
+            name: data.get("name"),
+            entryDate: new Date(data.get("entryDate")).toISOString(),
+            entryPrice: data.get("entryPrice"),
+            positionSize: data.get("positionSize"),
+            signalState: data.get("signalState"),
+            reasonEntry: data.get("reasonEntry"),
+            plannedInvalidation: data.get("plannedInvalidation"),
+            notes: data.get("notes"),
+            status: tradeJournal.find(row => row.id === id)?.status || "open"
+        });
+        if (!trade.symbol || trade.entryPrice < 0 || trade.positionSize < 0) {
+            document.getElementById("journal-message").textContent = "Enter valid non-negative trade details.";
+            document.getElementById("journal-message").classList.add("error");
+            return;
+        }
+        if (id) updateTrade(id, trade);
+        else addTrade(trade);
+        document.getElementById("journal-message").textContent = "Trade saved.";
+        document.getElementById("journal-message").classList.remove("error");
+        clearJournalForm();
+        renderJournal();
+    });
+    document.getElementById("journal-reset")?.addEventListener("click", clearJournalForm);
+    renderJournal();
+}
+
 async function boot() {
     const markets = await getMarkets();
     const model = buildDecisionPipeline(markets);
+    recordSignalHistory(model.assets);
     if (page === "dashboard") renderDashboard(model);
     if (page === "logs") renderLogs(model);
     if (page === "alerts") renderAlerts(model);
@@ -990,4 +1659,5 @@ if (page === "dashboard") {
     initHoldingsControls();
     initSecondaryTabs();
 }
+if (page === "journal") initJournalControls();
 setInterval(boot, 60000);
