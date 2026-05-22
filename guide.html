@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Guide - ZenCloud Crypto Dashboard</title>
-    <link rel="stylesheet" href="styles.css?v=reports-20260522">
+    <link rel="stylesheet" href="styles.css?v=cmc-prep-20260522">
 </head>
 <body data-page="guide">
     <header class="topbar">
@@ -183,6 +183,33 @@
 
             <article class="panel guide-card">
                 <div class="panel-header">
+                    <h2 class="panel-title">Market Data Source Strategy</h2>
+                    <p class="panel-subtitle">Discovery data and execution stay separate</p>
+                </div>
+                <div class="panel-body">
+                    <p>CoinMarketCap may become the preferred market data provider for discovery and rankings, but it requires secure backend integration. The static portal must not contain API keys.</p>
+                    <p>CoinMarketCap is for market data and discovery. CoinSpot is for execution. ZenCloud is for decision, planning, journal, and reports.</p>
+                </div>
+            </article>
+
+            <article class="panel guide-card">
+                <div class="panel-header">
+                    <h2 class="panel-title">Future Backend Requirements</h2>
+                    <p class="panel-subtitle">Required before CoinMarketCap activation</p>
+                </div>
+                <div class="panel-body">
+                    <ul class="guide-rules">
+                        <li>Secure API key storage outside browser-visible files.</li>
+                        <li>CORS-safe proxy endpoint for the static portal.</li>
+                        <li>Caching to reduce API usage.</li>
+                        <li>Rate-limit handling and provider failover.</li>
+                        <li>No private keys in frontend JavaScript, HTML, GitHub Pages, or localStorage.</li>
+                    </ul>
+                </div>
+            </article>
+
+            <article class="panel guide-card">
+                <div class="panel-header">
                     <h2 class="panel-title">Market Logs</h2>
                     <p class="panel-subtitle">System telemetry</p>
                 </div>
@@ -203,11 +230,12 @@
 
             <article class="panel guide-card">
                 <div class="panel-header">
-                    <h2 class="panel-title">Fallback Snapshot</h2>
+                    <h2 class="panel-title">Data Confidence and Fallback Snapshot</h2>
                     <p class="panel-subtitle">When live data is unavailable</p>
                 </div>
                 <div class="panel-body">
-                    <p>If the live API fails, the portal shows <span class="status-inline">Live API unavailable - fallback snapshot</span>. The app remains usable, clearly labelled, and safe to review until live data returns.</p>
+                    <p>Live Data means the portal is using the current public market feed. Fallback Snapshot means the public feed was unavailable, delayed, blocked, or rate limited.</p>
+                    <p>The portal remains usable for review and planning, but fallback data should not be treated as fresh live market data.</p>
                 </div>
             </article>
 

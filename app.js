@@ -25,6 +25,32 @@ const FALLBACK_MARKETS = [
 const FALLBACK_SPARKLINE = [12, 12.4, 12.8, 13, 13.4, 14.2, 14.8, 15.1, 15.4];
 const FALLBACK_STATUS = "Live API unavailable - fallback snapshot";
 let fallbackWarningShown = false;
+let detailedFetchErrorLogged = false;
+
+// Future backend/proxy placeholder. Keep empty for static GitHub Pages builds.
+// Intended secure backend use only:
+// - CoinMarketCap /v1/cryptocurrency/listings/latest for broad ranked market data
+// - CoinMarketCap /v1/cryptocurrency/quotes/latest for selected symbols or IDs
+// - CoinMarketCap trending/gainers/losers endpoints if supported by the backend plan
+// Never call authenticated CoinMarketCap endpoints directly from browser JavaScript.
+const MARKET_DATA_PROXY_URL = "";
+const REFRESH_INTERVAL_MS = 60000;
+const MARKET_PROVIDERS = {
+    currentPublicFeed: "Current Feed",
+    coinMarketCapProxy: "CoinMarketCap Proxy",
+    fallbackSnapshot: "Fallback Snapshot"
+};
+const dataConfidence = {
+    mode: "Live Data",
+    provider: MARKET_PROVIDERS.currentPublicFeed,
+    plannedProvider: "CoinMarketCap API via secure proxy",
+    lastSuccessfulLiveFetch: "",
+    lastAttemptedFetch: "",
+    failureReason: "None",
+    retryCount: 0,
+    nextRetryTime: "next refresh",
+    isFallback: false
+};
 
 const DEFAULT_HOLDINGS = [
     { symbol: "FET", name: "Artificial Superintelligence Alliance", balance: 0, note: "Default manual holding seed", updatedAt: "2026-05-22T00:00:00+10:00" }
@@ -497,32 +523,85 @@ function normalizeSparkline(coin) {
     return { price: cleanPrices.length ? cleanPrices : FALLBACK_SPARKLINE };
 }
 
-function normalizeMarket(coin = {}, index = 0) {
-    const idSeed = safeText(coin.id, safeText(coin.symbol, `asset-${index}`)).toLowerCase();
-    const symbol = safeText(coin.symbol, idSeed || `asset-${index}`).toLowerCase();
-    const name = safeText(coin.name, symbol.toUpperCase());
+function normalizeMarketAsset(asset = {}, index = 0, source = MARKET_PROVIDERS.currentPublicFeed) {
+    const idSeed = safeText(asset.id, safeText(asset.symbol, `asset-${index}`)).toLowerCase();
+    const symbol = safeText(asset.symbol, idSeed || `asset-${index}`).toLowerCase();
+    const name = safeText(asset.name, symbol.toUpperCase());
+    const priceAud = finiteNumber(asset.priceAud ?? asset.current_price);
+    const marketCapAud = finiteNumber(asset.marketCapAud ?? asset.market_cap);
+    const volume24hAud = finiteNumber(asset.volume24hAud ?? asset.total_volume);
+    const change1h = finiteNumber(asset.change1h ?? asset.price_change_percentage_1h_in_currency);
+    const change24h = finiteNumber(asset.change24h ?? asset.price_change_percentage_24h);
+    const change7d = Number(asset.change7d ?? asset.price_change_percentage_7d_in_currency);
     return {
-        ...coin,
+        ...asset,
         id: idSeed,
         name,
         symbol,
-        current_price: finiteNumber(coin.current_price),
-        market_cap: finiteNumber(coin.market_cap),
-        total_volume: finiteNumber(coin.total_volume),
-        price_change_percentage_24h: finiteNumber(coin.price_change_percentage_24h),
-        price_change_percentage_1h_in_currency: finiteNumber(coin.price_change_percentage_1h_in_currency),
-        image: typeof coin.image === "string" ? coin.image : "",
-        sparkline_in_7d: normalizeSparkline(coin)
+        priceAud,
+        marketCapAud,
+        volume24hAud,
+        change1h,
+        change24h,
+        change7d: Number.isFinite(change7d) ? change7d : null,
+        rank: Number.isFinite(Number(asset.rank ?? asset.market_cap_rank)) ? Number(asset.rank ?? asset.market_cap_rank) : index + 1,
+        source,
+        lastUpdated: safeText(asset.lastUpdated, new Date().toISOString()),
+        current_price: priceAud,
+        market_cap: marketCapAud,
+        total_volume: volume24hAud,
+        price_change_percentage_24h: change24h,
+        price_change_percentage_1h_in_currency: change1h,
+        image: typeof asset.image === "string" ? asset.image : "",
+        sparkline_in_7d: normalizeSparkline(asset)
     };
 }
 
-function normalizeMarkets(markets) {
-    const source = Array.isArray(markets) && markets.length ? markets : FALLBACK_MARKETS;
-    return source.map(normalizeMarket);
+function normalizeCurrentPublicFeedAsset(coin = {}, index = 0) {
+    return normalizeMarketAsset({
+        ...coin,
+        priceAud: coin.current_price,
+        marketCapAud: coin.market_cap,
+        volume24hAud: coin.total_volume,
+        change1h: coin.price_change_percentage_1h_in_currency,
+        change24h: coin.price_change_percentage_24h,
+        rank: coin.market_cap_rank
+    }, index, MARKET_PROVIDERS.currentPublicFeed);
+}
+
+function normalizeCoinMarketCapProxyAsset(asset = {}, index = 0) {
+    const quote = asset.quote?.AUD || asset.quote?.USD || {};
+    return normalizeMarketAsset({
+        id: asset.slug || asset.id || asset.symbol,
+        symbol: asset.symbol,
+        name: asset.name,
+        priceAud: asset.priceAud ?? quote.price,
+        marketCapAud: asset.marketCapAud ?? quote.market_cap,
+        volume24hAud: asset.volume24hAud ?? quote.volume_24h,
+        change1h: asset.change1h ?? quote.percent_change_1h,
+        change24h: asset.change24h ?? quote.percent_change_24h,
+        change7d: asset.change7d ?? quote.percent_change_7d,
+        rank: asset.cmc_rank || asset.rank,
+        lastUpdated: asset.last_updated || asset.lastUpdated,
+        image: asset.image || ""
+    }, index, MARKET_PROVIDERS.coinMarketCapProxy);
+}
+
+function normalizeMarket(coin = {}, index = 0) {
+    return normalizeMarketAsset(coin, index, coin.source || MARKET_PROVIDERS.currentPublicFeed);
+}
+
+function normalizeMarkets(markets, provider = MARKET_PROVIDERS.currentPublicFeed) {
+    const sourceRows = Array.isArray(markets) && markets.length ? markets : FALLBACK_MARKETS;
+    return sourceRows.map((asset, index) => provider === MARKET_PROVIDERS.coinMarketCapProxy
+        ? normalizeCoinMarketCapProxyAsset(asset, index)
+        : provider === MARKET_PROVIDERS.currentPublicFeed
+            ? normalizeCurrentPublicFeedAsset(asset, index)
+            : normalizeMarketAsset(asset, index, provider));
 }
 
 function fallbackMarkets() {
-    return normalizeMarkets(FALLBACK_MARKETS);
+    return normalizeMarkets(FALLBACK_MARKETS, MARKET_PROVIDERS.fallbackSnapshot);
 }
 
 function warnFallbackOnce() {
@@ -531,17 +610,69 @@ function warnFallbackOnce() {
     console.warn("Live API unavailable; rendering fallback snapshot.");
 }
 
+function classifyFetchFailure(error, response) {
+    if (response?.status === 429) return "Rate limited / HTTP 429";
+    if (response?.status === 503) return "Service unavailable / HTTP 503";
+    if (error?.name === "AbortError") return "Network timeout";
+    const message = String(error?.message || "");
+    if (/429/.test(message)) return "Rate limited / HTTP 429";
+    if (/503/.test(message)) return "Service unavailable / HTTP 503";
+    if (/CORS|blocked|Failed to fetch|NetworkError|fetch/i.test(message)) return "CORS or fetch blocked";
+    if (/Malformed/i.test(message)) return "Malformed API response";
+    if (/Empty/i.test(message)) return "Empty API response";
+    return "Unknown error";
+}
+
+function logDetailedFetchErrorOnce(error) {
+    if (detailedFetchErrorLogged) return;
+    detailedFetchErrorLogged = true;
+    console.warn("Market data fetch failed; fallback snapshot active.", error);
+}
+
+function setNextRetryLabel() {
+    const next = new Date(Date.now() + REFRESH_INTERVAL_MS);
+    dataConfidence.nextRetryTime = next.toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit" });
+}
+
 function shouldForceFallback() {
     return new URLSearchParams(window.location.search).has("forceFallback");
 }
 
-function setStatus(message, isLive = true) {
+function compactConfidenceMessage() {
+    if (dataConfidence.isFallback) {
+        const lastLive = dataConfidence.lastSuccessfulLiveFetch
+            ? new Date(dataConfidence.lastSuccessfulLiveFetch).toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit" })
+            : "none";
+        return `Fallback Snapshot · ${dataConfidence.failureReason} · Last live: ${lastLive}`;
+    }
+    return `${dataConfidence.mode} · ${dataConfidence.provider}`;
+}
+
+function renderDataConfidence() {
+    document.querySelectorAll("[data-confidence-field]").forEach(el => {
+        const field = el.dataset.confidenceField;
+        const valueMap = {
+            provider: dataConfidence.provider,
+            plannedProvider: dataConfidence.plannedProvider,
+            mode: dataConfidence.mode,
+            lastSuccessfulLiveFetch: dataConfidence.lastSuccessfulLiveFetch ? formatTimestamp(dataConfidence.lastSuccessfulLiveFetch) : "Not recorded",
+            lastAttemptedFetch: dataConfidence.lastAttemptedFetch ? formatTimestamp(dataConfidence.lastAttemptedFetch) : "Not recorded",
+            failureReason: dataConfidence.failureReason,
+            retryCount: String(dataConfidence.retryCount),
+            nextRetryTime: dataConfidence.nextRetryTime || "next refresh"
+        };
+        el.textContent = valueMap[field] || "Not recorded";
+    });
+}
+
+function setStatus(message = compactConfidenceMessage(), isLive = true) {
     document.querySelectorAll("#market-status").forEach(el => {
         el.textContent = message;
     });
     document.querySelectorAll(".status-dot").forEach(el => {
         el.style.background = isLive ? "var(--green)" : "var(--orange)";
     });
+    renderDataConfidence();
 }
 
 function setLastUpdatedLabel() {
@@ -551,6 +682,10 @@ function setLastUpdatedLabel() {
 }
 
 async function getMarkets() {
+    dataConfidence.lastAttemptedFetch = new Date().toISOString();
+    setNextRetryLabel();
+    const proxyUrl = safeText(MARKET_DATA_PROXY_URL, "");
+    const provider = proxyUrl ? MARKET_PROVIDERS.coinMarketCapProxy : MARKET_PROVIDERS.currentPublicFeed;
     const params = new URLSearchParams({
         vs_currency: "aud",
         order: "market_cap_desc",
@@ -562,19 +697,57 @@ async function getMarkets() {
 
     try {
         if (shouldForceFallback()) throw new Error("Forced fallback snapshot");
-        const response = await fetch(`https://api.coingecko.com/api/v3/coins/markets?${params.toString()}`, {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 12000);
+        const url = proxyUrl || `https://api.coingecko.com/api/v3/coins/markets?${params.toString()}`;
+        const response = await fetch(url, {
             headers: { "accept": "application/json" },
-            cache: "no-store"
+            cache: "no-store",
+            signal: controller.signal
         });
-        if (!response.ok) throw new Error(`CoinGecko ${response.status}`);
-        const data = await response.json();
-        if (!Array.isArray(data) || !data.length) throw new Error("Empty market payload");
-        setStatus(`Live data updated ${new Date().toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit" })}`);
+        clearTimeout(timeoutId);
+        if (!response.ok) {
+            const error = new Error(`${provider} HTTP ${response.status}`);
+            error.failureReason = classifyFetchFailure(error, response);
+            throw error;
+        }
+        let data;
+        try {
+            data = await response.json();
+        } catch (parseError) {
+            const error = new Error("Malformed API response");
+            error.failureReason = "Malformed API response";
+            throw error;
+        }
+        const rows = provider === MARKET_PROVIDERS.coinMarketCapProxy ? (Array.isArray(data?.data) ? data.data : data) : data;
+        if (!Array.isArray(rows)) {
+            const error = new Error("Malformed API response");
+            error.failureReason = "Malformed API response";
+            throw error;
+        }
+        if (!rows.length) {
+            const error = new Error("Empty API response");
+            error.failureReason = "Empty API response";
+            throw error;
+        }
+        dataConfidence.mode = "Live Data";
+        dataConfidence.provider = provider;
+        dataConfidence.lastSuccessfulLiveFetch = new Date().toISOString();
+        dataConfidence.failureReason = "None";
+        dataConfidence.retryCount = 0;
+        dataConfidence.isFallback = false;
+        setStatus(compactConfidenceMessage(), true);
         setLastUpdatedLabel();
-        return normalizeMarkets(data);
+        return normalizeMarkets(rows, provider);
     } catch (error) {
+        dataConfidence.mode = "Fallback Snapshot";
+        dataConfidence.provider = MARKET_PROVIDERS.fallbackSnapshot;
+        dataConfidence.failureReason = error.failureReason || classifyFetchFailure(error);
+        dataConfidence.retryCount += 1;
+        dataConfidence.isFallback = true;
+        logDetailedFetchErrorOnce(error);
         warnFallbackOnce();
-        setStatus(FALLBACK_STATUS, false);
+        setStatus(compactConfidenceMessage() || FALLBACK_STATUS, false);
         setLastUpdatedLabel();
         return fallbackMarkets();
     }
@@ -1466,7 +1639,7 @@ function buildDecisionPipeline(markets) {
             return eventOrder[a.event.type] - eventOrder[b.event.type] || Math.abs(b.event.value) - Math.abs(a.event.value);
         });
 
-    return { markets: safeMarkets, assets, rankedAssets, alertEvents };
+    return { markets: safeMarkets, assets, rankedAssets, alertEvents, dataConfidence: { ...dataConfidence } };
 }
 
 function observationFor(item) {
@@ -1484,6 +1657,17 @@ function observationFor(item) {
 }
 
 function renderLogs(model) {
+    const systemRows = model.dataConfidence?.isFallback ? `
+            <tr>
+                <td>${new Date().toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit", timeZone: "Australia/Brisbane" })}</td>
+                <td>SYS</td>
+                <td class="num">-</td>
+                <td class="num">-</td>
+                <td class="num">-</td>
+                <td><span class="badge wait">Fallback Snapshot</span></td>
+                <td>Live API unavailable. Rendering fallback snapshot. Reason: ${escapeHtml(model.dataConfidence.failureReason)}.</td>
+            </tr>
+    ` : "";
     const rows = model.assets.slice(0, 16).map(item => {
         const observation = observationFor(item);
         return `
@@ -1498,7 +1682,7 @@ function renderLogs(model) {
             </tr>
         `;
     }).join("");
-    document.getElementById("logs-body").innerHTML = rows;
+    document.getElementById("logs-body").innerHTML = systemRows + rows;
 
     const { markets } = model;
     const watchlist = WATCHLIST_IDS.map(id => byId(markets, id)).filter(Boolean);
@@ -1900,4 +2084,4 @@ if (page === "dashboard") {
 }
 if (page === "journal") initJournalControls();
 if (page === "reports") initReportsControls();
-setInterval(boot, 60000);
+setInterval(boot, REFRESH_INTERVAL_MS);

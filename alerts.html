@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Alerts - ZenCloud Crypto Dashboard</title>
-    <link rel="stylesheet" href="styles.css?v=reports-20260522">
+    <link rel="stylesheet" href="styles.css?v=cmc-prep-20260522">
 </head>
 <body data-page="alerts">
     <header class="topbar">
@@ -31,6 +31,15 @@
             <div class="status-card">
                 <span class="status-dot"></span>
                 <span id="market-status">Loading live data...</span>
+            </div>
+            <div class="data-source-card">
+                <span>Provider: <strong data-confidence-field="provider">Current Feed</strong></span>
+                <span>Planned: <strong data-confidence-field="plannedProvider">CoinMarketCap API via secure proxy</strong></span>
+                <span>Status: <strong data-confidence-field="mode">Live Data</strong></span>
+                <span>Last live: <strong data-confidence-field="lastSuccessfulLiveFetch">Not recorded</strong></span>
+                <span>Attempted: <strong data-confidence-field="lastAttemptedFetch">Not recorded</strong></span>
+                <span>Failure: <strong data-confidence-field="failureReason">None</strong></span>
+                <span>Retry: <strong data-confidence-field="retryCount">0</strong></span>
             </div>
         </section>
 
@@ -73,6 +82,6 @@
         </section>
     </main>
 
-    <script src="app.js?v=reports-20260522"></script>
+    <script src="app.js?v=cmc-prep-20260522"></script>
 </body>
 </html>
