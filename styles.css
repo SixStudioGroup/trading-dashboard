@@ -21,7 +21,7 @@ body {
     background: var(--page);
     color: var(--text);
     font-family: Arial, Helvetica, sans-serif;
-    font-size: 13px;
+    font-size: 14px;
 }
 
 a { color: var(--brand-blue); text-decoration: none; }
@@ -910,7 +910,7 @@ a:hover { text-decoration: underline; }
 }
 
 .button-primary {
-    background: var(--orange);
+    background: var(--brand-blue);
     color: #fff;
     border-radius: 3px;
     padding: 10px 18px;
@@ -921,7 +921,7 @@ a:hover { text-decoration: underline; }
 .button-primary:hover {
     color: #fff;
     text-decoration: none;
-    background: #e79817;
+    background: var(--brand-blue-dark);
 }
 
 .table-action {
@@ -931,7 +931,7 @@ a:hover { text-decoration: underline; }
     justify-content: center;
     border: 1px solid rgba(8,120,186,0.22);
     border-radius: 3px;
-    padding: 4px 7px;
+    padding: 6px 12px;
     font-size: 11px;
     font-weight: 700;
     background: #eef6fb;
@@ -1139,7 +1139,7 @@ tr:last-child td { border-bottom: none; }
 
 .analysis-panel {
     position: sticky;
-    top: 14px;
+    top: 68px;
 }
 
 .analysis-heading {
@@ -1209,6 +1209,7 @@ tr:last-child td { border-bottom: none; }
     padding: 3px 7px;
     font-weight: 700;
     font-size: 11px;
+    border: 1px solid rgba(0,0,0,0.09);
 }
 
 .badge.buy,
@@ -1251,6 +1252,42 @@ tr:last-child td { border-bottom: none; }
 .rule-card.risk { background: var(--red-bg); color: var(--red); }
 .rule-card.volume { background: #eef6fb; color: var(--brand-blue); }
 
+@keyframes skeleton-shimmer {
+    from { background-position: -400px 0; }
+    to { background-position: 400px 0; }
+}
+
+.skeleton-cell {
+    display: inline-block;
+    height: 13px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #e8edf1 25%, #f3f6f8 50%, #e8edf1 75%);
+    background-size: 800px 100%;
+    animation: skeleton-shimmer 1.4s infinite linear;
+    vertical-align: middle;
+}
+
+.skeleton-cell.w-short { width: 40px; }
+.skeleton-cell.w-med { width: 72px; }
+.skeleton-cell.w-long { width: 110px; }
+
+.skeleton-row td {
+    padding-top: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--line);
+}
+
+.checklist-progress {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    margin-left: 6px;
+}
+
+.command-status.is-fallback .status-dot {
+    box-shadow: 0 0 0 3px rgba(245,166,35,0.25);
+}
+
 @media (max-width: 1180px) {
     .shell { min-width: 0; }
     .command-status,
@@ -1263,10 +1300,13 @@ tr:last-child td { border-bottom: none; }
     .two-column,
     .three-column,
     .holdings-form { grid-template-columns: 1fr; }
-    .analysis-panel { position: static; }
     .coin-rail { grid-template-columns: repeat(4, 1fr); }
     .compact-rail { grid-template-columns: repeat(4, minmax(68px, 1fr)); }
     .rules-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 900px) {
+    .analysis-panel { position: static; }
 }
 
 @media (max-width: 760px) {

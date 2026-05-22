@@ -34,6 +34,7 @@ let detailedFetchErrorLogged = false;
 // - CoinMarketCap trending/gainers/losers endpoints if supported by the backend plan
 // Never call authenticated CoinMarketCap endpoints directly from browser JavaScript.
 const MARKET_DATA_PROXY_URL = "";
+const COINGECKO_DEMO_KEY = "CG-XfUcJ4LkYhH59vnbgzWTYW84";
 const REFRESH_INTERVAL_MS = 60000;
 const MARKET_PROVIDERS = {
     currentPublicFeed: "Current Feed",
@@ -101,6 +102,7 @@ let usingDefaultHoldings = false;
 let selectedAssetId = null;
 let planConfirmedAssetId = null;
 let currentDashboardModel = null;
+const savedPlanInputs = {};
 let manualHoldings = loadHoldings();
 let tradeJournal = loadCollection(TRADE_JOURNAL_STORAGE_KEY);
 let analysisWatchlist = loadCollection(ANALYSIS_WATCHLIST_STORAGE_KEY);
@@ -132,7 +134,8 @@ function formatBig(value) {
 function formatPercent(value) {
     const numeric = Number(value);
     if (!Number.isFinite(numeric)) return "0.00%";
-    return `${numeric.toFixed(2)}%`;
+    const arrow = numeric > 0 ? "▲" : numeric < 0 ? "▼" : "";
+    return `${arrow}${Math.abs(numeric).toFixed(2)}%`;
 }
 
 function finiteNumber(value, fallback = 0) {
@@ -708,9 +711,11 @@ async function getMarkets() {
         }
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 12000);
-        const url = proxyUrl || `https://api.coingecko.com/api/v3/coins/markets?${params.toString()}`;
+        const url = proxyUrl || `https://pro-api.coingecko.com/api/v3/coins/markets?${params.toString()}`;
+        const headers = { "accept": "application/json" };
+        if (!proxyUrl && COINGECKO_DEMO_KEY) headers["x-cg-demo-api-key"] = COINGECKO_DEMO_KEY;
         const response = await fetch(url, {
-            headers: { "accept": "application/json" },
+            headers,
             cache: "no-store",
             signal: controller.signal
         });
@@ -780,6 +785,7 @@ function renderDashboard(model) {
     const portfolioValue = holdingRows.reduce((total, row) => total + (row.value ?? 0), 0);
     const pricedRows = holdingRows.filter(row => row.value !== null && row.holding.balance > 0);
     updateCommandStatus(holdingRows, portfolioValue);
+    document.querySelector(".command-status")?.classList.toggle("is-fallback", Boolean(model.dataConfidence?.isFallback));
     renderMarketRegime(model);
 
     document.getElementById("opportunities-body").innerHTML = opportunityRows.map(item => `
@@ -797,9 +803,38 @@ function renderDashboard(model) {
     renderHighestExitRisk(rankedAssets, holdingRows);
     renderTradeGuide(opportunityRows);
 
+    const PLAN_INPUT_IDS = ["plan-reason", "plan-trigger", "plan-invalidation", "plan-review",
+        "plan-window", "plan-size", "plan-notes", "size-portfolio",
+        "risk-percent", "risk-entry", "risk-invalid-price", "size-risk-amount", "size-allocation"];
+    if (selectedAssetId) {
+        const snap = {};
+        let hadInputs = false;
+        PLAN_INPUT_IDS.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) { snap[id] = el.value; hadInputs = true; }
+        });
+        document.querySelectorAll("[data-handoff-check]").forEach(el => {
+            snap[`_check_${el.dataset.handoffCheck}`] = el.checked;
+        });
+        if (hadInputs) savedPlanInputs[selectedAssetId] = snap;
+    }
+
     document.getElementById("analysis-panel").innerHTML = selected
         ? analysisHtml(selected, portfolioValue)
         : `<div class="empty-analysis">Select an asset from the Opportunity Queue to inspect structure, plan the trade, and unlock execution handoff.</div>`;
+
+    if (selected && savedPlanInputs[selected.coin.id]) {
+        const snap = savedPlanInputs[selected.coin.id];
+        Object.entries(snap).forEach(([key, value]) => {
+            if (key.startsWith("_check_")) {
+                const el = document.querySelector(`[data-handoff-check="${key.replace("_check_", "")}"]`);
+                if (el) el.checked = value;
+            } else {
+                const el = document.getElementById(key);
+                if (el) el.value = value;
+            }
+        });
+    }
 
     document.querySelectorAll("[data-asset-id]").forEach(button => {
         button.addEventListener("click", event => {
@@ -1073,7 +1108,7 @@ function analysisHtml(selected, portfolioValue) {
             <div class="helper-output" id="size-output">Sizing helper only. Final trade decision is external.</div>
         </div>
         <div class="handoff-checklist">
-            <div class="mini-title">CoinSpot Handoff Checklist</div>
+            <div class="mini-title">CoinSpot Handoff Checklist <span class="checklist-progress" id="checklist-progress">${confirmed ? "5 / 5" : "0 / 5"} checks</span></div>
             ${["Plan created", "Position size checked", "Invalidation set", "Holding impact reviewed", "Journal reminder acknowledged"].map((label, index) => `
                 <label class="check-row"><input type="checkbox" data-handoff-check="${index}" ${confirmed ? "checked" : ""}><span>${label}</span></label>
             `).join("")}
@@ -1112,6 +1147,17 @@ function attachAnalysisControls(selected, portfolioValue) {
         document.getElementById(id)?.addEventListener("change", updateSizing);
     });
     updateSizing();
+    const updateChecklistProgress = () => {
+        const progress = document.getElementById("checklist-progress");
+        if (!progress) return;
+        const checks = [...document.querySelectorAll("[data-handoff-check]")];
+        const done = checks.filter(el => el.checked).length;
+        progress.textContent = `${done} / ${checks.length} checks`;
+    };
+    document.querySelectorAll("[data-handoff-check]").forEach(el => {
+        el.addEventListener("change", updateChecklistProgress);
+    });
+    updateChecklistProgress();
     document.getElementById("confirm-plan")?.addEventListener("click", () => {
         const checks = [...document.querySelectorAll("[data-handoff-check]")];
         const invalidationSet = Boolean(safeText(document.getElementById("plan-invalidation")?.value, ""));
@@ -2311,6 +2357,23 @@ async function boot() {
     if (page === "logs") renderLogs(model);
     if (page === "alerts") renderAlerts(model);
     if (page === "reports") renderReports(model);
+}
+
+function injectSkeletonRows(bodyId, cols, count = 5) {
+    const body = document.getElementById(bodyId);
+    if (!body) return;
+    const widths = ["w-long", "w-med", "w-short", "w-med", "w-short", "w-med", "w-short", "w-short", "w-short", "w-short"];
+    body.innerHTML = Array.from({ length: count }, () =>
+        `<tr class="skeleton-row">${Array.from({ length: cols }, (_, i) =>
+            `<td><span class="skeleton-cell ${widths[i] || "w-med"}"></span></td>`
+        ).join("")}</tr>`
+    ).join("");
+}
+
+if (page === "dashboard") {
+    injectSkeletonRows("opportunities-body", 7);
+    injectSkeletonRows("trade-guide-body", 10);
+    injectSkeletonRows("watchlist-body", 6);
 }
 
 boot();
