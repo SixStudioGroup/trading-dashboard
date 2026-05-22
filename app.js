@@ -834,9 +834,9 @@ function renderDashboard(model) {
     document.getElementById("portfolio-value").textContent = formatPrice(portfolioValue);
     renderHoldingsAllocation(holdingRows, portfolioValue);
     renderHoldingsManager(markets, holdingRows);
+    renderPositionMonitor(rankedAssets, holdingRows);
 
-    const highVolume = [...markets].sort((a, b) => b.total_volume - a.total_volume).slice(0, 8);
-    document.getElementById("popular-now").innerHTML = highVolume.map(tile).join("");
+    renderMarketAttention(markets);
 
     const recent = [...markets].sort((a, b) =>
         Math.abs(b.price_change_percentage_1h_in_currency || 0) - Math.abs(a.price_change_percentage_1h_in_currency || 0)
@@ -874,8 +874,15 @@ function updateCommandStatus(holdingRows, portfolioValue) {
     const portfolioEl = document.getElementById("status-portfolio-value");
     const holdingEl = document.getElementById("status-holding-summary");
     if (portfolioEl) portfolioEl.textContent = formatPrice(portfolioValue);
-    if (!holdingEl) return;
+    const modeEl = document.getElementById("session-mode");
     const activeRows = holdingRows.filter(row => row.holding.balance > 0);
+    if (modeEl) {
+        const openTrades = tradeJournal.map(normalizeTrade).filter(trade => trade.status !== "closed").length;
+        modeEl.textContent = selectedAssetId
+            ? planConfirmedAssetId === selectedAssetId ? "Planning" : "Analysing"
+            : openTrades || activeRows.length ? "In Position" : "Scanning";
+    }
+    if (!holdingEl) return;
     if (!activeRows.length) {
         holdingEl.textContent = "No active holdings";
         return;
@@ -921,7 +928,7 @@ function renderMarketRegime(model) {
         ? "Low Liquidity"
         : highVolatility
             ? "High Volatility"
-            : btcDominance >= 48 && avgMove > 0
+            : btcDominance !== null && btcDominance >= 48 && avgMove > 0
                 ? "BTC-Led Market"
                 : altAvg > avgMove + 1 && avgMove > 0
                     ? "Altcoin Rotation"
@@ -929,7 +936,7 @@ function renderMarketRegime(model) {
     el.innerHTML = `
         <div class="regime-header">
             <span>Market Regime</span>
-            <strong>${label}</strong>
+            <strong>${label || "Unknown"}</strong>
         </div>
         <div class="regime-grid">
             <span><small>Total cap</small><strong>${formatBig(totalCap)}</strong></span>
@@ -944,11 +951,73 @@ function renderMarketRegime(model) {
     `;
 }
 
+function attentionRow(coin) {
+    return `
+        <tr>
+            <td>${coinCell(coin)}</td>
+            <td class="num">${formatPercent(coin.change24h ?? coin.price_change_percentage_24h)}</td>
+            <td>${coinspotStatus(coin)}</td>
+        </tr>
+    `;
+}
+
+function renderAttentionTable(id, rows) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = rows.length ? rows.map(attentionRow).join("") : `<tr><td colspan="3" class="loading-cell">No market context available.</td></tr>`;
+}
+
+function renderMarketAttention(markets) {
+    const safe = Array.isArray(markets) ? markets : [];
+    const byVolume = [...safe].sort((a, b) => finiteNumber(b.volume24hAud ?? b.total_volume) - finiteNumber(a.volume24hAud ?? a.total_volume));
+    const byGain = [...safe].sort((a, b) => finiteNumber(b.change24h ?? b.price_change_percentage_24h) - finiteNumber(a.change24h ?? a.price_change_percentage_24h));
+    const byLoss = [...safe].sort((a, b) => finiteNumber(a.change24h ?? a.price_change_percentage_24h) - finiteNumber(b.change24h ?? b.price_change_percentage_24h));
+    renderAttentionTable("attention-trending", byVolume.slice(0, 5));
+    renderAttentionTable("attention-gainers", byGain.slice(0, 5));
+    renderAttentionTable("attention-losers", byLoss.slice(0, 5));
+    renderAttentionTable("attention-visited", byVolume.slice(5, 10));
+    renderAttentionTable("attention-recent", safe.slice(-5).reverse());
+}
+
+function itemForHolding(items, holding) {
+    return items.find(asset => asset.coin.symbol.toUpperCase() === holding.symbol || asset.coin.name.toLowerCase() === holding.name.toLowerCase()) || null;
+}
+
+function renderPositionMonitor(items, holdingRows) {
+    const body = document.getElementById("position-monitor-body");
+    if (!body) return;
+    const rows = holdingRows.filter(row => row.holding.balance > 0);
+    body.innerHTML = rows.length ? rows.map(row => {
+        const item = itemForHolding(items, row.holding);
+        const unrealized = unrealizedFor(row);
+        const signal = item ? guideStateFor(item).label : "No Action";
+        const exitRisk = item
+            ? (signal === "Sell Risk" || riskFor(item) === "High" || finiteNumber(item.coin.change24h ?? item.coin.price_change_percentage_24h) < 0 ? "Review Position" : "No elevated exit risk")
+            : "Price unavailable";
+        const status = exitRisk === "Review Position" ? "Review" : signal === "Sell Risk" ? "Plan Exit" : "Hold";
+        return `
+            <tr>
+                <td>${escapeHtml(row.holding.symbol)} / ${escapeHtml(row.holding.name)}</td>
+                <td class="num">${formatBalance(row.holding.balance)}</td>
+                <td class="num">${row.holding.avgEntryPrice ? formatPrice(row.holding.avgEntryPrice) : "Entry not set"}</td>
+                <td class="num">${row.market ? formatPrice(row.market.current_price) : "Price unavailable"}</td>
+                <td class="num ${unrealized.aud > 0 ? "positive" : unrealized.aud < 0 ? "negative" : "neutral"}">${unrealized.aud === null ? unrealized.label : formatSignedMoney(unrealized.aud)}</td>
+                <td class="num ${unrealized.percent > 0 ? "positive" : unrealized.percent < 0 ? "negative" : "neutral"}">${unrealized.percent === null ? unrealized.label : formatSignedPercent(unrealized.percent)}</td>
+                <td>${escapeHtml(signal)}</td>
+                <td>${escapeHtml(exitRisk)}</td>
+                <td>${holdingDuration(row.holding.updatedAt)}</td>
+                <td>${escapeHtml(status)}</td>
+            </tr>
+        `;
+    }).join("") : `<tr><td colspan="10" class="loading-cell">No active holdings.</td></tr>`;
+}
+
 function analysisHtml(selected, portfolioValue) {
     const state = guideStateFor(selected);
     const confirmed = planConfirmedAssetId === selected.coin.id;
     const selectedCoinspotUrl = confirmed ? coinspotUrl(selected.coin) : null;
     const defaultSize = Math.max(0, portfolioValue * 0.1);
+    const consensus = agentConsensusFor(selected, portfolioValue);
     return `
         <div class="analysis-heading">
             ${coinCell(selected.coin)}
@@ -966,32 +1035,49 @@ function analysisHtml(selected, portfolioValue) {
             <strong>Invalidation</strong>
             <span>${invalidationSentence(state.label)}</span>
         </div>
+        <div class="agent-consensus">
+            <div class="mini-title">Agent Consensus <span class="badge wait">${consensus.label}</span></div>
+            <div class="consensus-grid">
+                ${consensus.agents.map(agent => `
+                    <span><small>${agent.name}</small><strong>${agent.result}</strong><em>${agent.reason}</em></span>
+                `).join("")}
+            </div>
+        </div>
         <div class="trade-plan-box">
             <div class="mini-title">Trade Plan</div>
             <label>Why now?<textarea id="plan-reason">${escapeHtml(swingReasonFor(selected))}</textarea></label>
             <label>Entry trigger<input id="plan-trigger" type="text" value="${escapeHtml(state.label)} confirmation"></label>
             <label>Invalidation<input id="plan-invalidation" type="text" value="${escapeHtml(invalidationSentence(state.label))}"></label>
             <label>Target review time<input id="plan-review" type="datetime-local" value="${formatDateTimeLocal(Date.now() + 86400000)}"></label>
+            <label>Expected holding window<input id="plan-window" type="text" value="1-7 days"></label>
             <label>Intended position size<input id="plan-size" type="number" min="0" step="any" value="${defaultSize.toFixed(2)}"></label>
             <label>Notes<textarea id="plan-notes" placeholder="Manual notes"></textarea></label>
             <div class="form-actions">
-                <button class="table-action" type="button" id="confirm-plan">Confirm Plan</button>
+                <button class="table-action" type="button" id="confirm-plan">Confirm Checklist</button>
                 <button class="table-action" type="button" id="save-plan-journal">Save to Journal</button>
                 <button class="table-action" type="button" id="add-analysis-watch">Add to Watch</button>
             </div>
         </div>
         <div class="position-helper">
-            <div class="mini-title">Position Size Helper</div>
+            <div class="mini-title">Risk Per Trade</div>
             <div class="size-grid">
-                <label>Portfolio value<input id="size-portfolio" type="number" min="0" step="any" value="${portfolioValue.toFixed(2)}"></label>
-                <label>Allocation %<input id="size-allocation" type="number" min="0" step="any" value="10"></label>
-                <label>Risk level<select id="size-risk"><option>${riskFor(selected)}</option><option>Low</option><option>Medium</option><option>High</option></select></label>
+                <label>Account value<input id="size-portfolio" type="number" min="0" step="any" value="${portfolioValue.toFixed(2)}"></label>
+                <label>Risk per trade %<input id="risk-percent" type="number" min="0" step="any" value="2"></label>
+                <label>Entry price<input id="risk-entry" type="number" min="0" step="any" value="${selected.coin.current_price}"></label>
+                <label>Invalidation price<input id="risk-invalid-price" type="number" min="0" step="any" value="${Math.max(0, selected.coin.current_price * 0.95).toFixed(6)}"></label>
                 <label>Max risk AUD<input id="size-risk-amount" type="number" min="0" step="any" value="${Math.max(0, portfolioValue * 0.02).toFixed(2)}"></label>
+                <label>Allocation %<input id="size-allocation" type="number" min="0" step="any" value="10"></label>
             </div>
             <div class="helper-output" id="size-output">Sizing helper only. Final trade decision is external.</div>
         </div>
+        <div class="handoff-checklist">
+            <div class="mini-title">CoinSpot Handoff Checklist</div>
+            ${["Plan created", "Position size checked", "Invalidation set", "Holding impact reviewed", "Journal reminder acknowledged"].map((label, index) => `
+                <label class="check-row"><input type="checkbox" data-handoff-check="${index}" ${confirmed ? "checked" : ""}><span>${label}</span></label>
+            `).join("")}
+        </div>
         <div class="execution-bar">
-            <span>${confirmed ? "Trade plan confirmed. Execution handoff is available for this asset." : "Confirm a trade plan before execution handoff."}</span>
+            <span>${confirmed ? "Checklist complete. Execution handoff is available for this asset." : "Complete the checklist before execution handoff."}</span>
             ${selectedCoinspotUrl
                 ? `<a class="button-primary" href="${selectedCoinspotUrl}" target="_blank" rel="noopener noreferrer">Open CoinSpot</a>`
                 : confirmed ? `<span class="watch-only">CoinSpot link unavailable</span>` : `<span class="watch-only">Plan required</span>`}
@@ -1006,21 +1092,32 @@ function attachAnalysisControls(selected, portfolioValue) {
         if (!out) return;
         const portfolio = Math.max(0, finiteNumber(document.getElementById("size-portfolio")?.value, portfolioValue));
         const allocation = Math.max(0, finiteNumber(document.getElementById("size-allocation")?.value, 0));
+        const riskPercent = Math.max(0, finiteNumber(document.getElementById("risk-percent")?.value, 0));
+        const entry = Math.max(0, finiteNumber(document.getElementById("risk-entry")?.value, selected.coin.current_price));
+        const invalid = Math.max(0, finiteNumber(document.getElementById("risk-invalid-price")?.value, 0));
         const maxRisk = Math.max(0, finiteNumber(document.getElementById("size-risk-amount")?.value, 0));
+        const riskBudget = portfolio * (riskPercent / 100);
+        const perUnitRisk = Math.max(0, entry - invalid);
         const position = portfolio * (allocation / 100);
-        const capped = maxRisk > 0 ? Math.min(position, maxRisk / 0.1) : position;
-        const units = selected.coin.current_price > 0 ? capped / selected.coin.current_price : 0;
+        const riskCapped = perUnitRisk > 0 && entry > 0 ? (Math.min(maxRisk || riskBudget, riskBudget || maxRisk) / perUnitRisk) * entry : position;
+        const capped = Math.max(0, Math.min(position, riskCapped || position));
+        const units = entry > 0 ? capped / entry : 0;
         const after = portfolio > 0 ? (capped / portfolio) * 100 : 0;
-        out.textContent = `Suggested position ${formatPrice(capped)} / est. ${formatBalance(units)} ${selected.coin.symbol.toUpperCase()} / allocation ${after.toFixed(1)}%. Sizing helper only. Final trade decision is external.`;
+        out.textContent = `Max loss ${formatPrice(Math.min(maxRisk || riskBudget, riskBudget || maxRisk || 0))} / suggested position ${formatPrice(capped)} / est. ${formatBalance(units)} ${selected.coin.symbol.toUpperCase()} / allocation after trade ${after.toFixed(1)}%. Sizing helper only. Final trade decision is external.`;
     };
-    ["size-portfolio", "size-allocation", "size-risk-amount", "size-risk"].forEach(id => {
+    ["size-portfolio", "size-allocation", "size-risk-amount", "risk-percent", "risk-entry", "risk-invalid-price"].forEach(id => {
         document.getElementById(id)?.addEventListener("input", updateSizing);
         document.getElementById(id)?.addEventListener("change", updateSizing);
     });
     updateSizing();
     document.getElementById("confirm-plan")?.addEventListener("click", () => {
-        planConfirmedAssetId = selected.coin.id;
-        renderDashboard(currentDashboardModel);
+        const checks = [...document.querySelectorAll("[data-handoff-check]")];
+        const invalidationSet = Boolean(safeText(document.getElementById("plan-invalidation")?.value, ""));
+        const positionChecked = finiteNumber(document.getElementById("plan-size")?.value) > 0;
+        if (checks.every(input => input.checked) && invalidationSet && positionChecked) {
+            planConfirmedAssetId = selected.coin.id;
+            renderDashboard(currentDashboardModel);
+        }
     });
     document.getElementById("save-plan-journal")?.addEventListener("click", () => {
         planConfirmedAssetId = selected.coin.id;
@@ -1055,6 +1152,42 @@ function planTradeFromSelection(selected) {
         notes: safeText(document.getElementById("plan-notes")?.value, ""),
         status: "open"
     };
+}
+
+function agentConsensusFor(item, portfolioValue = 0) {
+    const state = guideStateFor(item).label;
+    const liquidity = liquidityFor(item);
+    const risk = riskFor(item);
+    const oneHour = finiteNumber(item.coin.change1h ?? item.coin.price_change_percentage_1h_in_currency);
+    const day = finiteNumber(item.coin.change24h ?? item.coin.price_change_percentage_24h);
+    const volume = finiteNumber(item.coin.volume24hAud ?? item.coin.total_volume);
+    const agents = [
+        {
+            name: "Momentum Agent",
+            result: state === "Sell Risk" ? "Reject" : day > 2 && oneHour >= 0 ? "Support" : day > 0 ? "Watch" : "Reject",
+            reason: `${formatPercent(day)} 24h / ${formatPercent(oneHour)} 1h`
+        },
+        {
+            name: "Liquidity Agent",
+            result: liquidity === "Suitable" ? "Support" : liquidity === "Caution" ? "Watch" : "Reject",
+            reason: volume > 0 ? formatBig(volume) : "Insufficient Data"
+        },
+        {
+            name: "Risk Agent",
+            result: state === "Sell Risk" || risk === "High" ? "Reject" : risk === "Low" ? "Support" : "Watch",
+            reason: risk
+        },
+        {
+            name: "Portfolio Agent",
+            result: portfolioValue > 0 ? "Support" : "Insufficient Data",
+            reason: portfolioValue > 0 ? "Portfolio value available" : "Portfolio value unavailable"
+        }
+    ];
+    const supportCount = agents.filter(agent => agent.result === "Support").length;
+    const label = state === "Sell Risk"
+        ? "Review Position / No Action"
+        : supportCount >= 3 ? "High Consensus" : supportCount === 2 ? "Analyse Candidate" : supportCount === 1 ? "Watch Only" : "No Action";
+    return { label, agents, supportCount };
 }
 
 function swingReasonFor(item) {

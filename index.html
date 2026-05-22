@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ZenCloud Crypto Dashboard</title>
-    <link rel="stylesheet" href="styles.css?v=cmc-prep-20260522">
+    <link rel="stylesheet" href="styles.css?v=master-os-20260522">
 </head>
 <body data-page="dashboard">
     <header class="topbar">
@@ -52,6 +52,10 @@
             <div class="status-metric status-holding">
                 <span>Holding</span>
                 <strong id="status-holding-summary">No active holdings</strong>
+            </div>
+            <div class="status-metric">
+                <span>Mode</span>
+                <strong id="session-mode">Scanning</strong>
             </div>
         </section>
 
@@ -154,7 +158,7 @@
                     </tbody>
                 </table>
                 <div class="panel-header flat-header">
-                    <h2 class="panel-title">Analysis Watchlist</h2>
+                    <h2 class="panel-title">Watch Queue</h2>
                     <p class="panel-subtitle">Assets added from Asset Analysis</p>
                 </div>
                 <table class="compact-table">
@@ -186,6 +190,14 @@
                     <tbody id="wallets-body">
                         <tr><td colspan="6" class="loading-cell">Loading wallet values...</td></tr>
                     </tbody>
+                </table>
+                <div class="panel-header flat-header">
+                    <h2 class="panel-title">Open Position Monitor</h2>
+                    <p class="panel-subtitle">Held assets only</p>
+                </div>
+                <table class="compact-table">
+                    <thead><tr><th>Asset</th><th class="num">Balance</th><th class="num">Entry</th><th class="num">Current</th><th class="num">P/L AUD</th><th class="num">P/L %</th><th>Signal</th><th>Exit risk</th><th>Held</th><th>Status</th></tr></thead>
+                    <tbody id="position-monitor-body"><tr><td colspan="10" class="loading-cell">No active holdings.</td></tr></tbody>
                 </table>
             </div>
 
@@ -225,9 +237,15 @@
             <div class="tab-panel" id="attention-tab">
                 <div class="panel-header flat-header">
                     <h2 class="panel-title">Market Attention</h2>
-                    <p class="panel-subtitle">High-volume assets from the live scan</p>
+                    <p class="panel-subtitle">Secondary market context only</p>
                 </div>
-                <div class="panel-body coin-rail compact-rail" id="popular-now"></div>
+                <div class="market-attention-grid">
+                    <section><h3>Trending</h3><table class="compact-table"><tbody id="attention-trending"></tbody></table></section>
+                    <section><h3>Top Gainers</h3><table class="compact-table"><tbody id="attention-gainers"></tbody></table></section>
+                    <section><h3>Top Losers</h3><table class="compact-table"><tbody id="attention-losers"></tbody></table></section>
+                    <section><h3>Most Visited</h3><table class="compact-table"><tbody id="attention-visited"></tbody></table></section>
+                    <section><h3>Recently Added</h3><table class="compact-table"><tbody id="attention-recent"></tbody></table></section>
+                </div>
             </div>
 
             <div class="tab-panel" id="new-coins-tab">
@@ -318,6 +336,6 @@
         </section>
     </main>
 
-    <script src="app.js?v=cmc-prep-20260522"></script>
+    <script src="app.js?v=master-os-20260522"></script>
 </body>
 </html>
