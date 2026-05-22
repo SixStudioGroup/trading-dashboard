@@ -446,6 +446,8 @@ function normalizeTrade(trade = {}) {
         resultPercent: Number.isFinite(resultPercent) ? resultPercent : null,
         notes: safeText(trade.notes, ""),
         ruleFollowed: typeof trade.ruleFollowed === "boolean" ? trade.ruleFollowed : false,
+        fromZenCloud: typeof trade.fromZenCloud === "boolean" ? trade.fromZenCloud : true,
+        agentConsensus: safeText(trade.agentConsensus, "Not recorded"),
         mistakeType: safeText(trade.mistakeType, "Other"),
         lessonLearned: safeText(trade.lessonLearned, ""),
         status: trade.status === "closed" ? "closed" : "open",
@@ -1121,7 +1123,7 @@ function attachAnalysisControls(selected, portfolioValue) {
     });
     document.getElementById("save-plan-journal")?.addEventListener("click", () => {
         planConfirmedAssetId = selected.coin.id;
-        addTrade(planTradeFromSelection(selected));
+        addTrade(planTradeFromSelection(selected, portfolioValue));
         renderDashboard(currentDashboardModel);
     });
     document.getElementById("add-analysis-watch")?.addEventListener("click", () => {
@@ -1138,7 +1140,7 @@ function attachAnalysisControls(selected, portfolioValue) {
     });
 }
 
-function planTradeFromSelection(selected) {
+function planTradeFromSelection(selected, portfolioValue = 0) {
     const state = guideStateFor(selected).label;
     return {
         symbol: selected.coin.symbol,
@@ -1149,6 +1151,8 @@ function planTradeFromSelection(selected) {
         signalState: state,
         reasonEntry: safeText(document.getElementById("plan-reason")?.value, swingReasonFor(selected)),
         plannedInvalidation: safeText(document.getElementById("plan-invalidation")?.value, invalidationSentence(state)),
+        agentConsensus: agentConsensusFor(selected, portfolioValue).label,
+        fromZenCloud: true,
         notes: safeText(document.getElementById("plan-notes")?.value, ""),
         status: "open"
     };
@@ -1394,6 +1398,17 @@ function performanceMetrics() {
         acc[trade.signalState].push(trade.resultAud);
         return acc;
     }, {})).map(([signal, values]) => ({ signal, avg: values.reduce((a, b) => a + b, 0) / values.length }));
+    const byConsensus = Object.entries(closed.reduce((acc, trade) => {
+        const key = safeText(trade.agentConsensus, "Not recorded");
+        acc[key] = acc[key] || [];
+        acc[key].push(trade.resultAud);
+        return acc;
+    }, {})).map(([consensus, values]) => ({ consensus, avg: values.reduce((a, b) => a + b, 0) / values.length, count: values.length }));
+    const consensusCounts = Object.entries(trades.reduce((acc, trade) => {
+        const key = safeText(trade.agentConsensus, "Not recorded");
+        acc[key] = (acc[key] || 0) + 1;
+        return acc;
+    }, {})).map(([label, count]) => `${label}: ${count}`).join(" / ") || "Not enough data";
     return {
         trades, open, closed, enough: true,
         winRate: (wins.length / closed.length) * 100,
@@ -1404,7 +1419,10 @@ function performanceMetrics() {
         net,
         mostTraded,
         bestSignal: bySignal.sort((a, b) => b.avg - a.avg)[0]?.signal || "Not enough data",
-        worstSignal: bySignal.sort((a, b) => a.avg - b.avg)[0]?.signal || "Not enough data"
+        worstSignal: bySignal.sort((a, b) => a.avg - b.avg)[0]?.signal || "Not enough data",
+        consensusCounts,
+        bestConsensus: byConsensus.sort((a, b) => b.avg - a.avg)[0]?.consensus || "Not enough data",
+        worstConsensus: byConsensus.sort((a, b) => a.avg - b.avg)[0]?.consensus || "Not enough data"
     };
 }
 
@@ -1428,7 +1446,10 @@ function renderPerformanceSummary(targetId) {
         ["Net AUD", formatSignedMoney(metrics.net)],
         ["Most traded", metrics.mostTraded],
         ["Best signal", metrics.bestSignal],
-        ["Worst signal", metrics.worstSignal]
+        ["Worst signal", metrics.worstSignal],
+        ["Consensus", metrics.consensusCounts],
+        ["Best consensus", metrics.bestConsensus],
+        ["Worst consensus", metrics.worstConsensus]
     ];
     el.innerHTML = cells.map(([label, value]) => `<div><span>${label}</span><strong>${value}</strong></div>`).join("");
 }
@@ -2015,7 +2036,10 @@ function renderWeeklyReport() {
         ["Net AUD result", formatSignedMoney(metrics.net)],
         ["Best signal type", metrics.bestSignal],
         ["Worst signal type", metrics.worstSignal],
-        ["Most traded asset", metrics.mostTraded]
+        ["Most traded asset", metrics.mostTraded],
+        ["Trades by consensus", metrics.consensusCounts],
+        ["Best consensus state", metrics.bestConsensus],
+        ["Worst consensus state", metrics.worstConsensus]
     ].map(([label, value]) => reportMetric(label, value)).join("");
 }
 
@@ -2029,6 +2053,7 @@ function renderTradeReviewReport(trades) {
             <td>${escapeHtml(trade.symbol)} / ${escapeHtml(trade.name)}</td>
             <td>${escapeHtml(trade.reasonEntry)}</td>
             <td>${escapeHtml(trade.signalState)}</td>
+            <td>${escapeHtml(trade.agentConsensus)}</td>
             <td>${escapeHtml(trade.plannedInvalidation)}</td>
             <td>${escapeHtml(trade.exitReason || "Manual close")}</td>
             <td class="num ${trade.resultAud > 0 ? "positive" : trade.resultAud < 0 ? "negative" : "neutral"}">${trade.resultAud === null ? "Not recorded" : formatSignedMoney(trade.resultAud)}</td>
@@ -2053,7 +2078,7 @@ function renderTradeReviewReport(trades) {
                 </div>
             </td>
         </tr>
-    `).join("") : `<tr><td colspan="9" class="loading-cell">No closed trades to review.</td></tr>`;
+    `).join("") : `<tr><td colspan="10" class="loading-cell">No closed trades to review.</td></tr>`;
     body.querySelectorAll("[data-save-review]").forEach(button => {
         button.addEventListener("click", event => {
             const id = event.currentTarget.dataset.saveReview;
@@ -2112,7 +2137,9 @@ function renderBehaviourReport(trades) {
         ["Overtrading days", overtradingDays],
         ["Average holding time", holdingDays.length ? `${average(holdingDays).toFixed(1)} days` : "Not enough data"],
         ["Most common mistake", mostCommon(trades.map(trade => trade.mistakeType), "Not enough data")],
-        ["Most common signal at entry", mostCommon(trades.map(trade => trade.signalState), "Not enough data")]
+        ["Most common signal at entry", mostCommon(trades.map(trade => trade.signalState), "Not enough data")],
+        ["Most common consensus", mostCommon(trades.map(trade => trade.agentConsensus), "Not enough data")],
+        ["Trades from ZenCloud", trades.filter(trade => trade.fromZenCloud).length]
     ].map(([label, value]) => reportMetric(label, value)).join("");
 }
 
@@ -2161,6 +2188,7 @@ function renderJournal() {
             <td class="num">${formatPrice(trade.entryPrice)}</td>
             <td class="num">${formatPrice(trade.positionSize)}</td>
             <td>${escapeHtml(trade.signalState)}</td>
+            <td>${escapeHtml(trade.agentConsensus)}</td>
             <td>${escapeHtml(trade.plannedInvalidation)}</td>
             <td>
                 <input class="inline-balance close-price" type="number" min="0" step="any" placeholder="Exit price" data-close-price="${escapeHtml(trade.id)}">
@@ -2172,7 +2200,7 @@ function renderJournal() {
                 <button class="table-action danger-action" type="button" data-delete-trade="${escapeHtml(trade.id)}">Delete</button>
             </td>
         </tr>
-    `).join("") : `<tr><td colspan="9" class="loading-cell">No open trades.</td></tr>`;
+    `).join("") : `<tr><td colspan="10" class="loading-cell">No open trades.</td></tr>`;
     closedBody.innerHTML = closedRows.length ? closedRows.map(trade => `
         <tr>
             <td>${escapeHtml(trade.id)}</td>
@@ -2181,13 +2209,15 @@ function renderJournal() {
             <td>${formatTimestamp(trade.exitDate)} @ ${trade.exitPrice === null ? "Not recorded" : formatPrice(trade.exitPrice)}</td>
             <td class="num ${trade.resultAud > 0 ? "positive" : trade.resultAud < 0 ? "negative" : "neutral"}">${trade.resultAud === null ? "Not recorded" : formatSignedMoney(trade.resultAud)}</td>
             <td class="num ${trade.resultPercent > 0 ? "positive" : trade.resultPercent < 0 ? "negative" : "neutral"}">${trade.resultPercent === null ? "Not recorded" : formatSignedPercent(trade.resultPercent)}</td>
+            <td>${escapeHtml(trade.agentConsensus)}</td>
+            <td>${trade.fromZenCloud ? "Yes" : "No"}</td>
             <td>${escapeHtml(trade.exitReason || "Manual close")}</td>
             <td>
                 <button class="table-action" type="button" data-edit-trade="${escapeHtml(trade.id)}">Edit</button>
                 <button class="table-action danger-action" type="button" data-delete-trade="${escapeHtml(trade.id)}">Delete</button>
             </td>
         </tr>
-    `).join("") : `<tr><td colspan="8" class="loading-cell">No closed trades.</td></tr>`;
+    `).join("") : `<tr><td colspan="10" class="loading-cell">No closed trades.</td></tr>`;
     document.querySelectorAll("[data-close-trade]").forEach(button => {
         button.addEventListener("click", event => {
             const id = event.currentTarget.dataset.closeTrade;
@@ -2217,8 +2247,10 @@ function fillJournalForm(id) {
     document.getElementById("journal-entry-price").value = trade.entryPrice;
     document.getElementById("journal-position-size").value = trade.positionSize;
     document.getElementById("journal-signal").value = trade.signalState;
+    document.getElementById("journal-consensus").value = trade.agentConsensus;
     document.getElementById("journal-reason").value = trade.reasonEntry;
     document.getElementById("journal-invalidation").value = trade.plannedInvalidation;
+    document.getElementById("journal-from-zencloud").value = String(trade.fromZenCloud);
     document.getElementById("journal-notes").value = trade.notes;
 }
 
@@ -2228,6 +2260,8 @@ function clearJournalForm() {
     form.reset();
     document.getElementById("journal-id").value = "";
     document.getElementById("journal-entry-date").value = formatDateTimeLocal(new Date());
+    document.getElementById("journal-consensus").value = "";
+    document.getElementById("journal-from-zencloud").value = "true";
 }
 
 function initJournalControls() {
@@ -2246,8 +2280,10 @@ function initJournalControls() {
             entryPrice: data.get("entryPrice"),
             positionSize: data.get("positionSize"),
             signalState: data.get("signalState"),
+            agentConsensus: data.get("agentConsensus"),
             reasonEntry: data.get("reasonEntry"),
             plannedInvalidation: data.get("plannedInvalidation"),
+            fromZenCloud: data.get("fromZenCloud") !== "false",
             notes: data.get("notes"),
             status: tradeJournal.find(row => row.id === id)?.status || "open"
         });

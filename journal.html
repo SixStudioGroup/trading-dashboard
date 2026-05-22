@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trade Journal - ZenCloud Crypto Dashboard</title>
-    <link rel="stylesheet" href="styles.css?v=cmc-prep-20260522">
+    <link rel="stylesheet" href="styles.css?v=master-os-20260522">
 </head>
 <body data-page="journal">
     <header class="topbar">
@@ -49,8 +49,10 @@
                     <option>Volume Spike</option>
                     <option>No Action</option>
                 </select></label>
+                <label><span>Agent consensus</span><input name="agentConsensus" id="journal-consensus" placeholder="Not recorded"></label>
                 <label><span>Reason for entry</span><input name="reasonEntry" id="journal-reason" required></label>
                 <label><span>Planned invalidation</span><input name="plannedInvalidation" id="journal-invalidation" required></label>
+                <label><span>From ZenCloud</span><select name="fromZenCloud" id="journal-from-zencloud"><option value="true">Yes</option><option value="false">No</option></select></label>
                 <label><span>Notes</span><input name="notes" id="journal-notes" placeholder="Optional"></label>
                 <div class="form-actions">
                     <button class="button-primary" type="submit">Save Trade</button>
@@ -74,8 +76,8 @@
                 <p class="panel-subtitle">Planned or active external positions</p>
             </div>
             <table class="compact-table">
-                <thead><tr><th>ID</th><th>Asset</th><th>Entry</th><th class="num">Price</th><th class="num">Size</th><th>Signal</th><th>Invalidation</th><th>Close</th><th>Actions</th></tr></thead>
-                <tbody id="open-trades-body"><tr><td colspan="9" class="loading-cell">No open trades.</td></tr></tbody>
+                <thead><tr><th>ID</th><th>Asset</th><th>Entry</th><th class="num">Price</th><th class="num">Size</th><th>Signal</th><th>Consensus</th><th>Invalidation</th><th>Close</th><th>Actions</th></tr></thead>
+                <tbody id="open-trades-body"><tr><td colspan="10" class="loading-cell">No open trades.</td></tr></tbody>
             </table>
         </section>
 
@@ -85,12 +87,12 @@
                 <p class="panel-subtitle">Outcome review from manual entries</p>
             </div>
             <table class="compact-table">
-                <thead><tr><th>ID</th><th>Asset</th><th>Entry</th><th>Exit</th><th class="num">Result AUD</th><th class="num">Result %</th><th>Exit reason</th><th>Actions</th></tr></thead>
-                <tbody id="closed-trades-body"><tr><td colspan="8" class="loading-cell">No closed trades.</td></tr></tbody>
+                <thead><tr><th>ID</th><th>Asset</th><th>Entry</th><th>Exit</th><th class="num">Result AUD</th><th class="num">Result %</th><th>Consensus</th><th>From ZenCloud</th><th>Exit reason</th><th>Actions</th></tr></thead>
+                <tbody id="closed-trades-body"><tr><td colspan="10" class="loading-cell">No closed trades.</td></tr></tbody>
             </table>
         </section>
     </main>
 
-    <script src="app.js?v=cmc-prep-20260522"></script>
+    <script src="app.js?v=master-os-20260522"></script>
 </body>
 </html>
