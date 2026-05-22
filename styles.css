@@ -522,9 +522,7 @@ a:hover { text-decoration: underline; }
 
 .invalidation-box,
 .trade-plan-box,
-.position-helper,
-.agent-consensus,
-.handoff-checklist {
+.position-helper {
     border: 1px solid var(--line);
     border-radius: 3px;
     background: #fbfcfd;
@@ -590,6 +588,16 @@ a:hover { text-decoration: underline; }
     color: #44576a;
     font-size: 12px;
     line-height: 1.4;
+}
+
+.agent-consensus,
+.handoff-checklist {
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: #fbfcfd;
+    padding: 9px;
+    display: grid;
+    gap: 8px;
 }
 
 .checklist {
@@ -844,6 +852,19 @@ a:hover { text-decoration: underline; }
     padding: 12px;
 }
 
+.market-attention-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+    padding: 10px;
+}
+
+.market-attention-grid h3 {
+    margin: 0 0 6px;
+    color: #34495e;
+    font-size: 13px;
+}
+
 .manage-holdings {
     padding: 0 12px 12px;
 }
@@ -1085,19 +1106,6 @@ tr:last-child td { border-bottom: none; }
     grid-template-columns: repeat(4, 1fr);
     gap: 10px;
     min-height: 90px;
-}
-
-.market-attention-grid {
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 10px;
-    padding: 10px;
-}
-
-.market-attention-grid h3 {
-    margin: 0 0 6px;
-    color: #34495e;
-    font-size: 13px;
 }
 
 .coin-tile {
