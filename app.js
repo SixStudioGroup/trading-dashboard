@@ -46,6 +46,7 @@ const dataConfidence = {
     plannedProvider: "CoinMarketCap API via secure proxy",
     lastSuccessfulLiveFetch: "",
     lastAttemptedFetch: "",
+    lastStatusUpdate: "",
     failureReason: "None",
     retryCount: 0,
     nextRetryTime: "next refresh",
@@ -655,9 +656,10 @@ function renderDataConfidence() {
             provider: dataConfidence.provider,
             plannedProvider: dataConfidence.plannedProvider,
             mode: dataConfidence.mode,
+            lastStatusUpdate: dataConfidence.lastStatusUpdate ? formatTimestamp(dataConfidence.lastStatusUpdate) : "Pending",
             lastSuccessfulLiveFetch: dataConfidence.lastSuccessfulLiveFetch ? formatTimestamp(dataConfidence.lastSuccessfulLiveFetch) : "Not recorded",
             lastAttemptedFetch: dataConfidence.lastAttemptedFetch ? formatTimestamp(dataConfidence.lastAttemptedFetch) : "Not recorded",
-            failureReason: dataConfidence.failureReason,
+            failureReason: dataConfidence.failureReason || "None",
             retryCount: String(dataConfidence.retryCount),
             nextRetryTime: dataConfidence.nextRetryTime || "next refresh"
         };
@@ -666,6 +668,7 @@ function renderDataConfidence() {
 }
 
 function setStatus(message = compactConfidenceMessage(), isLive = true) {
+    dataConfidence.lastStatusUpdate = new Date().toISOString();
     document.querySelectorAll("#market-status").forEach(el => {
         el.textContent = message;
     });
@@ -696,7 +699,11 @@ async function getMarkets() {
     });
 
     try {
-        if (shouldForceFallback()) throw new Error("Forced fallback snapshot");
+        if (shouldForceFallback()) {
+            const error = new Error("Forced fallback snapshot");
+            error.failureReason = "Forced fallback snapshot";
+            throw error;
+        }
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 12000);
         const url = proxyUrl || `https://api.coingecko.com/api/v3/coins/markets?${params.toString()}`;
@@ -771,6 +778,7 @@ function renderDashboard(model) {
     const portfolioValue = holdingRows.reduce((total, row) => total + (row.value ?? 0), 0);
     const pricedRows = holdingRows.filter(row => row.value !== null && row.holding.balance > 0);
     updateCommandStatus(holdingRows, portfolioValue);
+    renderMarketRegime(model);
 
     document.getElementById("opportunities-body").innerHTML = opportunityRows.map(item => `
         <tr class="${item.coin.id === selectedAssetId ? "selected-row" : ""}">
@@ -875,6 +883,65 @@ function updateCommandStatus(holdingRows, portfolioValue) {
     const lead = [...activeRows].sort((a, b) => (b.value ?? 0) - (a.value ?? 0))[0];
     const valueText = lead.value === null ? "Price unavailable" : formatPrice(lead.value);
     holdingEl.textContent = `${lead.holding.symbol} ${formatBalance(lead.holding.balance)} / ${valueText}`;
+}
+
+function renderMarketRegime(model) {
+    const el = document.getElementById("market-regime-panel");
+    if (!el) return;
+    const markets = model.markets || [];
+    const unavailableHtml = `<div class="loading-cell">Market regime unavailable.</div>`;
+    if (!markets.length) {
+        el.innerHTML = unavailableHtml;
+        return;
+    }
+    const topMarkets = markets.slice(0, 30);
+    const totalCap = markets.reduce((total, coin) => total + finiteNumber(coin.marketCapAud ?? coin.market_cap), 0);
+    const totalVolume = markets.reduce((total, coin) => total + finiteNumber(coin.volume24hAud ?? coin.total_volume), 0);
+    const btc = markets.find(coin => safeText(coin.symbol, "").toUpperCase() === "BTC");
+    const eth = markets.find(coin => safeText(coin.symbol, "").toUpperCase() === "ETH");
+    const btcCap = btc ? finiteNumber(btc.marketCapAud ?? btc.market_cap, NaN) : NaN;
+    const ethCap = eth ? finiteNumber(eth.marketCapAud ?? eth.market_cap, NaN) : NaN;
+    const changes24h = topMarkets.map(coin => finiteNumber(coin.change24h ?? coin.price_change_percentage_24h, NaN)).filter(Number.isFinite);
+    const altChanges24h = markets
+        .filter(coin => !["BTC", "ETH"].includes(safeText(coin.symbol, "").toUpperCase()))
+        .slice(0, 30)
+        .map(coin => finiteNumber(coin.change24h ?? coin.price_change_percentage_24h, NaN))
+        .filter(Number.isFinite);
+    if (totalCap <= 0 || totalVolume <= 0 || !Number.isFinite(btcCap) || !Number.isFinite(ethCap) || !changes24h.length || !altChanges24h.length) {
+        el.innerHTML = unavailableHtml;
+        return;
+    }
+    const btcDominance = (btcCap / totalCap) * 100;
+    const ethDominance = (ethCap / totalCap) * 100;
+    const avgMove = average(changes24h);
+    const highVolatility = changes24h.filter(change => Math.abs(change) >= 5).length >= 8;
+    const lowLiquidity = totalVolume < 50000000000;
+    const altAvg = average(altChanges24h);
+    const label = lowLiquidity
+        ? "Low Liquidity"
+        : highVolatility
+            ? "High Volatility"
+            : btcDominance >= 48 && avgMove > 0
+                ? "BTC-Led Market"
+                : altAvg > avgMove + 1 && avgMove > 0
+                    ? "Altcoin Rotation"
+                    : avgMove >= 1.5 ? "Risk-On" : avgMove <= -1.5 ? "Risk-Off" : "Cautious";
+    el.innerHTML = `
+        <div class="regime-header">
+            <span>Market Regime</span>
+            <strong>${label}</strong>
+        </div>
+        <div class="regime-grid">
+            <span><small>Total cap</small><strong>${formatBig(totalCap)}</strong></span>
+            <span><small>24h volume</small><strong>${formatBig(totalVolume)}</strong></span>
+            <span><small>BTC dominance</small><strong>${btcDominance.toFixed(1)}%</strong></span>
+            <span><small>ETH dominance</small><strong>${ethDominance.toFixed(1)}%</strong></span>
+            <span><small>24h breadth</small><strong>${avgMove >= 0 ? "+" : ""}${avgMove.toFixed(2)}%</strong></span>
+            <span><small>Alt rotation</small><strong>${altAvg > avgMove + 1 ? "Rotation watch" : "Not confirmed"}</strong></span>
+            <span><small>Source</small><strong>${escapeHtml(model.dataConfidence?.provider || "Current Feed")}</strong></span>
+            <span><small>Updated</small><strong>${formatTimestamp(model.dataConfidence?.lastStatusUpdate || new Date().toISOString())}</strong></span>
+        </div>
+    `;
 }
 
 function analysisHtml(selected, portfolioValue) {

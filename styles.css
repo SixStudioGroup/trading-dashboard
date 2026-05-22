@@ -100,7 +100,7 @@ a:hover { text-decoration: underline; }
     margin-bottom: 10px;
     padding: 10px 12px;
     display: grid;
-    grid-template-columns: minmax(150px, 0.8fr) minmax(230px, 1fr) minmax(270px, 1.3fr) repeat(3, minmax(120px, auto));
+    grid-template-columns: minmax(140px, 0.7fr) minmax(220px, 0.9fr) minmax(270px, 1.2fr) repeat(4, minmax(110px, auto));
     gap: 10px;
     align-items: center;
     box-shadow: 0 1px 2px rgba(15, 41, 61, 0.06);
@@ -145,6 +145,55 @@ a:hover { text-decoration: underline; }
     font-size: 13px;
     font-weight: 700;
     white-space: nowrap;
+}
+
+.market-regime-panel {
+    margin-bottom: 10px;
+    padding: 9px 12px;
+    display: grid;
+    gap: 8px;
+}
+
+.regime-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.regime-header strong {
+    color: var(--brand-blue);
+    font-size: 14px;
+}
+
+.regime-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 7px;
+}
+
+.regime-grid span {
+    border: 1px solid #edf1f4;
+    border-radius: 3px;
+    background: #fbfcfd;
+    padding: 7px;
+    display: grid;
+    gap: 3px;
+}
+
+.regime-grid small {
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.regime-grid strong {
+    color: #34495e;
+    font-size: 12px;
 }
 
 .status-holding strong {

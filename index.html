@@ -32,13 +32,13 @@
                 <span class="status-dot"></span>
                 <span id="market-status">Loading live data...</span>
             </div>
-            <div class="data-source-card">
-                <span>Market Source: <strong data-confidence-field="provider">Current Feed</strong></span>
-                <span>Planned Source: <strong data-confidence-field="plannedProvider">CoinMarketCap API via secure proxy</strong></span>
-                <span>Status: <strong data-confidence-field="mode">Live Data</strong></span>
+            <div class="data-source-card" aria-label="Data Source Status">
+                <span>Source: <strong data-confidence-field="provider">Current Feed</strong></span>
+                <span>State: <strong data-confidence-field="mode">Live Data</strong></span>
+                <span>Updated: <strong data-confidence-field="lastStatusUpdate">Pending</strong></span>
+                <span>Fallback reason: <strong data-confidence-field="failureReason">None</strong></span>
                 <span>Last live: <strong data-confidence-field="lastSuccessfulLiveFetch">Not recorded</strong></span>
                 <span>Attempted: <strong data-confidence-field="lastAttemptedFetch">Not recorded</strong></span>
-                <span>Failure: <strong data-confidence-field="failureReason">None</strong></span>
                 <span>Retry: <strong data-confidence-field="retryCount">0</strong> · Next <strong data-confidence-field="nextRetryTime">next refresh</strong></span>
             </div>
             <div class="status-metric">
@@ -53,6 +53,10 @@
                 <span>Holding</span>
                 <strong id="status-holding-summary">No active holdings</strong>
             </div>
+        </section>
+
+        <section class="panel market-regime-panel" id="market-regime-panel">
+            <div class="loading-cell">Market regime unavailable.</div>
         </section>
 
         <section class="decision-grid command-grid">
