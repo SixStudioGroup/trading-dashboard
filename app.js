@@ -23,35 +23,34 @@ const FALLBACK_MARKETS = [
 ];
 
 const FALLBACK_SPARKLINE = [12, 12.4, 12.8, 13, 13.4, 14.2, 14.8, 15.1, 15.4];
-const FALLBACK_STATUS = "Live API unavailable - fallback snapshot";
+const FALLBACK_STATUS = "Fallback Snapshot - review/planning only.";
 let fallbackWarningShown = false;
 let detailedFetchErrorLogged = false;
 
-// Future backend/proxy placeholder. Keep empty for static GitHub Pages builds.
-// Intended secure backend use only:
-// - CoinMarketCap /v1/cryptocurrency/listings/latest for broad ranked market data
-// - CoinMarketCap /v1/cryptocurrency/quotes/latest for selected symbols or IDs
-// - CoinMarketCap trending/gainers/losers endpoints if supported by the backend plan
-// Never call authenticated CoinMarketCap endpoints directly from browser JavaScript.
+// Static GitHub Pages build: keep market data keyless in the browser.
+// A future GitHub Action or lightweight backend can publish a static JSON
+// snapshot for this file to read without exposing provider credentials.
 const MARKET_DATA_PROXY_URL = "";
-const COINGECKO_DEMO_KEY = "CG-XfUcJ4LkYhH59vnbgzWTYW84";
 const REFRESH_INTERVAL_MS = 60000;
+const PRIVACY_STORAGE_KEY = "zencloud.hideValues.v1";
+const MASTER_RULE = "If the idea did not start in ZenCloud, do not execute it in CoinSpot.";
 const MARKET_PROVIDERS = {
-    currentPublicFeed: "Current Feed",
-    coinMarketCapProxy: "CoinMarketCap Proxy",
+    currentPublicFeed: "Live Public Feed",
+    coinMarketCapProxy: "Static Snapshot Ready",
     fallbackSnapshot: "Fallback Snapshot"
 };
 const dataConfidence = {
     mode: "Live Data",
     provider: MARKET_PROVIDERS.currentPublicFeed,
-    plannedProvider: "CoinMarketCap API via secure proxy",
+    plannedProvider: "Static Snapshot Ready",
     lastSuccessfulLiveFetch: "",
     lastAttemptedFetch: "",
     lastStatusUpdate: "",
     failureReason: "None",
     retryCount: 0,
     nextRetryTime: "next refresh",
-    isFallback: false
+    isFallback: false,
+    dataKind: "Live"
 };
 
 const DEFAULT_HOLDINGS = [
@@ -67,19 +66,7 @@ const LEGACY_DEFAULT_HOLDINGS = [
     { symbol: "TRB", balance: 0, note: "Default sample holding" }
 ];
 
-const COINSPOT_SYMBOLS = {
-    ADA: "https://www.coinspot.com.au/buy/ada",
-    BNB: "https://www.coinspot.com.au/buy/bnb",
-    BTC: "https://www.coinspot.com.au/buy/btc",
-    DOGE: "https://www.coinspot.com.au/buy/doge",
-    DOT: "https://www.coinspot.com.au/buy/dot",
-    ETH: "https://www.coinspot.com.au/buy/eth",
-    FET: "https://www.coinspot.com.au/buy/fet",
-    LTC: "https://www.coinspot.com.au/buy/ltc",
-    NEAR: "https://www.coinspot.com.au/buy/near",
-    THETA: "https://www.coinspot.com.au/buy/theta",
-    XLM: "https://www.coinspot.com.au/buy/xlm"
-};
+const COINSPOT_SUPPORTED_SYMBOLS = new Set(["ADA", "BNB", "BTC", "DOGE", "DOT", "ETH", "FET", "LTC", "NEAR", "THETA", "XLM"]);
 
 const page = document.body.dataset.page;
 const HOLDINGS_STORAGE_KEY = "zencloud.manualHoldings.v1";
@@ -102,6 +89,8 @@ let usingDefaultHoldings = false;
 let selectedAssetId = null;
 let planConfirmedAssetId = null;
 let currentDashboardModel = null;
+let currentJournalModel = null;
+let hideValues = loadPrivacyMode();
 const savedPlanInputs = {};
 let manualHoldings = loadHoldings();
 let tradeJournal = loadCollection(TRADE_JOURNAL_STORAGE_KEY);
@@ -124,6 +113,44 @@ function formatPrice(value) {
         minimumFractionDigits: value >= 1 ? 2 : 6,
         maximumFractionDigits: value >= 1 ? 2 : 6
     }).format(value);
+}
+
+function maskMoney() {
+    return "$••••";
+}
+
+function maskUnits() {
+    return "•••• units";
+}
+
+function maskHidden() {
+    return "Hidden";
+}
+
+function displayPrice(value) {
+    return hideValues ? maskMoney() : formatPrice(value);
+}
+
+function displayMoneyText(value, formatter = formatPrice) {
+    return hideValues ? maskMoney() : formatter(value);
+}
+
+function displayBalance(value, symbol = "") {
+    if (hideValues) return symbol ? `•••• ${symbol}` : maskUnits();
+    return formatBalance(value);
+}
+
+function displayEntry(value, fallback = "Entry not set") {
+    if (hideValues) return maskMoney();
+    return value ? formatPrice(value) : fallback;
+}
+
+function displayTradeValue(value, formatter = formatPrice) {
+    return hideValues ? maskMoney() : formatter(value);
+}
+
+function displayPercentValue(value, formatter = formatSignedPercent) {
+    return hideValues ? maskHidden() : formatter(value);
 }
 
 function formatBig(value) {
@@ -165,6 +192,26 @@ function storageAvailable() {
         return true;
     } catch (error) {
         return false;
+    }
+}
+
+function loadPrivacyMode() {
+    if (!storageAvailable()) return false;
+    try {
+        return window.localStorage.getItem(PRIVACY_STORAGE_KEY) === "true";
+    } catch (error) {
+        return false;
+    }
+}
+
+function savePrivacyMode(value) {
+    hideValues = Boolean(value);
+    if (storageAvailable()) {
+        try {
+            window.localStorage.setItem(PRIVACY_STORAGE_KEY, String(hideValues));
+        } catch (error) {
+            console.warn("Privacy mode preference update skipped.");
+        }
     }
 }
 
@@ -401,12 +448,12 @@ function unrealizedFor(row) {
 }
 
 function coinspotUrl(coin) {
-    const symbol = safeText(coin?.symbol, "").toUpperCase();
-    return COINSPOT_SYMBOLS[symbol] || null;
+    return null;
 }
 
 function coinspotStatus(coin) {
-    return coinspotUrl(coin) ? "Supported" : "Watch only";
+    const symbol = safeText(coin?.symbol, "").toUpperCase();
+    return COINSPOT_SUPPORTED_SYMBOLS.has(symbol) ? "Supported" : "Watch only";
 }
 
 function coinCell(coin) {
@@ -649,7 +696,7 @@ function compactConfidenceMessage() {
         const lastLive = dataConfidence.lastSuccessfulLiveFetch
             ? new Date(dataConfidence.lastSuccessfulLiveFetch).toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit" })
             : "none";
-        return `Fallback Snapshot · ${dataConfidence.failureReason} · Last live: ${lastLive}`;
+        return `Fallback Snapshot — review/planning only. ${dataConfidence.failureReason}. Last live: ${lastLive}`;
     }
     return `${dataConfidence.mode} · ${dataConfidence.provider}`;
 }
@@ -666,10 +713,44 @@ function renderDataConfidence() {
             lastAttemptedFetch: dataConfidence.lastAttemptedFetch ? formatTimestamp(dataConfidence.lastAttemptedFetch) : "Not recorded",
             failureReason: dataConfidence.failureReason || "None",
             retryCount: String(dataConfidence.retryCount),
-            nextRetryTime: dataConfidence.nextRetryTime || "next refresh"
+            nextRetryTime: dataConfidence.nextRetryTime || "next refresh",
+            dataKind: dataConfidence.dataKind || (dataConfidence.isFallback ? "Fallback" : "Live")
         };
         el.textContent = valueMap[field] || "Not recorded";
     });
+    document.body.classList.toggle("fallback-active", Boolean(dataConfidence.isFallback));
+}
+
+function rerenderCurrentPage() {
+    if (page === "dashboard" && currentDashboardModel) renderDashboard(currentDashboardModel);
+    if (page === "journal") renderJournal();
+    if (page === "reports" && currentReportModel) renderReports(currentReportModel);
+}
+
+function initPrivacyToggle() {
+    const topbar = document.querySelector(".topbar");
+    if (!topbar || document.getElementById("hide-values-toggle")) return;
+    const label = document.createElement("label");
+    label.className = "privacy-toggle";
+    label.innerHTML = `
+        <input id="hide-values-toggle" type="checkbox" ${hideValues ? "checked" : ""}>
+        <span>Hide Values</span>
+    `;
+    topbar.appendChild(label);
+    document.body.classList.toggle("values-hidden", hideValues);
+    label.querySelector("input").addEventListener("change", event => {
+        savePrivacyMode(event.currentTarget.checked);
+        document.body.classList.toggle("values-hidden", hideValues);
+        rerenderCurrentPage();
+    });
+}
+
+function initMasterRuleFooter() {
+    if (document.querySelector(".master-rule-footer")) return;
+    const footer = document.createElement("footer");
+    footer.className = "master-rule-footer";
+    footer.innerHTML = `<strong>${MASTER_RULE}</strong><span>ZenCloud decides. CoinSpot executes. ZenCloud records and reviews.</span>`;
+    document.body.appendChild(footer);
 }
 
 function setStatus(message = compactConfidenceMessage(), isLive = true) {
@@ -678,7 +759,7 @@ function setStatus(message = compactConfidenceMessage(), isLive = true) {
         el.textContent = message;
     });
     document.querySelectorAll(".status-dot").forEach(el => {
-        el.style.background = isLive ? "var(--green)" : "var(--orange)";
+        el.style.background = isLive ? "var(--cyan)" : "var(--amber)";
     });
     renderDataConfidence();
 }
@@ -711,9 +792,8 @@ async function getMarkets() {
         }
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 12000);
-        const url = proxyUrl || `https://pro-api.coingecko.com/api/v3/coins/markets?${params.toString()}`;
+        const url = proxyUrl || `https://api.coingecko.com/api/v3/coins/markets?${params.toString()}`;
         const headers = { "accept": "application/json" };
-        if (!proxyUrl && COINGECKO_DEMO_KEY) headers["x-cg-demo-api-key"] = COINGECKO_DEMO_KEY;
         const response = await fetch(url, {
             headers,
             cache: "no-store",
@@ -750,6 +830,7 @@ async function getMarkets() {
         dataConfidence.failureReason = "None";
         dataConfidence.retryCount = 0;
         dataConfidence.isFallback = false;
+        dataConfidence.dataKind = "Live";
         setStatus(compactConfidenceMessage(), true);
         setLastUpdatedLabel();
         return normalizeMarkets(rows, provider);
@@ -759,6 +840,7 @@ async function getMarkets() {
         dataConfidence.failureReason = error.failureReason || classifyFetchFailure(error);
         dataConfidence.retryCount += 1;
         dataConfidence.isFallback = true;
+        dataConfidence.dataKind = "Fallback";
         logDetailedFetchErrorOnce(error);
         warnFallbackOnce();
         setStatus(compactConfidenceMessage() || FALLBACK_STATUS, false);
@@ -859,16 +941,16 @@ function renderDashboard(model) {
         return `
             <tr>
                 <td>${coinCell(row.displayCoin)}</td>
-                <td class="num">${formatBalance(row.holding.balance)}</td>
+                <td class="num">${displayBalance(row.holding.balance, row.holding.symbol)}</td>
                 <td class="num">${row.market ? formatPrice(row.market.current_price) : "Price unavailable"}</td>
-                <td class="num">${row.holding.avgEntryPrice ? formatPrice(row.holding.avgEntryPrice) : "Entry not set"}</td>
-                <td class="num ${unrealized.aud > 0 ? "positive" : unrealized.aud < 0 ? "negative" : "neutral"}">${unrealized.label}</td>
+                <td class="num">${displayEntry(row.holding.avgEntryPrice)}</td>
+                <td class="num ${unrealized.aud > 0 ? "positive" : unrealized.aud < 0 ? "negative" : "neutral"}">${hideValues ? maskMoney() : unrealized.label}</td>
                 <td>${holdingDuration(row.holding.updatedAt)}</td>
             </tr>
         `;
     }).join("") : `<tr><td colspan="6" class="loading-cell">No manual holdings saved.</td></tr>`;
 
-    document.getElementById("portfolio-value").textContent = formatPrice(portfolioValue);
+    document.getElementById("portfolio-value").textContent = displayPrice(portfolioValue);
     renderHoldingsAllocation(holdingRows, portfolioValue);
     renderHoldingsManager(markets, holdingRows);
     renderPositionMonitor(rankedAssets, holdingRows);
@@ -910,7 +992,7 @@ function renderDashboard(model) {
 function updateCommandStatus(holdingRows, portfolioValue) {
     const portfolioEl = document.getElementById("status-portfolio-value");
     const holdingEl = document.getElementById("status-holding-summary");
-    if (portfolioEl) portfolioEl.textContent = formatPrice(portfolioValue);
+    if (portfolioEl) portfolioEl.textContent = displayPrice(portfolioValue);
     const modeEl = document.getElementById("session-mode");
     const activeRows = holdingRows.filter(row => row.holding.balance > 0);
     if (modeEl) {
@@ -925,8 +1007,8 @@ function updateCommandStatus(holdingRows, portfolioValue) {
         return;
     }
     const lead = [...activeRows].sort((a, b) => (b.value ?? 0) - (a.value ?? 0))[0];
-    const valueText = lead.value === null ? "Price unavailable" : formatPrice(lead.value);
-    holdingEl.textContent = `${lead.holding.symbol} ${formatBalance(lead.holding.balance)} / ${valueText}`;
+    const valueText = lead.value === null ? "Price unavailable" : displayPrice(lead.value);
+    holdingEl.textContent = `${lead.holding.symbol} ${displayBalance(lead.holding.balance, lead.holding.symbol)} / ${valueText}`;
 }
 
 function renderMarketRegime(model) {
@@ -1035,11 +1117,11 @@ function renderPositionMonitor(items, holdingRows) {
         return `
             <tr>
                 <td>${escapeHtml(row.holding.symbol)} / ${escapeHtml(row.holding.name)}</td>
-                <td class="num">${formatBalance(row.holding.balance)}</td>
-                <td class="num">${row.holding.avgEntryPrice ? formatPrice(row.holding.avgEntryPrice) : "Entry not set"}</td>
+                <td class="num">${displayBalance(row.holding.balance, row.holding.symbol)}</td>
+                <td class="num">${displayEntry(row.holding.avgEntryPrice)}</td>
                 <td class="num">${row.market ? formatPrice(row.market.current_price) : "Price unavailable"}</td>
-                <td class="num ${unrealized.aud > 0 ? "positive" : unrealized.aud < 0 ? "negative" : "neutral"}">${unrealized.aud === null ? unrealized.label : formatSignedMoney(unrealized.aud)}</td>
-                <td class="num ${unrealized.percent > 0 ? "positive" : unrealized.percent < 0 ? "negative" : "neutral"}">${unrealized.percent === null ? unrealized.label : formatSignedPercent(unrealized.percent)}</td>
+                <td class="num ${unrealized.aud > 0 ? "positive" : unrealized.aud < 0 ? "negative" : "neutral"}">${unrealized.aud === null ? (hideValues ? maskMoney() : unrealized.label) : displayMoneyText(unrealized.aud, formatSignedMoney)}</td>
+                <td class="num ${unrealized.percent > 0 ? "positive" : unrealized.percent < 0 ? "negative" : "neutral"}">${unrealized.percent === null ? (hideValues ? maskHidden() : unrealized.label) : displayPercentValue(unrealized.percent)}</td>
                 <td>${escapeHtml(signal)}</td>
                 <td>${escapeHtml(exitRisk)}</td>
                 <td>${holdingDuration(row.holding.updatedAt)}</td>
@@ -1052,9 +1134,13 @@ function renderPositionMonitor(items, holdingRows) {
 function analysisHtml(selected, portfolioValue) {
     const state = guideStateFor(selected);
     const confirmed = planConfirmedAssetId === selected.coin.id;
-    const selectedCoinspotUrl = confirmed ? coinspotUrl(selected.coin) : null;
+    const fallbackLocked = Boolean(dataConfidence.isFallback);
+    const selectedCoinspotUrl = confirmed && !fallbackLocked ? coinspotUrl(selected.coin) : null;
     const defaultSize = Math.max(0, portfolioValue * 0.1);
     const consensus = agentConsensusFor(selected, portfolioValue);
+    const handoffText = fallbackLocked
+        ? "Live data unavailable. Review only."
+        : confirmed ? "Checklist complete. Execution handoff is available for this asset." : "Complete the checklist before execution handoff.";
     return `
         <div class="analysis-heading">
             ${coinCell(selected.coin)}
@@ -1087,7 +1173,7 @@ function analysisHtml(selected, portfolioValue) {
             <label>Invalidation<input id="plan-invalidation" type="text" value="${escapeHtml(invalidationSentence(state.label))}"></label>
             <label>Target review time<input id="plan-review" type="datetime-local" value="${formatDateTimeLocal(Date.now() + 86400000)}"></label>
             <label>Expected holding window<input id="plan-window" type="text" value="1-7 days"></label>
-            <label>Intended position size<input id="plan-size" type="number" min="0" step="any" value="${defaultSize.toFixed(2)}"></label>
+            <label>Intended position size<input id="plan-size" type="${hideValues ? "password" : "number"}" min="0" step="any" value="${hideValues ? maskMoney() : defaultSize.toFixed(2)}" ${hideValues ? "disabled" : ""}></label>
             <label>Notes<textarea id="plan-notes" placeholder="Manual notes"></textarea></label>
             <div class="form-actions">
                 <button class="table-action" type="button" id="confirm-plan">Confirm Checklist</button>
@@ -1098,11 +1184,11 @@ function analysisHtml(selected, portfolioValue) {
         <div class="position-helper">
             <div class="mini-title">Risk Per Trade</div>
             <div class="size-grid">
-                <label>Account value<input id="size-portfolio" type="number" min="0" step="any" value="${portfolioValue.toFixed(2)}"></label>
+                <label>Account value<input id="size-portfolio" type="${hideValues ? "password" : "number"}" min="0" step="any" value="${hideValues ? maskMoney() : portfolioValue.toFixed(2)}" ${hideValues ? "disabled" : ""}></label>
                 <label>Risk per trade %<input id="risk-percent" type="number" min="0" step="any" value="2"></label>
                 <label>Entry price<input id="risk-entry" type="number" min="0" step="any" value="${selected.coin.current_price}"></label>
                 <label>Invalidation price<input id="risk-invalid-price" type="number" min="0" step="any" value="${Math.max(0, selected.coin.current_price * 0.95).toFixed(6)}"></label>
-                <label>Max risk AUD<input id="size-risk-amount" type="number" min="0" step="any" value="${Math.max(0, portfolioValue * 0.02).toFixed(2)}"></label>
+                <label>Max risk AUD<input id="size-risk-amount" type="${hideValues ? "password" : "number"}" min="0" step="any" value="${hideValues ? maskMoney() : Math.max(0, portfolioValue * 0.02).toFixed(2)}" ${hideValues ? "disabled" : ""}></label>
                 <label>Allocation %<input id="size-allocation" type="number" min="0" step="any" value="10"></label>
             </div>
             <div class="helper-output" id="size-output">Sizing helper only. Final trade decision is external.</div>
@@ -1114,10 +1200,11 @@ function analysisHtml(selected, portfolioValue) {
             `).join("")}
         </div>
         <div class="execution-bar">
-            <span>${confirmed ? "Checklist complete. Execution handoff is available for this asset." : "Complete the checklist before execution handoff."}</span>
+            <span>${handoffText}<small>${MASTER_RULE}</small></span>
             ${selectedCoinspotUrl
                 ? `<a class="button-primary" href="${selectedCoinspotUrl}" target="_blank" rel="noopener noreferrer">Open CoinSpot</a>`
-                : confirmed ? `<span class="watch-only">CoinSpot link unavailable</span>` : `<span class="watch-only">Plan required</span>`}
+                : fallbackLocked ? `<span class="watch-only handoff-locked">Live data unavailable. Review only.</span>`
+                    : confirmed ? `<span class="watch-only">Manual CoinSpot execution only</span>` : `<span class="watch-only">Plan required</span>`}
         </div>
     `;
 }
@@ -1127,6 +1214,10 @@ function attachAnalysisControls(selected, portfolioValue) {
     const updateSizing = () => {
         const out = document.getElementById("size-output");
         if (!out) return;
+        if (hideValues) {
+            out.textContent = "Sizing values hidden for screen sharing. Disable Hide Values to edit the sizing helper.";
+            return;
+        }
         const portfolio = Math.max(0, finiteNumber(document.getElementById("size-portfolio")?.value, portfolioValue));
         const allocation = Math.max(0, finiteNumber(document.getElementById("size-allocation")?.value, 0));
         const riskPercent = Math.max(0, finiteNumber(document.getElementById("risk-percent")?.value, 0));
@@ -1487,9 +1578,9 @@ function renderPerformanceSummary(targetId) {
         ["Win rate", `${metrics.winRate.toFixed(1)}%`],
         ["Avg gain", `${metrics.avgGain.toFixed(2)}%`],
         ["Avg loss", `${metrics.avgLoss.toFixed(2)}%`],
-        ["Best", formatSignedMoney(metrics.best.resultAud)],
-        ["Worst", formatSignedMoney(metrics.worst.resultAud)],
-        ["Net AUD", formatSignedMoney(metrics.net)],
+        ["Best", displayMoneyText(metrics.best.resultAud, formatSignedMoney)],
+        ["Worst", displayMoneyText(metrics.worst.resultAud, formatSignedMoney)],
+        ["Net AUD", displayMoneyText(metrics.net, formatSignedMoney)],
         ["Most traded", metrics.mostTraded],
         ["Best signal", metrics.bestSignal],
         ["Worst signal", metrics.worstSignal],
@@ -1611,12 +1702,15 @@ function renderTradeGuide(items) {
         const state = guideStateFor(item);
         const supported = coinspotStatus(item.coin);
         const analysed = item.coin.id === selectedAssetId;
-        const handoffUrl = analysed && planConfirmedAssetId === item.coin.id ? coinspotUrl(item.coin) : null;
+        const fallbackLocked = Boolean(dataConfidence.isFallback);
+        const handoffUrl = analysed && planConfirmedAssetId === item.coin.id && !fallbackLocked ? coinspotUrl(item.coin) : null;
         const action = handoffUrl
             ? `<a class="table-action" href="${handoffUrl}" target="_blank" rel="noopener noreferrer">CoinSpot</a>`
+            : fallbackLocked && analysed
+                ? `<span class="watch-only">Review only</span>`
             : supported === "Supported" && !analysed
                 ? `<button class="table-action" type="button" data-asset-id="${item.coin.id}">Analyse</button>`
-                : analysed && supported === "Supported" ? "Plan required" : "Watch only";
+                : analysed && supported === "Supported" ? "Manual only" : "Watch only";
         return `
             <tr>
                 <td class="num">${index + 1}</td>
@@ -1645,7 +1739,7 @@ function renderHoldingsAllocation(holdingRows, portfolioValue) {
     const leadPercent = lead && portfolioValue > 0 && lead.value !== null
         ? Math.round((lead.value / portfolioValue) * 100)
         : activeRows.length === 1 ? 100 : 0;
-    pie.innerHTML = lead ? `${lead.holding.symbol}<br>${leadPercent}%` : "0%";
+    pie.innerHTML = lead ? `${lead.holding.symbol}<br>${hideValues ? "••••" : `${leadPercent}%`}` : "0%";
 
     if (!activeRows.length) {
         body.innerHTML = `<tr><td colspan="3" class="loading-cell">No active holdings.</td></tr>`;
@@ -1659,8 +1753,8 @@ function renderHoldingsAllocation(holdingRows, portfolioValue) {
         return `
             <tr>
                 <td>${coinCell(row.displayCoin)}</td>
-                <td class="num">${allocation}</td>
-                <td class="num">${row.value === null ? "Price unavailable" : formatPrice(row.value)}</td>
+                <td class="num">${hideValues ? maskHidden() : allocation}</td>
+                <td class="num">${row.value === null ? "Price unavailable" : displayPrice(row.value)}</td>
             </tr>
         `;
     }).join("");
@@ -1673,15 +1767,15 @@ function renderHoldingsManager(markets, holdingRows) {
     body.innerHTML = holdingRows.length ? holdingRows.map(row => `
         <tr>
             <td>${coinCell(row.displayCoin)}</td>
-            <td class="num"><input class="inline-balance" type="number" min="0" step="any" value="${row.holding.balance}" data-balance-symbol="${escapeHtml(row.holding.symbol)}"></td>
-            <td class="num"><input class="inline-balance" type="number" min="0" step="any" value="${row.holding.avgEntryPrice || ""}" data-entry-symbol="${escapeHtml(row.holding.symbol)}" placeholder="Entry not set"></td>
+            <td class="num">${hideValues ? `<span class="masked-value">${maskUnits()}</span>` : `<input class="inline-balance" type="number" min="0" step="any" value="${row.holding.balance}" data-balance-symbol="${escapeHtml(row.holding.symbol)}">`}</td>
+            <td class="num">${hideValues ? `<span class="masked-value">${maskMoney()}</span>` : `<input class="inline-balance" type="number" min="0" step="any" value="${row.holding.avgEntryPrice || ""}" data-entry-symbol="${escapeHtml(row.holding.symbol)}" placeholder="Entry not set">`}</td>
             <td class="num">${row.market ? formatPrice(row.market.current_price) : "Price unavailable"}</td>
-            <td class="num ${unrealizedFor(row).aud > 0 ? "positive" : unrealizedFor(row).aud < 0 ? "negative" : "neutral"}">${unrealizedFor(row).label}</td>
+            <td class="num ${unrealizedFor(row).aud > 0 ? "positive" : unrealizedFor(row).aud < 0 ? "negative" : "neutral"}">${hideValues ? maskMoney() : unrealizedFor(row).label}</td>
             <td><input class="inline-note" type="text" value="${escapeHtml(row.holding.note)}" data-note-symbol="${escapeHtml(row.holding.symbol)}" placeholder="None"></td>
             <td>${holdingDuration(row.holding.updatedAt)}</td>
             <td>${formatTimestamp(row.holding.updatedAt)}</td>
             <td>
-                <button class="table-action" type="button" data-save-holding="${escapeHtml(row.holding.symbol)}">Save</button>
+                <button class="table-action" type="button" data-save-holding="${escapeHtml(row.holding.symbol)}" ${hideValues ? "disabled" : ""}>Save</button>
                 <button class="table-action danger-action" type="button" data-remove-holding="${escapeHtml(row.holding.symbol)}">Remove</button>
             </td>
         </tr>
@@ -2055,9 +2149,9 @@ function renderDailyReport(trades) {
         ["Trades closed", closedToday.length],
         ["Open positions", openPositions],
         ["Closed positions", closedPositions],
-        ["Best result", best ? formatSignedMoney(best.resultAud) : "Not recorded"],
-        ["Worst result", worst ? formatSignedMoney(worst.resultAud) : "Not recorded"],
-        ["Net AUD result", formatSignedMoney(net)]
+        ["Best result", best ? displayMoneyText(best.resultAud, formatSignedMoney) : "Not recorded"],
+        ["Worst result", worst ? displayMoneyText(worst.resultAud, formatSignedMoney) : "Not recorded"],
+        ["Net AUD result", displayMoneyText(net, formatSignedMoney)]
     ].map(([label, value]) => reportMetric(label, value)).join("");
     note.textContent = opened.length || closedToday.length
         ? "Daily notes: review entries, exits, and whether the plan was followed."
@@ -2079,7 +2173,7 @@ function renderWeeklyReport() {
         ["Win rate", `${metrics.winRate.toFixed(1)}%`],
         ["Average gain", `${metrics.avgGain.toFixed(2)}%`],
         ["Average loss", `${metrics.avgLoss.toFixed(2)}%`],
-        ["Net AUD result", formatSignedMoney(metrics.net)],
+        ["Net AUD result", displayMoneyText(metrics.net, formatSignedMoney)],
         ["Best signal type", metrics.bestSignal],
         ["Worst signal type", metrics.worstSignal],
         ["Most traded asset", metrics.mostTraded],
@@ -2102,8 +2196,8 @@ function renderTradeReviewReport(trades) {
             <td>${escapeHtml(trade.agentConsensus)}</td>
             <td>${escapeHtml(trade.plannedInvalidation)}</td>
             <td>${escapeHtml(trade.exitReason || "Manual close")}</td>
-            <td class="num ${trade.resultAud > 0 ? "positive" : trade.resultAud < 0 ? "negative" : "neutral"}">${trade.resultAud === null ? "Not recorded" : formatSignedMoney(trade.resultAud)}</td>
-            <td class="num ${trade.resultPercent > 0 ? "positive" : trade.resultPercent < 0 ? "negative" : "neutral"}">${trade.resultPercent === null ? "Not recorded" : formatSignedPercent(trade.resultPercent)}</td>
+            <td class="num ${trade.resultAud > 0 ? "positive" : trade.resultAud < 0 ? "negative" : "neutral"}">${trade.resultAud === null ? "Not recorded" : displayMoneyText(trade.resultAud, formatSignedMoney)}</td>
+            <td class="num ${trade.resultPercent > 0 ? "positive" : trade.resultPercent < 0 ? "negative" : "neutral"}">${trade.resultPercent === null ? "Not recorded" : displayPercentValue(trade.resultPercent)}</td>
             <td>
                 <label class="rule-toggle">
                     <input type="checkbox" data-review-rule="${escapeHtml(trade.id)}" ${trade.ruleFollowed ? "checked" : ""}>
@@ -2151,11 +2245,11 @@ function renderPositionReport(model) {
     body.innerHTML = rows.length ? rows.map(row => `
         <tr>
             <td>${escapeHtml(row.holding.symbol)} / ${escapeHtml(row.holding.name)}</td>
-            <td class="num">${formatBalance(row.holding.balance)}</td>
-            <td class="num">${row.holding.avgEntryPrice ? formatPrice(row.holding.avgEntryPrice) : "Entry not set"}</td>
+            <td class="num">${displayBalance(row.holding.balance, row.holding.symbol)}</td>
+            <td class="num">${displayEntry(row.holding.avgEntryPrice)}</td>
             <td class="num">${row.valuation.market ? formatPrice(row.valuation.market.current_price) : "Price unavailable"}</td>
-            <td class="num ${row.unrealized.aud > 0 ? "positive" : row.unrealized.aud < 0 ? "negative" : "neutral"}">${row.unrealized.aud === null ? row.unrealized.label : formatSignedMoney(row.unrealized.aud)}</td>
-            <td class="num ${row.unrealized.percent > 0 ? "positive" : row.unrealized.percent < 0 ? "negative" : "neutral"}">${row.unrealized.percent === null ? row.unrealized.label : formatSignedPercent(row.unrealized.percent)}</td>
+            <td class="num ${row.unrealized.aud > 0 ? "positive" : row.unrealized.aud < 0 ? "negative" : "neutral"}">${row.unrealized.aud === null ? (hideValues ? maskMoney() : row.unrealized.label) : displayMoneyText(row.unrealized.aud, formatSignedMoney)}</td>
+            <td class="num ${row.unrealized.percent > 0 ? "positive" : row.unrealized.percent < 0 ? "negative" : "neutral"}">${row.unrealized.percent === null ? (hideValues ? maskHidden() : row.unrealized.label) : displayPercentValue(row.unrealized.percent)}</td>
             <td>${holdingDuration(row.holding.updatedAt)}</td>
             <td>${escapeHtml(row.stateRow.state)}</td>
             <td>${escapeHtml(exitRiskForReport(row.stateRow, row.valuation))}</td>
@@ -2220,6 +2314,7 @@ function initReportsControls() {
 }
 
 function renderJournal() {
+    currentJournalModel = true;
     const openBody = document.getElementById("open-trades-body");
     const closedBody = document.getElementById("closed-trades-body");
     if (!openBody || !closedBody) return;
@@ -2231,8 +2326,8 @@ function renderJournal() {
             <td>${escapeHtml(trade.id)}</td>
             <td>${escapeHtml(trade.symbol)} / ${escapeHtml(trade.name)}</td>
             <td>${formatTimestamp(trade.entryDate)}</td>
-            <td class="num">${formatPrice(trade.entryPrice)}</td>
-            <td class="num">${formatPrice(trade.positionSize)}</td>
+            <td class="num">${displayTradeValue(trade.entryPrice)}</td>
+            <td class="num">${displayTradeValue(trade.positionSize)}</td>
             <td>${escapeHtml(trade.signalState)}</td>
             <td>${escapeHtml(trade.agentConsensus)}</td>
             <td>${escapeHtml(trade.plannedInvalidation)}</td>
@@ -2251,10 +2346,10 @@ function renderJournal() {
         <tr>
             <td>${escapeHtml(trade.id)}</td>
             <td>${escapeHtml(trade.symbol)} / ${escapeHtml(trade.name)}</td>
-            <td>${formatTimestamp(trade.entryDate)} @ ${formatPrice(trade.entryPrice)}</td>
-            <td>${formatTimestamp(trade.exitDate)} @ ${trade.exitPrice === null ? "Not recorded" : formatPrice(trade.exitPrice)}</td>
-            <td class="num ${trade.resultAud > 0 ? "positive" : trade.resultAud < 0 ? "negative" : "neutral"}">${trade.resultAud === null ? "Not recorded" : formatSignedMoney(trade.resultAud)}</td>
-            <td class="num ${trade.resultPercent > 0 ? "positive" : trade.resultPercent < 0 ? "negative" : "neutral"}">${trade.resultPercent === null ? "Not recorded" : formatSignedPercent(trade.resultPercent)}</td>
+            <td>${formatTimestamp(trade.entryDate)} @ ${displayTradeValue(trade.entryPrice)}</td>
+            <td>${formatTimestamp(trade.exitDate)} @ ${trade.exitPrice === null ? "Not recorded" : displayTradeValue(trade.exitPrice)}</td>
+            <td class="num ${trade.resultAud > 0 ? "positive" : trade.resultAud < 0 ? "negative" : "neutral"}">${trade.resultAud === null ? "Not recorded" : displayMoneyText(trade.resultAud, formatSignedMoney)}</td>
+            <td class="num ${trade.resultPercent > 0 ? "positive" : trade.resultPercent < 0 ? "negative" : "neutral"}">${trade.resultPercent === null ? "Not recorded" : displayPercentValue(trade.resultPercent)}</td>
             <td>${escapeHtml(trade.agentConsensus)}</td>
             <td>${trade.fromZenCloud ? "Yes" : "No"}</td>
             <td>${escapeHtml(trade.exitReason || "Manual close")}</td>
@@ -2369,6 +2464,9 @@ function injectSkeletonRows(bodyId, cols, count = 5) {
         ).join("")}</tr>`
     ).join("");
 }
+
+initPrivacyToggle();
+initMasterRuleFooter();
 
 if (page === "dashboard") {
     injectSkeletonRows("opportunities-body", 7);

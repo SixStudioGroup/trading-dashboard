@@ -1,17 +1,23 @@
 :root {
-    --brand-blue: #0878ba;
-    --brand-blue-dark: #075f95;
-    --page: #f3f6f8;
-    --panel: #ffffff;
-    --line: #d9e1e7;
-    --text: #2c3e50;
-    --muted: #71808d;
-    --green: #14a46c;
-    --red: #d84b4b;
-    --orange: #f5a623;
-    --amber-bg: #fff8e6;
-    --green-bg: #eefaf4;
-    --red-bg: #fff1f1;
+    --brand-blue: #5c7cfa;
+    --brand-blue-dark: #4263eb;
+    --brand-accent: #7c6df2;
+    --page: #08111f;
+    --panel: #111c2b;
+    --panel-soft: #152235;
+    --panel-raised: #18263a;
+    --line: #27364a;
+    --text: #edf4ff;
+    --muted: #91a1b6;
+    --cyan: #38bdf8;
+    --green: #35c486;
+    --red: #f26d6d;
+    --amber: #f4b84a;
+    --orange: var(--amber);
+    --amber-bg: rgba(244, 184, 74, 0.12);
+    --green-bg: rgba(53, 196, 134, 0.12);
+    --red-bg: rgba(242, 109, 109, 0.12);
+    --cyan-bg: rgba(56, 189, 248, 0.12);
 }
 
 * { box-sizing: border-box; }
@@ -1288,6 +1294,263 @@ tr:last-child td { border-bottom: none; }
     box-shadow: 0 0 0 3px rgba(245,166,35,0.25);
 }
 
+.topbar {
+    background: #0d1726;
+    border-bottom: 1px solid var(--line);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+}
+
+.brand-mark {
+    background: linear-gradient(135deg, var(--brand-accent), var(--cyan));
+    color: #ffffff;
+}
+
+.navlinks a {
+    color: #aebbd0;
+}
+
+.navlinks a.active,
+.navlinks a:hover {
+    color: #ffffff;
+    border-bottom-color: var(--cyan);
+}
+
+.privacy-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-left: 14px;
+    color: #d9e5f7;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.privacy-toggle input {
+    accent-color: var(--cyan);
+}
+
+.command-status,
+.welcome,
+.panel,
+.status-card,
+.data-source-card {
+    background: var(--panel);
+    border-color: var(--line);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.16);
+}
+
+.panel-header,
+.trade-guide-header,
+.tab-bar,
+.swing-mover,
+.collapsible-panel summary,
+th {
+    background: var(--panel-soft);
+    border-color: var(--line);
+}
+
+.exit-risk {
+    background: rgba(244, 184, 74, 0.07);
+}
+
+.command-title h1,
+.panel-title,
+.welcome h1,
+.regime-header strong,
+.regime-grid strong,
+.consensus-grid strong,
+.swing-header,
+.swing-metrics strong,
+.metric-grid dd,
+.collapsible-panel summary span,
+.coin-tile,
+.data-source-card strong,
+.status-metric strong {
+    color: var(--text);
+}
+
+.command-title span,
+.status-metric span,
+.panel-subtitle,
+.welcome p,
+.data-source-card,
+.swing-body p,
+.swing-empty,
+.watch-only,
+.loading-cell,
+.neutral,
+th {
+    color: var(--muted);
+}
+
+.status-card,
+.data-source-card,
+.regime-grid span,
+.consensus-grid span,
+.swing-metrics span,
+.metric-grid div,
+.empty-analysis,
+.coin-tile,
+.tab-button.active {
+    background: var(--panel-raised);
+    border-color: var(--line);
+}
+
+td {
+    border-bottom-color: rgba(145, 161, 182, 0.14);
+}
+
+.selected-row td {
+    background: rgba(56, 189, 248, 0.08);
+}
+
+.status-dot {
+    background: var(--cyan);
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.14);
+}
+
+.fallback-active .status-card,
+.fallback-active .data-source-card,
+.command-status.is-fallback {
+    border-color: rgba(244, 184, 74, 0.5);
+}
+
+.fallback-active .status-dot,
+.command-status.is-fallback .status-dot {
+    background: var(--amber);
+    box-shadow: 0 0 0 3px rgba(244, 184, 74, 0.18);
+}
+
+.button-primary,
+.table-action {
+    background: rgba(56, 189, 248, 0.1);
+    border-color: rgba(56, 189, 248, 0.32);
+    color: #bfeaff;
+}
+
+.button-primary:hover,
+.table-action:hover {
+    background: rgba(56, 189, 248, 0.18);
+}
+
+.table-action:disabled,
+.handoff-locked {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.danger-action {
+    background: rgba(242, 109, 109, 0.1);
+    border-color: rgba(242, 109, 109, 0.26);
+    color: #ffb0b0;
+}
+
+.positive { color: var(--green); }
+.negative { color: var(--red); }
+
+.badge {
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.badge.buy,
+.badge.strong {
+    background: var(--green-bg);
+    color: #7ce0b1;
+}
+
+.badge.watch {
+    background: var(--amber-bg);
+    color: #f7cb73;
+}
+
+.badge.risk,
+.badge.sell {
+    background: var(--red-bg);
+    color: #ff9b9b;
+}
+
+.badge.volume {
+    background: var(--cyan-bg);
+    color: #8bddff;
+}
+
+.badge.wait {
+    background: rgba(145, 161, 182, 0.12);
+    color: #a9b8ca;
+}
+
+.rule-card.strong,
+.rule-card.watch,
+.rule-card.risk,
+.rule-card.volume {
+    border-color: var(--line);
+}
+
+.holdings-form input,
+.inline-balance,
+.inline-note,
+.journal-form input,
+.journal-form select,
+.journal-form textarea,
+.trade-plan-box input,
+.trade-plan-box textarea,
+.position-helper input,
+.review-field input,
+.review-field select,
+.report-date-control input {
+    background: #0d1726;
+    border-color: var(--line);
+    color: var(--text);
+}
+
+.masked-value {
+    color: var(--muted);
+    font-weight: 700;
+}
+
+.execution-bar {
+    align-items: flex-start;
+}
+
+.execution-bar span {
+    display: grid;
+    gap: 4px;
+}
+
+.execution-bar small {
+    color: #c5d2e5;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.master-rule-footer {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 12px 24px 22px;
+    color: #c5d2e5;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    font-size: 12px;
+    border-top: 1px solid var(--line);
+}
+
+.master-rule-footer strong {
+    color: var(--text);
+}
+
+.rule-banner {
+    background: linear-gradient(90deg, rgba(124, 109, 242, 0.16), rgba(56, 189, 248, 0.08));
+    border-color: rgba(124, 109, 242, 0.34);
+}
+
+.skeleton-cell {
+    background: linear-gradient(90deg, #142236 25%, #1c2c42 50%, #142236 75%);
+    background-size: 800px 100%;
+}
+
 @media (max-width: 1180px) {
     .shell { min-width: 0; }
     .command-status,
@@ -1338,4 +1601,11 @@ tr:last-child td { border-bottom: none; }
     .workflow-list { columns: 1; }
     table { min-width: 680px; }
     .panel { overflow-x: auto; }
+    .privacy-toggle { margin-left: 0; }
+    .master-rule-footer {
+        margin: 0 12px;
+        padding: 12px 0 18px;
+        align-items: flex-start;
+        flex-direction: column;
+    }
 }

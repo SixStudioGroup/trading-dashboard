@@ -27,7 +27,7 @@
         <section class="welcome">
             <div>
                 <h1>User Guide</h1>
-                <p>ZenCloud is a manual crypto day/swing trading decision portal. It does not execute trades, manage keys, or automate orders. Its job is scan, analyse, plan — then hand off to CoinSpot for execution, and record the result.</p>
+                <p>ZenCloud is a manual crypto day/swing trading decision portal. It does not execute trades, manage keys, or automate orders. Its job is scan, analyse, plan — then hand off to CoinSpot for manual execution, and record the result.</p>
             </div>
         </section>
 
@@ -334,9 +334,10 @@
                     <p class="panel-subtitle">Check the status bar at the start of every session</p>
                 </div>
                 <div class="panel-body">
-                    <p><strong>Live Data</strong> — the portal is connected to the CoinGecko public feed. Data refreshes every 60 seconds. The status dot shows green.</p>
-                    <p><strong>Fallback Snapshot</strong> — the public feed was unavailable, rate-limited, or blocked. The portal switches to a hardcoded snapshot of nine assets. The status dot shows amber.</p>
-                    <p style="margin-top: 8px;"><strong>When Fallback is active:</strong> all scored signals, queues, and rankings reflect stale data. Use ZenCloud for review and planning only. Do not scan for new entries or act on signal states while fallback is active.</p>
+                    <p><strong>Live Public Feed</strong> — the portal is connected to a public/free market feed with no paid API key. Data refreshes every 60 seconds when the browser can fetch it.</p>
+                    <p><strong>Fallback Snapshot</strong> — the public feed was unavailable, rate-limited, or blocked by CORS. The portal keeps working from a built-in snapshot and shows amber/grey fallback status.</p>
+                    <p><strong>Static Snapshot Ready</strong> — a future scheduled GitHub Action or lightweight backend can refresh a static JSON market snapshot without exposing API keys in the portal.</p>
+                    <p style="margin-top: 8px;"><strong>When Fallback is active:</strong> use ZenCloud for review and planning only. Execution handoff is de-emphasised and live-signal decisions should wait for live data.</p>
                 </div>
             </article>
 
@@ -349,22 +350,22 @@
                     <ul class="guide-rules">
                         <li><strong>60-second DOM refresh</strong> — the dashboard rebuilds every 60 seconds. Unsaved inline edits to holdings may be overwritten. Save before the next refresh cycle.</li>
                         <li><strong>localStorage only</strong> — all holdings, journal, watchlist, and checklist data lives in your current browser. No cross-device sync, no cloud backup. Clearing browser data resets everything.</li>
-                        <li><strong>Single data source</strong> — CoinGecko public feed with no API key. Rate limits can trigger fallback mode during high-traffic periods.</li>
-                        <li><strong>No colour-blind alternative</strong> — signal states currently rely on colour coding only. Check badge labels when in doubt.</li>
-                        <li><strong>Minimum screen width</strong> — the portal is designed for 1100px+ screens. Horizontal scrolling occurs on tablets and smaller laptops.</li>
-                        <li><strong>No dark mode</strong> — currently light theme only.</li>
+                        <li><strong>Public/free data</strong> — no paid CoinMarketCap or CoinGecko API is required. Public feeds can still rate-limit or fail from browser CORS rules.</li>
+                        <li><strong>No API keys in the portal</strong> — never paste provider keys or exchange keys into frontend JavaScript, GitHub Pages, localStorage, or repo files.</li>
+                        <li><strong>Fallback is review only</strong> — fallback keeps Dashboard, Logs, Alerts, Holdings, Journal, Reports, and Guide usable, but it is not live execution context.</li>
+                        <li><strong>Responsive tables</strong> — compact tables scroll horizontally on small screens to preserve data density.</li>
                     </ul>
                 </div>
             </article>
 
             <article class="panel guide-card">
                 <div class="panel-header">
-                    <h2 class="panel-title">CoinMarketCap — Future Data Source</h2>
-                    <p class="panel-subtitle">Requires backend integration before activation</p>
+                    <h2 class="panel-title">Static Snapshot Mode</h2>
+                    <p class="panel-subtitle">Future reliability path without exposed keys</p>
                 </div>
                 <div class="panel-body">
-                    <p>CoinMarketCap may replace CoinGecko as the primary market data provider for discovery and rankings. It offers more comprehensive data but requires a secure API key.</p>
-                    <p>The static portal must not contain API keys in any frontend file. CoinMarketCap activation requires a backend proxy. Until that backend exists, CoinGecko remains the data source.</p>
+                    <p>ZenCloud can later read a static JSON market snapshot generated outside the browser. A scheduled GitHub Action or lightweight backend can refresh that file and keep credentials out of GitHub Pages.</p>
+                    <p>This keeps the portal static, avoids paid frontend API dependencies, and improves resilience when direct browser fetches are blocked.</p>
                 </div>
             </article>
 
@@ -375,7 +376,7 @@
                 </div>
                 <div class="panel-body">
                     <p>ZenCloud does not use CoinSpot private APIs, exchange keys, or automated order placement. This is a design decision, not a technical limitation.</p>
-                    <p>CoinSpot remains the external venue for manual execution and transaction confirmation. Any future CoinSpot API integration would require the same secure backend infrastructure as CoinMarketCap.</p>
+                    <p>CoinSpot remains the external venue for manual execution and transaction confirmation. ZenCloud should not store CoinSpot API keys or place orders.</p>
                 </div>
             </article>
 
@@ -386,8 +387,8 @@
                 </div>
                 <div class="panel-body">
                     <ul class="workflow-list">
-                        <li>Secure API key storage outside browser-visible files and repositories.</li>
-                        <li>CORS-safe proxy endpoint that the static portal can call without exposing keys.</li>
+                        <li>Secure API key storage outside browser-visible files, repositories, GitHub Pages, and localStorage.</li>
+                        <li>CORS-safe static snapshot or proxy endpoint that the portal can call without exposing keys.</li>
                         <li>Response caching to reduce API usage and stay within rate limits.</li>
                         <li>Rate-limit handling with automatic provider failover.</li>
                         <li>No private keys in frontend JavaScript, HTML files, GitHub Pages deployments, or localStorage.</li>
@@ -416,5 +417,9 @@
 
         </section>
     </main>
+    <footer class="master-rule-footer">
+        <strong>If the idea did not start in ZenCloud, do not execute it in CoinSpot.</strong>
+        <span>ZenCloud decides. CoinSpot executes. ZenCloud records and reviews.</span>
+    </footer>
 </body>
 </html>
