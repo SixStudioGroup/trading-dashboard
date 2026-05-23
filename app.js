@@ -32,8 +32,13 @@ let detailedFetchErrorLogged = false;
 // snapshot for this file to read without exposing provider credentials.
 const MARKET_DATA_PROXY_URL = "";
 const REFRESH_INTERVAL_MS = 60000;
+const PORTAL_MODE_STORAGE_KEY = "zencloud.portalMode.v1";
 const PRIVACY_STORAGE_KEY = "zencloud.hideValues.v1";
+const PUBLIC_DEMO_MODE = "demo";
+const PRIVATE_LOCAL_MODE = "private";
 const MASTER_RULE = "If the idea did not start in ZenCloud, do not execute it in CoinSpot.";
+const PUBLIC_PRIVACY_WARNING = "Do not enter group trade deals, private signals, real balances, or private strategy notes into the public demo site. Private data is stored only in your browser and should not be committed to GitHub.";
+const PUBLIC_SITE_RULE = "Shared GitHub Pages deployment is public. Use Public Demo Mode when sharing the portal.";
 const MARKET_PROVIDERS = {
     currentPublicFeed: "Live Public Feed",
     coinMarketCapProxy: "Static Snapshot Ready",
@@ -53,17 +58,62 @@ const dataConfidence = {
     dataKind: "Live"
 };
 
-const DEFAULT_HOLDINGS = [
-    { symbol: "FET", name: "Artificial Superintelligence Alliance", balance: 0, note: "Default manual holding seed", updatedAt: "2026-05-22T00:00:00+10:00" }
+const DEMO_HOLDINGS = [
+    { symbol: "BTC", name: "Demo BTC", balance: 0.125, avgEntryPrice: 104000, note: "Demo holding - not real trading data", updatedAt: "2026-05-01T09:00:00+10:00" },
+    { symbol: "ETH", name: "Demo ETH", balance: 1.8, avgEntryPrice: 2950, note: "Demo holding - not real trading data", updatedAt: "2026-05-03T11:30:00+10:00" },
+    { symbol: "FET", name: "Demo FET", balance: 2400, avgEntryPrice: 0.62, note: "Demo holding - not real trading data", updatedAt: "2026-05-05T14:15:00+10:00" }
 ];
 
 const LEGACY_DEFAULT_HOLDINGS = [
-    { symbol: "BTC", balance: 0.0001393, note: "Default sample holding" },
-    { symbol: "LTC", balance: 0, note: "Default sample holding" },
-    { symbol: "ETH", balance: 0, note: "Default sample holding" },
-    { symbol: "ETC", balance: 0, note: "Default sample holding" },
-    { symbol: "BNB", balance: 0, note: "Default sample holding" },
-    { symbol: "TRB", balance: 0, note: "Default sample holding" }
+    { symbol: "BTC", note: "Default sample holding" },
+    { symbol: "LTC", note: "Default sample holding" },
+    { symbol: "ETH", note: "Default sample holding" },
+    { symbol: "ETC", note: "Default sample holding" },
+    { symbol: "BNB", note: "Default sample holding" },
+    { symbol: "TRB", note: "Default sample holding" }
+];
+
+const DEMO_TRADE_JOURNAL = [
+    {
+        id: "DEMO-OPEN-1",
+        symbol: "BTC",
+        name: "Demo BTC",
+        entryDate: "2026-05-10T10:00:00+10:00",
+        entryPrice: 104000,
+        positionSize: 2500,
+        signalState: "Watch",
+        agentConsensus: "Demo consensus",
+        reasonEntry: "Demo trade plan for workflow preview only",
+        plannedInvalidation: "Demo invalidation: review if momentum weakens",
+        notes: "Demo trade plan - not real trading data",
+        fromZenCloud: true,
+        status: "open",
+        updatedAt: "2026-05-10T10:00:00+10:00"
+    },
+    {
+        id: "DEMO-CLOSED-1",
+        symbol: "ETH",
+        name: "Demo ETH",
+        entryDate: "2026-04-22T09:30:00+10:00",
+        entryPrice: 2800,
+        positionSize: 1800,
+        exitDate: "2026-04-26T15:10:00+10:00",
+        exitPrice: 3050,
+        exitReason: "Demo closed trade review",
+        resultAud: 160.71,
+        resultPercent: 8.93,
+        signalState: "Breakout",
+        agentConsensus: "Demo consensus",
+        reasonEntry: "Demo closed trade - workflow example only",
+        plannedInvalidation: "Demo invalidation level",
+        notes: "Demo report data - not real trading data",
+        ruleFollowed: true,
+        fromZenCloud: true,
+        mistakeType: "Other",
+        lessonLearned: "Demo lesson only",
+        status: "closed",
+        updatedAt: "2026-04-26T15:10:00+10:00"
+    }
 ];
 
 const COINSPOT_SUPPORTED_SYMBOLS = new Set(["ADA", "BNB", "BTC", "DOGE", "DOT", "ETH", "FET", "LTC", "NEAR", "THETA", "XLM"]);
@@ -90,6 +140,7 @@ let selectedAssetId = null;
 let planConfirmedAssetId = null;
 let currentDashboardModel = null;
 let currentJournalModel = null;
+let portalMode = loadPortalMode();
 let hideValues = loadPrivacyMode();
 const savedPlanInputs = {};
 let manualHoldings = loadHoldings();
@@ -215,7 +266,44 @@ function savePrivacyMode(value) {
     }
 }
 
+function loadPortalMode() {
+    if (!storageAvailable()) return PUBLIC_DEMO_MODE;
+    try {
+        const stored = window.localStorage.getItem(PORTAL_MODE_STORAGE_KEY);
+        return stored === PRIVATE_LOCAL_MODE ? PRIVATE_LOCAL_MODE : PUBLIC_DEMO_MODE;
+    } catch (error) {
+        return PUBLIC_DEMO_MODE;
+    }
+}
+
+function savePortalMode(value) {
+    portalMode = value === PRIVATE_LOCAL_MODE ? PRIVATE_LOCAL_MODE : PUBLIC_DEMO_MODE;
+    if (storageAvailable()) {
+        try {
+            window.localStorage.setItem(PORTAL_MODE_STORAGE_KEY, portalMode);
+        } catch (error) {
+            console.warn("Portal mode preference update skipped.");
+        }
+    }
+}
+
+function isPublicDemoMode() {
+    return portalMode !== PRIVATE_LOCAL_MODE;
+}
+
+function demoHoldings() {
+    return DEMO_HOLDINGS.map(normalizeHolding);
+}
+
+function demoTradeJournal() {
+    return DEMO_TRADE_JOURNAL.map(normalizeTrade);
+}
+
 function loadCollection(key) {
+    if (isPublicDemoMode()) {
+        if (key === TRADE_JOURNAL_STORAGE_KEY) return demoTradeJournal();
+        return [];
+    }
     if (!storageAvailable()) return [];
     try {
         const stored = window.localStorage.getItem(key);
@@ -228,6 +316,7 @@ function loadCollection(key) {
 
 function saveCollection(key, rows) {
     const cleanRows = Array.isArray(rows) ? rows : [];
+    if (isPublicDemoMode()) return cleanRows;
     if (storageAvailable()) {
         try {
             window.localStorage.setItem(key, JSON.stringify(cleanRows));
@@ -239,6 +328,9 @@ function saveCollection(key, rows) {
 }
 
 function loadChecklist() {
+    if (isPublicDemoMode()) {
+        return SESSION_CHECKLIST_ITEMS.map(label => ({ label, checked: false }));
+    }
     const stored = loadCollection(SESSION_CHECKLIST_STORAGE_KEY);
     if (!stored.length) {
         return SESSION_CHECKLIST_ITEMS.map(label => ({ label, checked: false }));
@@ -267,11 +359,11 @@ function normalizeHolding(holding = {}) {
 }
 
 function defaultHoldings() {
-    return DEFAULT_HOLDINGS.map(normalizeHolding);
+    return demoHoldings();
 }
 
 function isDefaultSampleSet(holdings) {
-    if (!Array.isArray(holdings) || holdings.length !== DEFAULT_HOLDINGS.length) return false;
+    if (!Array.isArray(holdings) || holdings.length !== DEMO_HOLDINGS.length) return false;
     const defaults = defaultHoldings();
     return defaults.every(defaultHolding => {
         const match = holdings.find(holding => holding.symbol === defaultHolding.symbol);
@@ -286,12 +378,15 @@ function isLegacyDefaultSampleSet(holdings) {
     return LEGACY_DEFAULT_HOLDINGS.every(defaultHolding => {
         const match = holdings.find(holding => holding.symbol === defaultHolding.symbol);
         return match
-            && match.note === defaultHolding.note
-            && match.balance === defaultHolding.balance;
+            && match.note === defaultHolding.note;
     });
 }
 
 function loadHoldings() {
+    if (isPublicDemoMode()) {
+        usingDefaultHoldings = true;
+        return defaultHoldings();
+    }
     if (!storageAvailable()) {
         usingDefaultHoldings = true;
         return defaultHoldings();
@@ -331,6 +426,10 @@ function saveHoldings(holdings) {
         : [];
     holdingsStorageInitialized = true;
     usingDefaultHoldings = false;
+    if (isPublicDemoMode()) {
+        setHoldingsMessage("Demo Mode: changes stay in this page only. Switch to Private Local Mode to save browser-local data.");
+        return;
+    }
     if (storageAvailable()) {
         try {
             window.localStorage.setItem(HOLDINGS_STORAGE_KEY, JSON.stringify(manualHoldings));
@@ -727,6 +826,56 @@ function rerenderCurrentPage() {
     if (page === "reports" && currentReportModel) renderReports(currentReportModel);
 }
 
+function reloadPortalData() {
+    manualHoldings = loadHoldings();
+    tradeJournal = loadCollection(TRADE_JOURNAL_STORAGE_KEY);
+    analysisWatchlist = loadCollection(ANALYSIS_WATCHLIST_STORAGE_KEY);
+    signalHistory = loadCollection(SIGNAL_HISTORY_STORAGE_KEY);
+    sessionChecklist = loadChecklist();
+    planConfirmedAssetId = null;
+}
+
+function updatePortalModeDisplay() {
+    const isDemo = isPublicDemoMode();
+    document.body.classList.toggle("public-demo-mode", isDemo);
+    document.body.classList.toggle("private-local-mode", !isDemo);
+    document.querySelectorAll("[data-portal-mode-label]").forEach(el => {
+        el.textContent = isDemo ? "Public Demo" : "Private Local";
+    });
+    document.querySelectorAll("[data-demo-message]").forEach(el => {
+        el.hidden = !isDemo;
+    });
+}
+
+function initPortalModeControls() {
+    const topbar = document.querySelector(".topbar");
+    if (!topbar || document.getElementById("portal-mode-select")) return;
+    const label = document.createElement("label");
+    label.className = "privacy-toggle";
+    label.innerHTML = `
+        <span>Mode: <strong data-portal-mode-label>${isPublicDemoMode() ? "Public Demo" : "Private Local"}</strong></span>
+        <select id="portal-mode-select" aria-label="Portal privacy mode">
+            <option value="${PUBLIC_DEMO_MODE}" ${isPublicDemoMode() ? "selected" : ""}>Public Demo Mode</option>
+            <option value="${PRIVATE_LOCAL_MODE}" ${!isPublicDemoMode() ? "selected" : ""}>Private Local Mode</option>
+        </select>
+    `;
+    topbar.appendChild(label);
+    const status = document.createElement("div");
+    status.className = "privacy-status-line";
+    status.innerHTML = `
+        <span><strong data-portal-mode-label>${isPublicDemoMode() ? "Public Demo" : "Private Local"}</strong>: Public GitHub Pages files are visible to anyone. Private data stays in this browser.</span>
+        <span data-demo-message>Demo data — not real trading data.</span>
+    `;
+    document.querySelector(".topbar")?.insertAdjacentElement("afterend", status);
+    document.getElementById("portal-mode-select")?.addEventListener("change", event => {
+        savePortalMode(event.currentTarget.value);
+        reloadPortalData();
+        updatePortalModeDisplay();
+        rerenderCurrentPage();
+    });
+    updatePortalModeDisplay();
+}
+
 function initPrivacyToggle() {
     const topbar = document.querySelector(".topbar");
     if (!topbar || document.getElementById("hide-values-toggle")) return;
@@ -749,7 +898,7 @@ function initMasterRuleFooter() {
     if (document.querySelector(".master-rule-footer")) return;
     const footer = document.createElement("footer");
     footer.className = "master-rule-footer";
-    footer.innerHTML = `<strong>${MASTER_RULE}</strong><span>ZenCloud decides. CoinSpot executes. ZenCloud records and reviews.</span>`;
+    footer.innerHTML = `<strong>${MASTER_RULE}</strong><span>ZenCloud decides. CoinSpot executes. ZenCloud records and reviews.</span><span>${PUBLIC_PRIVACY_WARNING}</span><span>${PUBLIC_SITE_RULE}</span>`;
     document.body.appendChild(footer);
 }
 
@@ -2465,6 +2614,7 @@ function injectSkeletonRows(bodyId, cols, count = 5) {
     ).join("");
 }
 
+initPortalModeControls();
 initPrivacyToggle();
 initMasterRuleFooter();
 
