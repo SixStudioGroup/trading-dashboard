@@ -3,31 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reports - ZenCloud Crypto Dashboard</title>
-    <link rel="stylesheet" href="styles.css?v=light-os-20260524">
+    <title>Shared Reports - ZenCloud Trading OS</title>
+    <link rel="stylesheet" href="styles.css?v=multi-asset-20260525">
 </head>
 <body data-page="reports">
     <header class="topbar">
-        <a class="brand" href="index.html" aria-label="ZenCloud Crypto Dashboard">
+        <a class="brand" href="index.html" aria-label="ZenCloud Trading OS">
             <span class="brand-mark">Z</span>
-            <span>ZenCloud Crypto Dashboard</span>
+            <span>ZenCloud Trading OS</span>
         </a>
         <nav class="navlinks" aria-label="Main navigation">
             <a href="index.html">Crypto Workspace</a>
             <a href="stocks.html">Stocks Workspace</a>
             <a href="logs.html">Market Logs</a>
             <a href="alerts.html">Alerts</a>
-            <a href="journal.html">Trade Journal</a>
-            <a class="active" href="reports.html">Reports</a>
-            <a href="guide.html">User Guide</a>
+            <a href="journal.html">Shared Journal</a>
+            <a class="active" href="reports.html">Shared Reports</a>
+            <a href="guide.html">Shared User Guide</a>
         </nav>
     </header>
 
     <main class="shell command-shell reports-shell">
         <section class="welcome">
             <div>
-                <h1>Reports</h1>
-                <p>Executive review from manual Trade Journal and Holdings records. No private exchange data is fetched.</p>
+                <h1>Shared Reports</h1>
+                <p>Executive review from manual Journal and Positions records. No private exchange or broker data is fetched.</p>
             </div>
             <div class="status-card">
                 <span class="status-dot"></span>
@@ -52,6 +52,14 @@
                 <button class="tab-button" type="button" data-report-target="trade-review-tab">Trades</button>
                 <button class="tab-button" type="button" data-report-target="position-report-tab">Positions</button>
                 <button class="tab-button" type="button" data-report-target="behaviour-report-tab">Behaviour</button>
+                <button class="tab-button" type="button" data-report-target="consensus-report-tab">Consensus outcomes</button>
+            </div>
+            <div class="report-filter-bar">
+                <label class="report-date-control"><span>Asset class</span><select id="report-asset-filter">
+                    <option value="all">All assets</option>
+                    <option value="crypto">Crypto only</option>
+                    <option value="stock">Stocks only</option>
+                </select></label>
             </div>
 
             <section class="tab-panel" id="daily-report-tab">
@@ -86,6 +94,7 @@
                 <table class="compact-table report-table">
                     <thead>
                         <tr>
+                            <th>Class</th>
                             <th>Asset</th>
                             <th>Entry reason</th>
                             <th>Signal</th>
@@ -99,7 +108,7 @@
                         </tr>
                     </thead>
                     <tbody id="trade-review-body">
-                        <tr><td colspan="10" class="loading-cell">Loading trade review...</td></tr>
+                        <tr><td colspan="11" class="loading-cell">Loading trade review...</td></tr>
                     </tbody>
                 </table>
             </section>
@@ -108,12 +117,13 @@
                 <div class="report-panel-header">
                     <div>
                         <h2 class="panel-title">Position Report</h2>
-                        <p class="panel-subtitle">Current holdings with live public market context where available</p>
+                        <p class="panel-subtitle">Current positions with crypto live context and stock reference context where available</p>
                     </div>
                 </div>
                 <table class="compact-table report-table">
                     <thead>
                         <tr>
+                            <th>Class</th>
                             <th>Asset</th>
                             <th class="num">Balance</th>
                             <th class="num">Average entry</th>
@@ -126,7 +136,7 @@
                         </tr>
                     </thead>
                     <tbody id="position-report-body">
-                        <tr><td colspan="9" class="loading-cell">Loading positions...</td></tr>
+                        <tr><td colspan="10" class="loading-cell">Loading positions...</td></tr>
                     </tbody>
                 </table>
             </section>
@@ -140,9 +150,22 @@
                 </div>
                 <div class="performance-grid" id="behaviour-report-summary"></div>
             </section>
+
+            <section class="tab-panel" id="consensus-report-tab">
+                <div class="report-panel-header">
+                    <div>
+                        <h2 class="panel-title">Consensus Outcomes</h2>
+                        <p class="panel-subtitle">Closed-trade outcomes grouped by agent consensus at entry</p>
+                    </div>
+                </div>
+                <table class="compact-table report-table">
+                    <thead><tr><th>Consensus</th><th class="num">Trades</th><th class="num">Wins</th><th class="num">Losses</th><th class="num">Net result</th><th>Most common asset class</th></tr></thead>
+                    <tbody id="consensus-outcomes-body"><tr><td colspan="6" class="loading-cell">No consensus outcomes yet.</td></tr></tbody>
+                </table>
+            </section>
         </section>
     </main>
 
-    <script src="app.js?v=master-os-20260522"></script>
+    <script src="app.js?v=multi-asset-20260525"></script>
 </body>
 </html>

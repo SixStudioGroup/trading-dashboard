@@ -3,31 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trade Journal - ZenCloud Crypto Dashboard</title>
-    <link rel="stylesheet" href="styles.css?v=light-os-20260524">
+    <title>Shared Journal - ZenCloud Trading OS</title>
+    <link rel="stylesheet" href="styles.css?v=multi-asset-20260525">
 </head>
 <body data-page="journal">
     <header class="topbar">
-        <a class="brand" href="index.html" aria-label="ZenCloud Crypto Dashboard">
+        <a class="brand" href="index.html" aria-label="ZenCloud Trading OS">
             <span class="brand-mark">Z</span>
-            <span>ZenCloud Crypto Dashboard</span>
+            <span>ZenCloud Trading OS</span>
         </a>
         <nav class="navlinks" aria-label="Main navigation">
             <a href="index.html">Crypto Workspace</a>
             <a href="stocks.html">Stocks Workspace</a>
             <a href="logs.html">Market Logs</a>
             <a href="alerts.html">Alerts</a>
-            <a class="active" href="journal.html">Trade Journal</a>
-            <a href="reports.html">Reports</a>
-            <a href="guide.html">User Guide</a>
+            <a class="active" href="journal.html">Shared Journal</a>
+            <a href="reports.html">Shared Reports</a>
+            <a href="guide.html">Shared User Guide</a>
         </nav>
     </header>
 
     <main class="shell command-shell">
         <section class="welcome">
             <div>
-                <h1>Trade Journal</h1>
-                <p>Manual trade planning, open-position tracking, and closed-trade review.</p>
+                <h1>Shared Journal</h1>
+                <p>Manual trade planning, open-position tracking, and closed-trade review across crypto and stocks.</p>
             </div>
         </section>
 
@@ -38,6 +38,10 @@
             </div>
             <form class="journal-form" id="journal-form">
                 <input type="hidden" name="id" id="journal-id">
+                <label><span>Asset class</span><select name="assetClass" id="journal-asset-class">
+                    <option value="crypto">Crypto</option>
+                    <option value="stock">Stock</option>
+                </select></label>
                 <label><span>Asset symbol</span><input name="symbol" id="journal-symbol" required placeholder="FET"></label>
                 <label><span>Asset name</span><input name="name" id="journal-name" required placeholder="Artificial Superintelligence Alliance"></label>
                 <label><span>Entry date/time</span><input name="entryDate" id="journal-entry-date" type="datetime-local" required></label>
@@ -53,7 +57,21 @@
                 <label><span>Agent consensus</span><input name="agentConsensus" id="journal-consensus" placeholder="Not recorded"></label>
                 <label><span>Reason for entry</span><input name="reasonEntry" id="journal-reason" required></label>
                 <label><span>Planned invalidation</span><input name="plannedInvalidation" id="journal-invalidation" required></label>
+                <label><span>Exit date/time</span><input name="exitDate" id="journal-exit-date" type="datetime-local"></label>
+                <label><span>Exit price</span><input name="exitPrice" id="journal-exit-price" type="number" min="0" step="any"></label>
+                <label><span>Exit reason</span><input name="exitReason" id="journal-exit-reason" placeholder="Optional"></label>
+                <label><span>Did I follow my plan?</span><select name="ruleFollowed" id="journal-rule-followed"><option value="false">No</option><option value="true">Yes</option></select></label>
                 <label><span>From ZenCloud</span><select name="fromZenCloud" id="journal-from-zencloud"><option value="true">Yes</option><option value="false">No</option></select></label>
+                <label><span>Mistake type</span><select name="mistakeType" id="journal-mistake-type">
+                    <option>Other</option>
+                    <option>No plan</option>
+                    <option>Entered too late</option>
+                    <option>Exited too early</option>
+                    <option>Ignored invalidation</option>
+                    <option>Oversized position</option>
+                    <option>Chased movement</option>
+                </select></label>
+                <label><span>Lesson learned</span><input name="lessonLearned" id="journal-lesson" placeholder="Optional"></label>
                 <label><span>Notes</span><input name="notes" id="journal-notes" placeholder="Optional"></label>
                 <div class="form-actions">
                     <button class="button-primary" type="submit">Save Trade</button>
@@ -73,12 +91,23 @@
 
         <section class="panel journal-panel">
             <div class="panel-header">
+                <h2 class="panel-title">All Journal Records</h2>
+                <p class="panel-subtitle">Crypto and stock records with full review fields</p>
+            </div>
+            <table class="compact-table journal-records-table">
+                <thead><tr><th>Class</th><th>Symbol / Ticker</th><th>Entry</th><th class="num">Entry price</th><th class="num">Position size</th><th>Signal</th><th>Consensus</th><th>Reason</th><th>Invalidation</th><th>Exit</th><th class="num">Exit price</th><th>Exit reason</th><th>Result</th><th>Plan?</th><th>ZenCloud?</th><th>Mistake</th><th>Lesson</th><th>Notes</th></tr></thead>
+                <tbody id="all-journal-body"><tr><td colspan="18" class="loading-cell">No journal records.</td></tr></tbody>
+            </table>
+        </section>
+
+        <section class="panel journal-panel">
+            <div class="panel-header">
                 <h2 class="panel-title">Open Trades</h2>
                 <p class="panel-subtitle">Planned or active external positions</p>
             </div>
             <table class="compact-table">
-                <thead><tr><th>ID</th><th>Asset</th><th>Entry</th><th class="num">Price</th><th class="num">Size</th><th>Signal</th><th>Consensus</th><th>Invalidation</th><th>Close</th><th>Actions</th></tr></thead>
-                <tbody id="open-trades-body"><tr><td colspan="10" class="loading-cell">No open trades.</td></tr></tbody>
+                <thead><tr><th>ID</th><th>Class</th><th>Asset</th><th>Entry</th><th class="num">Price</th><th class="num">Size</th><th>Signal</th><th>Consensus</th><th>Invalidation</th><th>Close</th><th>Actions</th></tr></thead>
+                <tbody id="open-trades-body"><tr><td colspan="11" class="loading-cell">No open trades.</td></tr></tbody>
             </table>
         </section>
 
@@ -88,12 +117,12 @@
                 <p class="panel-subtitle">Outcome review from manual entries</p>
             </div>
             <table class="compact-table">
-                <thead><tr><th>ID</th><th>Asset</th><th>Entry</th><th>Exit</th><th class="num">Result AUD</th><th class="num">Result %</th><th>Consensus</th><th>From ZenCloud</th><th>Exit reason</th><th>Actions</th></tr></thead>
-                <tbody id="closed-trades-body"><tr><td colspan="10" class="loading-cell">No closed trades.</td></tr></tbody>
+                <thead><tr><th>ID</th><th>Class</th><th>Asset</th><th>Entry</th><th>Exit</th><th class="num">Result AUD</th><th class="num">Result %</th><th>Consensus</th><th>From ZenCloud</th><th>Exit reason</th><th>Actions</th></tr></thead>
+                <tbody id="closed-trades-body"><tr><td colspan="11" class="loading-cell">No closed trades.</td></tr></tbody>
             </table>
         </section>
     </main>
 
-    <script src="app.js?v=master-os-20260522"></script>
+    <script src="app.js?v=multi-asset-20260525"></script>
 </body>
 </html>

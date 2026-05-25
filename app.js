@@ -76,6 +76,7 @@ const LEGACY_DEFAULT_HOLDINGS = [
 const DEMO_TRADE_JOURNAL = [
     {
         id: "DEMO-OPEN-1",
+        assetClass: "crypto",
         symbol: "BTC",
         name: "Demo BTC",
         entryDate: "2026-05-10T10:00:00+10:00",
@@ -92,6 +93,7 @@ const DEMO_TRADE_JOURNAL = [
     },
     {
         id: "DEMO-CLOSED-1",
+        assetClass: "crypto",
         symbol: "ETH",
         name: "Demo ETH",
         entryDate: "2026-04-22T09:30:00+10:00",
@@ -116,11 +118,38 @@ const DEMO_TRADE_JOURNAL = [
     }
 ];
 
+const DEMO_STOCK_TRADE_JOURNAL = [
+    {
+        id: "STOCK-DEMO-1",
+        assetClass: "stock",
+        symbol: "BHP",
+        name: "BHP Group",
+        market: "ASX",
+        state: "Watch",
+        referencePrice: 43.2,
+        allocation: 1500,
+        thesis: "Demo stock plan - workflow preview only",
+        invalidation: "Demo invalidation level",
+        brokerNote: "External broker placeholder only",
+        fromZenCloud: true,
+        recordedAt: "2026-05-12T09:30:00+10:00"
+    }
+];
+
+const DEMO_STOCK_POSITIONS = [
+    { assetClass: "stock", symbol: "BHP", name: "Demo BHP", market: "ASX", units: 20, avgEntryPrice: 41.5, referencePrice: 43.2, note: "Demo stock position - not real trading data" },
+    { assetClass: "stock", symbol: "CBA", name: "Demo CBA", market: "ASX", units: 6, avgEntryPrice: 124.0, referencePrice: 128.4, note: "Demo stock position - not real trading data" }
+];
+
 const COINSPOT_SUPPORTED_SYMBOLS = new Set(["ADA", "BNB", "BTC", "DOGE", "DOT", "ETH", "FET", "LTC", "NEAR", "THETA", "XLM"]);
 
 const page = document.body.dataset.page;
+const CRYPTO_ASSET_CLASS = "crypto";
+const STOCK_ASSET_CLASS = "stock";
 const HOLDINGS_STORAGE_KEY = "zencloud.manualHoldings.v1";
 const TRADE_JOURNAL_STORAGE_KEY = "zencloud.tradeJournal.v1";
+const STOCK_JOURNAL_STORAGE_KEY = "zencloud.stocks.tradeJournal.v1";
+const STOCK_HOLDINGS_STORAGE_KEY = "zencloud.stocks.holdings.v1";
 const ANALYSIS_WATCHLIST_STORAGE_KEY = "zencloud.watchlist.v1";
 const SIGNAL_HISTORY_STORAGE_KEY = "zencloud.signalHistory.v1";
 const SESSION_CHECKLIST_STORAGE_KEY = "zencloud.sessionChecklist.v1";
@@ -302,6 +331,8 @@ function demoTradeJournal() {
 function loadCollection(key) {
     if (isPublicDemoMode()) {
         if (key === TRADE_JOURNAL_STORAGE_KEY) return demoTradeJournal();
+        if (key === STOCK_JOURNAL_STORAGE_KEY) return DEMO_STOCK_TRADE_JOURNAL;
+        if (key === STOCK_HOLDINGS_STORAGE_KEY) return DEMO_STOCK_POSITIONS;
         return [];
     }
     if (!storageAvailable()) return [];
@@ -575,33 +606,127 @@ function journalId() {
 function normalizeTrade(trade = {}) {
     const entryPrice = Number(trade.entryPrice);
     const positionSize = Number(trade.positionSize);
-    const exitPrice = Number(trade.exitPrice);
-    const resultAud = Number(trade.resultAud);
-    const resultPercent = Number(trade.resultPercent);
+    const hasExitPrice = trade.exitPrice !== "" && trade.exitPrice !== null && trade.exitPrice !== undefined;
+    const exitPrice = hasExitPrice ? Number(trade.exitPrice) : NaN;
+    const hasResultAud = trade.resultAud !== "" && trade.resultAud !== null && trade.resultAud !== undefined;
+    const hasResultPercent = trade.resultPercent !== "" && trade.resultPercent !== null && trade.resultPercent !== undefined;
+    const resultAud = hasResultAud ? Number(trade.resultAud) : NaN;
+    const resultPercent = hasResultPercent ? Number(trade.resultPercent) : NaN;
+    const assetClass = trade.assetClass === STOCK_ASSET_CLASS ? STOCK_ASSET_CLASS : CRYPTO_ASSET_CLASS;
+    const cleanEntryPrice = Number.isFinite(entryPrice) && entryPrice >= 0 ? entryPrice : 0;
+    const cleanPositionSize = Number.isFinite(positionSize) && positionSize >= 0 ? positionSize : 0;
+    const cleanExitPrice = Number.isFinite(exitPrice) && exitPrice >= 0 ? exitPrice : null;
+    const calculatedResultAud = cleanExitPrice !== null && cleanEntryPrice > 0
+        ? ((cleanExitPrice - cleanEntryPrice) * (cleanPositionSize / Math.max(cleanEntryPrice, 0.000001)))
+        : null;
+    const calculatedResultPercent = cleanExitPrice !== null && cleanEntryPrice > 0
+        ? (((cleanExitPrice - cleanEntryPrice) / cleanEntryPrice) * 100)
+        : null;
     return {
         id: safeText(trade.id, journalId()),
+        assetClass,
         symbol: safeText(trade.symbol, "").toUpperCase(),
         name: safeText(trade.name, safeText(trade.symbol, "").toUpperCase() || "Unknown Asset"),
         entryDate: safeText(trade.entryDate, new Date().toISOString()),
-        entryPrice: Number.isFinite(entryPrice) && entryPrice >= 0 ? entryPrice : 0,
-        positionSize: Number.isFinite(positionSize) && positionSize >= 0 ? positionSize : 0,
+        entryPrice: cleanEntryPrice,
+        positionSize: cleanPositionSize,
         signalState: safeText(trade.signalState, "No Action"),
         reasonEntry: safeText(trade.reasonEntry, "Manual trade plan"),
         plannedInvalidation: safeText(trade.plannedInvalidation, "Review if risk state triggered"),
         exitDate: safeText(trade.exitDate, ""),
-        exitPrice: Number.isFinite(exitPrice) && exitPrice >= 0 ? exitPrice : null,
+        exitPrice: cleanExitPrice,
         exitReason: safeText(trade.exitReason, ""),
-        resultAud: Number.isFinite(resultAud) ? resultAud : null,
-        resultPercent: Number.isFinite(resultPercent) ? resultPercent : null,
+        resultAud: Number.isFinite(resultAud) ? resultAud : calculatedResultAud,
+        resultPercent: Number.isFinite(resultPercent) ? resultPercent : calculatedResultPercent,
         notes: safeText(trade.notes, ""),
         ruleFollowed: typeof trade.ruleFollowed === "boolean" ? trade.ruleFollowed : false,
         fromZenCloud: typeof trade.fromZenCloud === "boolean" ? trade.fromZenCloud : true,
         agentConsensus: safeText(trade.agentConsensus, "Not recorded"),
         mistakeType: safeText(trade.mistakeType, "Other"),
         lessonLearned: safeText(trade.lessonLearned, ""),
-        status: trade.status === "closed" ? "closed" : "open",
+        status: trade.status === "closed" || cleanExitPrice !== null || safeText(trade.exitDate, "") ? "closed" : "open",
         updatedAt: safeText(trade.updatedAt, new Date().toISOString())
     };
+}
+
+function stockPlanAsTrade(plan = {}) {
+    const symbol = safeText(plan.symbol, "").toUpperCase();
+    return normalizeTrade({
+        id: safeText(plan.id, stockIdForSharedJournal(plan)),
+        assetClass: STOCK_ASSET_CLASS,
+        symbol,
+        name: safeText(plan.name, symbol || "Unknown Ticker"),
+        entryDate: safeText(plan.recordedAt, new Date().toISOString()),
+        entryPrice: plan.referencePrice ?? plan.entryPrice,
+        positionSize: plan.positionSize ?? plan.allocation,
+        signalState: safeText(plan.state, "Watch"),
+        agentConsensus: "Stocks Workspace",
+        reasonEntry: safeText(plan.whyNow ?? plan.thesis, "Manual stock plan"),
+        plannedInvalidation: safeText(plan.invalidation, "Manual invalidation required"),
+        notes: safeText(plan.notes ?? plan.brokerNote, "Broker execution not connected."),
+        fromZenCloud: plan.fromZenCloud !== false,
+        status: "open",
+        updatedAt: safeText(plan.recordedAt, new Date().toISOString())
+    });
+}
+
+function stockIdForSharedJournal(plan = {}) {
+    const symbol = safeText(plan.symbol, "STOCK").toUpperCase();
+    return `STOCK-${symbol}-${Date.now().toString(36).toUpperCase()}`;
+}
+
+function loadStockWorkspaceTrades() {
+    return loadCollection(STOCK_JOURNAL_STORAGE_KEY).map(stockPlanAsTrade);
+}
+
+function normalizeStockPosition(position = {}) {
+    const symbol = safeText(position.symbol, "").toUpperCase();
+    return {
+        assetClass: STOCK_ASSET_CLASS,
+        symbol,
+        name: safeText(position.name, symbol || "Unknown Ticker"),
+        market: safeText(position.market, "Manual"),
+        units: Math.max(0, finiteNumber(position.units)),
+        avgEntryPrice: Math.max(0, finiteNumber(position.avgEntryPrice)),
+        referencePrice: Math.max(0, finiteNumber(position.referencePrice)),
+        note: safeText(position.note, "")
+    };
+}
+
+function loadStockWorkspacePositions() {
+    return loadCollection(STOCK_HOLDINGS_STORAGE_KEY).map(normalizeStockPosition);
+}
+
+function sharedJournalTrades() {
+    return [
+        ...tradeJournal.map(normalizeTrade),
+        ...loadStockWorkspaceTrades()
+    ];
+}
+
+function filterTradesByAssetClass(trades, filter = "all") {
+    if (filter === CRYPTO_ASSET_CLASS || filter === STOCK_ASSET_CLASS) {
+        return trades.filter(trade => trade.assetClass === filter);
+    }
+    return trades;
+}
+
+function currentReportAssetFilter() {
+    return document.getElementById("report-asset-filter")?.value || "all";
+}
+
+function assetClassLabel(assetClass) {
+    return assetClass === STOCK_ASSET_CLASS ? "Stock" : "Crypto";
+}
+
+function assetClassBadge(assetClass) {
+    const label = assetClassLabel(assetClass);
+    const klass = assetClass === STOCK_ASSET_CLASS ? "stock" : "crypto";
+    return `<span class="asset-class-badge ${klass}">${label}</span>`;
+}
+
+function isStockWorkspaceRecord(trade) {
+    return trade.assetClass === STOCK_ASSET_CLASS && String(trade.id).startsWith("STOCK-");
 }
 
 function saveTradeJournal() {
@@ -1664,8 +1789,7 @@ function renderSessionChecklist() {
     });
 }
 
-function performanceMetrics() {
-    const trades = tradeJournal.map(normalizeTrade);
+function performanceMetrics(trades = tradeJournal.map(normalizeTrade)) {
     const closed = trades.filter(trade => trade.status === "closed" && Number.isFinite(trade.resultAud));
     const open = trades.filter(trade => trade.status !== "closed");
     if (!closed.length) return { trades, open, closed, enough: false };
@@ -1712,10 +1836,10 @@ function performanceMetrics() {
     };
 }
 
-function renderPerformanceSummary(targetId) {
+function renderPerformanceSummary(targetId, trades = tradeJournal.map(normalizeTrade)) {
     const el = document.getElementById(targetId);
     if (!el) return;
-    const metrics = performanceMetrics();
+    const metrics = performanceMetrics(trades);
     if (!metrics.enough) {
         el.innerHTML = `<div class="empty-analysis compact-empty">Not enough closed trades yet.</div>`;
         return;
@@ -2307,16 +2431,18 @@ function renderDailyReport(trades) {
         : "No trades logged for this day.";
 }
 
-function renderWeeklyReport() {
+function renderWeeklyReport(trades = sharedJournalTrades()) {
     const el = document.getElementById("weekly-report-summary");
     if (!el) return;
-    const metrics = performanceMetrics();
+    const metrics = performanceMetrics(trades);
     if (!metrics.enough) {
         el.innerHTML = `<div class="empty-analysis compact-empty">Not enough closed trades yet.</div>`;
         return;
     }
     el.innerHTML = [
         ["Total trades", metrics.trades.length],
+        ["Crypto records", metrics.trades.filter(trade => trade.assetClass === CRYPTO_ASSET_CLASS).length],
+        ["Stock records", metrics.trades.filter(trade => trade.assetClass === STOCK_ASSET_CLASS).length],
         ["Open trades", metrics.open.length],
         ["Closed trades", metrics.closed.length],
         ["Win rate", `${metrics.winRate.toFixed(1)}%`],
@@ -2339,6 +2465,7 @@ function renderTradeReviewReport(trades) {
     const mistakeOptions = ["No plan", "Entered too late", "Exited too early", "Ignored invalidation", "Oversized position", "Chased movement", "Other"];
     body.innerHTML = closed.length ? closed.map(trade => `
         <tr>
+            <td>${assetClassBadge(trade.assetClass)}</td>
             <td>${escapeHtml(trade.symbol)} / ${escapeHtml(trade.name)}</td>
             <td>${escapeHtml(trade.reasonEntry)}</td>
             <td>${escapeHtml(trade.signalState)}</td>
@@ -2367,7 +2494,7 @@ function renderTradeReviewReport(trades) {
                 </div>
             </td>
         </tr>
-    `).join("") : `<tr><td colspan="10" class="loading-cell">No closed trades to review.</td></tr>`;
+    `).join("") : `<tr><td colspan="11" class="loading-cell">No closed trades to review.</td></tr>`;
     body.querySelectorAll("[data-save-review]").forEach(button => {
         button.addEventListener("click", event => {
             const id = event.currentTarget.dataset.saveReview;
@@ -2384,15 +2511,39 @@ function renderTradeReviewReport(trades) {
 function renderPositionReport(model) {
     const body = document.getElementById("position-report-body");
     if (!body) return;
-    const rows = manualHoldings.map(holding => {
+    const filter = currentReportAssetFilter();
+    const cryptoRows = manualHoldings.map(holding => {
         const normalized = normalizeHolding(holding);
         const valuation = holdingValuation(model.markets, normalized);
         const unrealized = unrealizedFor({ holding: normalized, market: valuation.market });
         const stateRow = assetStateForReport(model, normalized);
-        return { holding: normalized, valuation, unrealized, stateRow };
+        return { type: CRYPTO_ASSET_CLASS, holding: normalized, valuation, unrealized, stateRow };
     }).filter(row => row.holding.symbol);
-    body.innerHTML = rows.length ? rows.map(row => `
+    const stockRows = loadStockWorkspacePositions().filter(row => row.symbol).map(position => {
+        const unrealisedAud = (position.referencePrice - position.avgEntryPrice) * position.units;
+        const unrealisedPercent = position.avgEntryPrice > 0 ? ((position.referencePrice - position.avgEntryPrice) / position.avgEntryPrice) * 100 : null;
+        return { type: STOCK_ASSET_CLASS, position, unrealisedAud, unrealisedPercent };
+    });
+    const rows = [
+        ...(filter === "all" || filter === CRYPTO_ASSET_CLASS ? cryptoRows : []),
+        ...(filter === "all" || filter === STOCK_ASSET_CLASS ? stockRows : [])
+    ];
+    body.innerHTML = rows.length ? rows.map(row => row.type === STOCK_ASSET_CLASS ? `
         <tr>
+            <td>${assetClassBadge(STOCK_ASSET_CLASS)}</td>
+            <td>${escapeHtml(row.position.symbol)} / ${escapeHtml(row.position.name)}</td>
+            <td class="num">${displayBalance(row.position.units, row.position.symbol)}</td>
+            <td class="num">${displayEntry(row.position.avgEntryPrice)}</td>
+            <td class="num">${row.position.referencePrice ? displayTradeValue(row.position.referencePrice) : "Reference unavailable"}</td>
+            <td class="num ${row.unrealisedAud > 0 ? "positive" : row.unrealisedAud < 0 ? "negative" : "neutral"}">${displayMoneyText(row.unrealisedAud, formatSignedMoney)}</td>
+            <td class="num ${row.unrealisedPercent > 0 ? "positive" : row.unrealisedPercent < 0 ? "negative" : "neutral"}">${row.unrealisedPercent === null ? "Not recorded" : displayPercentValue(row.unrealisedPercent)}</td>
+            <td>Manual stock position</td>
+            <td>Stock Workspace</td>
+            <td>Broker review only</td>
+        </tr>
+    ` : `
+        <tr>
+            <td>${assetClassBadge(CRYPTO_ASSET_CLASS)}</td>
             <td>${escapeHtml(row.holding.symbol)} / ${escapeHtml(row.holding.name)}</td>
             <td class="num">${displayBalance(row.holding.balance, row.holding.symbol)}</td>
             <td class="num">${displayEntry(row.holding.avgEntryPrice)}</td>
@@ -2403,7 +2554,35 @@ function renderPositionReport(model) {
             <td>${escapeHtml(row.stateRow.state)}</td>
             <td>${escapeHtml(exitRiskForReport(row.stateRow, row.valuation))}</td>
         </tr>
-    `).join("") : `<tr><td colspan="9" class="loading-cell">No holdings recorded.</td></tr>`;
+    `).join("") : `<tr><td colspan="10" class="loading-cell">No positions recorded.</td></tr>`;
+}
+
+function renderConsensusOutcomesReport(trades) {
+    const body = document.getElementById("consensus-outcomes-body");
+    if (!body) return;
+    const closed = trades.filter(trade => trade.status === "closed" && Number.isFinite(trade.resultAud));
+    const groups = Object.values(closed.reduce((acc, trade) => {
+        const key = safeText(trade.agentConsensus, "Not recorded");
+        acc[key] = acc[key] || { label: key, trades: [] };
+        acc[key].trades.push(trade);
+        return acc;
+    }, {}));
+    body.innerHTML = groups.length ? groups.map(group => {
+        const wins = group.trades.filter(trade => trade.resultAud > 0).length;
+        const losses = group.trades.filter(trade => trade.resultAud < 0).length;
+        const net = group.trades.reduce((total, trade) => total + trade.resultAud, 0);
+        const mostCommonClass = mostCommon(group.trades.map(trade => assetClassLabel(trade.assetClass)), "Not enough data");
+        return `
+            <tr>
+                <td>${escapeHtml(group.label)}</td>
+                <td class="num">${group.trades.length}</td>
+                <td class="num">${wins}</td>
+                <td class="num">${losses}</td>
+                <td class="num ${net > 0 ? "positive" : net < 0 ? "negative" : "neutral"}">${displayMoneyText(net, formatSignedMoney)}</td>
+                <td>${escapeHtml(mostCommonClass)}</td>
+            </tr>
+        `;
+    }).join("") : `<tr><td colspan="6" class="loading-cell">No consensus outcomes yet.</td></tr>`;
 }
 
 function renderBehaviourReport(trades) {
@@ -2428,6 +2607,8 @@ function renderBehaviourReport(trades) {
         ["Most common mistake", mostCommon(trades.map(trade => trade.mistakeType), "Not enough data")],
         ["Most common signal at entry", mostCommon(trades.map(trade => trade.signalState), "Not enough data")],
         ["Most common consensus", mostCommon(trades.map(trade => trade.agentConsensus), "Not enough data")],
+        ["Crypto records", trades.filter(trade => trade.assetClass === CRYPTO_ASSET_CLASS).length],
+        ["Stock records", trades.filter(trade => trade.assetClass === STOCK_ASSET_CLASS).length],
         ["Trades from ZenCloud", trades.filter(trade => trade.fromZenCloud).length]
     ].map(([label, value]) => reportMetric(label, value)).join("");
 }
@@ -2436,12 +2617,13 @@ let currentReportModel = null;
 
 function renderReports(model) {
     currentReportModel = model;
-    const trades = tradeJournal.map(normalizeTrade);
+    const trades = filterTradesByAssetClass(sharedJournalTrades(), currentReportAssetFilter());
     renderDailyReport(trades);
-    renderWeeklyReport();
+    renderWeeklyReport(trades);
     renderTradeReviewReport(trades);
     renderPositionReport(model);
     renderBehaviourReport(trades);
+    renderConsensusOutcomesReport(trades);
 }
 
 function initReportsControls() {
@@ -2460,19 +2642,48 @@ function initReportsControls() {
     dateInput?.addEventListener("change", () => {
         if (currentReportModel) renderReports(currentReportModel);
     });
+    document.getElementById("report-asset-filter")?.addEventListener("change", () => {
+        if (currentReportModel) renderReports(currentReportModel);
+    });
 }
 
 function renderJournal() {
     currentJournalModel = true;
+    const allBody = document.getElementById("all-journal-body");
     const openBody = document.getElementById("open-trades-body");
     const closedBody = document.getElementById("closed-trades-body");
     if (!openBody || !closedBody) return;
-    const trades = tradeJournal.map(normalizeTrade);
+    const trades = sharedJournalTrades();
     const openRows = trades.filter(trade => trade.status !== "closed");
     const closedRows = trades.filter(trade => trade.status === "closed");
+    if (allBody) {
+        allBody.innerHTML = trades.length ? trades.map(trade => `
+            <tr>
+                <td>${assetClassBadge(trade.assetClass)}</td>
+                <td>${escapeHtml(trade.symbol)} / ${escapeHtml(trade.name)}</td>
+                <td>${formatTimestamp(trade.entryDate)}</td>
+                <td class="num">${displayTradeValue(trade.entryPrice)}</td>
+                <td class="num">${displayTradeValue(trade.positionSize)}</td>
+                <td>${escapeHtml(trade.signalState)}</td>
+                <td>${escapeHtml(trade.agentConsensus)}</td>
+                <td>${escapeHtml(trade.reasonEntry)}</td>
+                <td>${escapeHtml(trade.plannedInvalidation)}</td>
+                <td>${trade.exitDate ? formatTimestamp(trade.exitDate) : "Open"}</td>
+                <td class="num">${trade.exitPrice === null ? "Not recorded" : displayTradeValue(trade.exitPrice)}</td>
+                <td>${escapeHtml(trade.exitReason || "Not recorded")}</td>
+                <td>${trade.resultAud === null ? "Not recorded" : displayMoneyText(trade.resultAud, formatSignedMoney)}</td>
+                <td>${trade.ruleFollowed ? "Yes" : "No"}</td>
+                <td>${trade.fromZenCloud ? "Yes" : "No"}</td>
+                <td>${escapeHtml(trade.mistakeType)}</td>
+                <td>${escapeHtml(trade.lessonLearned || "Not recorded")}</td>
+                <td>${escapeHtml(trade.notes || "Not recorded")}</td>
+            </tr>
+        `).join("") : `<tr><td colspan="18" class="loading-cell">No journal records.</td></tr>`;
+    }
     openBody.innerHTML = openRows.length ? openRows.map(trade => `
         <tr>
             <td>${escapeHtml(trade.id)}</td>
+            <td>${assetClassBadge(trade.assetClass)}</td>
             <td>${escapeHtml(trade.symbol)} / ${escapeHtml(trade.name)}</td>
             <td>${formatTimestamp(trade.entryDate)}</td>
             <td class="num">${displayTradeValue(trade.entryPrice)}</td>
@@ -2481,19 +2692,24 @@ function renderJournal() {
             <td>${escapeHtml(trade.agentConsensus)}</td>
             <td>${escapeHtml(trade.plannedInvalidation)}</td>
             <td>
-                <input class="inline-balance close-price" type="number" min="0" step="any" placeholder="Exit price" data-close-price="${escapeHtml(trade.id)}">
-                <input class="inline-note close-reason" type="text" placeholder="Exit reason" data-close-reason="${escapeHtml(trade.id)}">
-                <button class="table-action" type="button" data-close-trade="${escapeHtml(trade.id)}">Close</button>
+                ${isStockWorkspaceRecord(trade)
+                    ? `<span class="watch-only">Managed in Stocks Workspace</span>`
+                    : `<input class="inline-balance close-price" type="number" min="0" step="any" placeholder="Exit price" data-close-price="${escapeHtml(trade.id)}">
+                        <input class="inline-note close-reason" type="text" placeholder="Exit reason" data-close-reason="${escapeHtml(trade.id)}">
+                        <button class="table-action" type="button" data-close-trade="${escapeHtml(trade.id)}">Close</button>`}
             </td>
             <td>
-                <button class="table-action" type="button" data-edit-trade="${escapeHtml(trade.id)}">Edit</button>
-                <button class="table-action danger-action" type="button" data-delete-trade="${escapeHtml(trade.id)}">Delete</button>
+                ${isStockWorkspaceRecord(trade)
+                    ? `<span class="watch-only">Read only</span>`
+                    : `<button class="table-action" type="button" data-edit-trade="${escapeHtml(trade.id)}">Edit</button>
+                        <button class="table-action danger-action" type="button" data-delete-trade="${escapeHtml(trade.id)}">Delete</button>`}
             </td>
         </tr>
-    `).join("") : `<tr><td colspan="10" class="loading-cell">No open trades.</td></tr>`;
+    `).join("") : `<tr><td colspan="11" class="loading-cell">No open trades.</td></tr>`;
     closedBody.innerHTML = closedRows.length ? closedRows.map(trade => `
         <tr>
             <td>${escapeHtml(trade.id)}</td>
+            <td>${assetClassBadge(trade.assetClass)}</td>
             <td>${escapeHtml(trade.symbol)} / ${escapeHtml(trade.name)}</td>
             <td>${formatTimestamp(trade.entryDate)} @ ${displayTradeValue(trade.entryPrice)}</td>
             <td>${formatTimestamp(trade.exitDate)} @ ${trade.exitPrice === null ? "Not recorded" : displayTradeValue(trade.exitPrice)}</td>
@@ -2503,11 +2719,13 @@ function renderJournal() {
             <td>${trade.fromZenCloud ? "Yes" : "No"}</td>
             <td>${escapeHtml(trade.exitReason || "Manual close")}</td>
             <td>
-                <button class="table-action" type="button" data-edit-trade="${escapeHtml(trade.id)}">Edit</button>
-                <button class="table-action danger-action" type="button" data-delete-trade="${escapeHtml(trade.id)}">Delete</button>
+                ${isStockWorkspaceRecord(trade)
+                    ? `<span class="watch-only">Read only</span>`
+                    : `<button class="table-action" type="button" data-edit-trade="${escapeHtml(trade.id)}">Edit</button>
+                        <button class="table-action danger-action" type="button" data-delete-trade="${escapeHtml(trade.id)}">Delete</button>`}
             </td>
         </tr>
-    `).join("") : `<tr><td colspan="10" class="loading-cell">No closed trades.</td></tr>`;
+    `).join("") : `<tr><td colspan="11" class="loading-cell">No closed trades.</td></tr>`;
     document.querySelectorAll("[data-close-trade]").forEach(button => {
         button.addEventListener("click", event => {
             const id = event.currentTarget.dataset.closeTrade;
@@ -2524,13 +2742,14 @@ function renderJournal() {
     document.querySelectorAll("[data-edit-trade]").forEach(button => {
         button.addEventListener("click", event => fillJournalForm(event.currentTarget.dataset.editTrade));
     });
-    renderPerformanceSummary("journal-performance-summary");
+    renderPerformanceSummary("journal-performance-summary", trades);
 }
 
 function fillJournalForm(id) {
     const trade = tradeJournal.map(normalizeTrade).find(row => row.id === id);
     if (!trade) return;
     document.getElementById("journal-id").value = trade.id;
+    document.getElementById("journal-asset-class").value = trade.assetClass;
     document.getElementById("journal-symbol").value = trade.symbol;
     document.getElementById("journal-name").value = trade.name;
     document.getElementById("journal-entry-date").value = formatDateTimeLocal(trade.entryDate);
@@ -2540,7 +2759,13 @@ function fillJournalForm(id) {
     document.getElementById("journal-consensus").value = trade.agentConsensus;
     document.getElementById("journal-reason").value = trade.reasonEntry;
     document.getElementById("journal-invalidation").value = trade.plannedInvalidation;
+    document.getElementById("journal-exit-date").value = trade.exitDate ? formatDateTimeLocal(trade.exitDate) : "";
+    document.getElementById("journal-exit-price").value = trade.exitPrice ?? "";
+    document.getElementById("journal-exit-reason").value = trade.exitReason;
+    document.getElementById("journal-rule-followed").value = String(trade.ruleFollowed);
     document.getElementById("journal-from-zencloud").value = String(trade.fromZenCloud);
+    document.getElementById("journal-mistake-type").value = trade.mistakeType;
+    document.getElementById("journal-lesson").value = trade.lessonLearned;
     document.getElementById("journal-notes").value = trade.notes;
 }
 
@@ -2549,9 +2774,12 @@ function clearJournalForm() {
     if (!form) return;
     form.reset();
     document.getElementById("journal-id").value = "";
+    document.getElementById("journal-asset-class").value = CRYPTO_ASSET_CLASS;
     document.getElementById("journal-entry-date").value = formatDateTimeLocal(new Date());
     document.getElementById("journal-consensus").value = "";
     document.getElementById("journal-from-zencloud").value = "true";
+    document.getElementById("journal-rule-followed").value = "false";
+    document.getElementById("journal-mistake-type").value = "Other";
 }
 
 function initJournalControls() {
@@ -2564,6 +2792,7 @@ function initJournalControls() {
         const id = safeText(data.get("id"), "");
         const trade = normalizeTrade({
             id: id || journalId(),
+            assetClass: data.get("assetClass"),
             symbol: data.get("symbol"),
             name: data.get("name"),
             entryDate: new Date(data.get("entryDate")).toISOString(),
@@ -2573,9 +2802,15 @@ function initJournalControls() {
             agentConsensus: data.get("agentConsensus"),
             reasonEntry: data.get("reasonEntry"),
             plannedInvalidation: data.get("plannedInvalidation"),
+            exitDate: data.get("exitDate") ? new Date(data.get("exitDate")).toISOString() : "",
+            exitPrice: data.get("exitPrice"),
+            exitReason: data.get("exitReason"),
+            ruleFollowed: data.get("ruleFollowed") === "true",
             fromZenCloud: data.get("fromZenCloud") !== "false",
+            mistakeType: data.get("mistakeType"),
+            lessonLearned: data.get("lessonLearned"),
             notes: data.get("notes"),
-            status: tradeJournal.find(row => row.id === id)?.status || "open"
+            status: data.get("exitDate") || data.get("exitPrice") ? "closed" : tradeJournal.find(row => row.id === id)?.status || "open"
         });
         if (!trade.symbol || trade.entryPrice < 0 || trade.positionSize < 0) {
             document.getElementById("journal-message").textContent = "Enter valid non-negative trade details.";
