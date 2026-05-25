@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stocks Workspace - ZenCloud Trading OS</title>
+    <link rel="stylesheet" href="styles.css?v=stocks-workspace-20260525">
+</head>
+<body data-page="stocks">
+    <header class="topbar">
+        <a class="brand" href="index.html" aria-label="ZenCloud Trading OS">
+            <span class="brand-mark">Z</span>
+            <span>ZenCloud Trading OS</span>
+        </a>
+        <nav class="navlinks" aria-label="Main navigation">
+            <a href="index.html">Crypto Workspace</a>
+            <a class="active" href="stocks.html">Stocks Workspace</a>
+            <a href="logs.html">Market Logs</a>
+            <a href="alerts.html">Alerts</a>
+            <a href="journal.html">Trade Journal</a>
+            <a href="reports.html">Reports</a>
+            <a href="guide.html">User Guide</a>
+        </nav>
+    </header>
+
+    <main class="shell command-shell stocks-shell">
+        <section class="command-status stocks-status">
+            <div class="command-title">
+                <h1>Stocks</h1>
+                <span>Manual workspace</span>
+            </div>
+            <div class="status-card compact-status">
+                <span class="status-dot"></span>
+                <span>Placeholder stock universe</span>
+            </div>
+            <div class="status-metric">
+                <span>Execution Venue</span>
+                <strong>External broker placeholder</strong>
+            </div>
+            <div class="status-metric">
+                <span>Source</span>
+                <strong>Manual review only</strong>
+            </div>
+            <div class="status-metric">
+                <span>Mode</span>
+                <strong data-portal-mode-label>Public Demo</strong>
+            </div>
+            <div class="status-metric">
+                <span>Workspace Rule</span>
+                <strong>ZenCloud-origin only</strong>
+            </div>
+        </section>
+
+        <section class="panel stock-rule-panel">
+            <div class="panel-body stock-rule-copy">
+                <strong>If the idea did not start in ZenCloud, do not execute it in the broker.</strong>
+                <span>ZenCloud decides. External broker executes. ZenCloud records and reviews.</span>
+                <span>No broker API, no order placement, no execution links.</span>
+            </div>
+        </section>
+
+        <section class="decision-grid command-grid stocks-grid">
+            <section class="panel opportunity-panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">Stocks Opportunity Queue</h2>
+                    <p class="panel-subtitle">Demo-only ranked review list. No live feed or paid API.</p>
+                </div>
+                <table class="watchlist-table">
+                    <thead>
+                        <tr>
+                            <th>Stock</th>
+                            <th>Market</th>
+                            <th>State</th>
+                            <th class="num">Score</th>
+                            <th class="num">Reference</th>
+                            <th>Reason</th>
+                            <th>Analyse</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stock-opportunities-body">
+                        <tr><td colspan="7" class="loading-cell">Loading stock workspace...</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="panel analysis-panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">Stock Analysis</h2>
+                    <p class="panel-subtitle">Select an idea before broker review</p>
+                </div>
+                <div class="panel-body" id="stock-analysis-panel">
+                    <div class="loading-cell">Select a stock from the queue.</div>
+                </div>
+            </section>
+        </section>
+
+        <section class="panel stock-plan-panel">
+            <div class="panel-header">
+                <h2 class="panel-title">Stocks Trade Plan</h2>
+                <p class="panel-subtitle">Local record only. The broker remains external.</p>
+            </div>
+            <form class="journal-form stock-plan-form" id="stock-plan-form">
+                <label><span>Symbol</span><input id="stock-plan-symbol" name="symbol" required placeholder="BHP"></label>
+                <label><span>Name</span><input id="stock-plan-name" name="name" required placeholder="BHP Group"></label>
+                <label><span>Market</span><input id="stock-plan-market" name="market" required placeholder="ASX"></label>
+                <label><span>Reference price</span><input id="stock-plan-price" name="referencePrice" type="number" min="0" step="any" required></label>
+                <label><span>Intended allocation</span><input id="stock-plan-allocation" name="allocation" type="number" min="0" step="any" placeholder="Optional"></label>
+                <label><span>Review state</span><select id="stock-plan-state" name="state">
+                    <option>Watch</option>
+                    <option>Momentum Review</option>
+                    <option>Risk Review</option>
+                    <option>No Action</option>
+                </select></label>
+                <label><span>ZenCloud thesis</span><input id="stock-plan-thesis" name="thesis" required placeholder="Why this idea belongs in the workspace"></label>
+                <label><span>Invalidation</span><input id="stock-plan-invalidation" name="invalidation" required placeholder="What would cancel the plan"></label>
+                <label><span>Broker note</span><input id="stock-plan-broker-note" name="brokerNote" placeholder="Manual broker checks only"></label>
+                <div class="form-actions">
+                    <button class="button-primary" type="submit">Save Stock Plan</button>
+                    <button class="table-action" id="stock-plan-clear" type="button">Clear Form</button>
+                </div>
+                <p class="form-message" id="stock-plan-message" aria-live="polite"></p>
+            </form>
+        </section>
+
+        <section class="panel secondary-tabs">
+            <div class="tab-bar" role="tablist" aria-label="Stocks workspace views">
+                <button class="tab-button active" type="button" data-stock-tab-target="stock-journal-tab">Stocks Journal</button>
+                <button class="tab-button" type="button" data-stock-tab-target="stock-holdings-tab">Stock Holdings</button>
+                <button class="tab-button" type="button" data-stock-tab-target="stock-review-tab">Broker Review</button>
+            </div>
+
+            <section class="tab-panel active" id="stock-journal-tab">
+                <table class="compact-table">
+                    <thead><tr><th>Recorded</th><th>Stock</th><th>State</th><th class="num">Reference</th><th class="num">Allocation</th><th>Thesis</th><th>Invalidation</th><th>Origin</th><th>Actions</th></tr></thead>
+                    <tbody id="stock-journal-body"><tr><td colspan="9" class="loading-cell">No stock plans recorded.</td></tr></tbody>
+                </table>
+            </section>
+
+            <section class="tab-panel" id="stock-holdings-tab">
+                <table class="compact-table">
+                    <thead><tr><th>Stock</th><th>Market</th><th class="num">Units</th><th class="num">Avg Entry</th><th class="num">Reference</th><th class="num">Unrealised</th><th>Note</th></tr></thead>
+                    <tbody id="stock-holdings-body"><tr><td colspan="7" class="loading-cell">No stock holdings recorded.</td></tr></tbody>
+                </table>
+            </section>
+
+            <section class="tab-panel" id="stock-review-tab">
+                <div class="panel-body broker-review" id="stock-broker-review">
+                    <p class="compact-empty">Select a stock and complete the checklist. The broker remains a manual external venue placeholder.</p>
+                </div>
+            </section>
+        </section>
+    </main>
+
+    <script src="stocks.js?v=stocks-workspace-20260525"></script>
+</body>
+</html>
