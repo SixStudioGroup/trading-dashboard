@@ -217,6 +217,11 @@ a:hover { text-decoration: underline; }
     font-style: normal;
 }
 
+.stock-agent-consensus .strong { color: var(--green); }
+.stock-agent-consensus .watch { color: var(--amber); }
+.stock-agent-consensus .risk { color: var(--red); }
+.stock-agent-consensus .wait { color: var(--muted); }
+
 .status-holding strong {
     max-width: 220px;
     overflow: hidden;
@@ -389,6 +394,29 @@ a:hover { text-decoration: underline; }
 .watch-only {
     color: var(--muted);
     font-weight: 700;
+}
+
+.asset-class-badge {
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 7px;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.asset-class-badge.crypto {
+    background: var(--cyan-bg);
+    color: #0369A1;
+    border-color: rgba(14, 165, 233, 0.22);
+}
+
+.asset-class-badge.stock {
+    background: var(--green-bg);
+    color: #15803D;
+    border-color: rgba(22, 163, 74, 0.22);
 }
 
 .swing-mover {
@@ -724,6 +752,37 @@ a:hover { text-decoration: underline; }
     margin-bottom: 10px;
 }
 
+.stock-risk-panel {
+    grid-column: 1 / -1;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: var(--panel-soft);
+    padding: 10px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.stock-risk-panel .mini-title,
+.stock-risk-panel .risk-output {
+    grid-column: 1 / -1;
+}
+
+.risk-output {
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: var(--panel);
+    padding: 8px;
+    color: var(--muted);
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.risk-output strong {
+    color: var(--text);
+}
+
 .broker-review {
     min-height: 160px;
 }
@@ -755,6 +814,14 @@ a:hover { text-decoration: underline; }
     margin-bottom: 10px;
 }
 
+.report-filter-bar {
+    border-bottom: 1px solid var(--line);
+    background: var(--panel);
+    padding: 10px;
+    display: flex;
+    justify-content: flex-end;
+}
+
 .report-date-control {
     display: grid;
     gap: 5px;
@@ -765,6 +832,7 @@ a:hover { text-decoration: underline; }
 }
 
 .report-date-control input,
+.report-date-control select,
 .review-field input,
 .review-field select {
     border: 1px solid var(--line);
@@ -1488,6 +1556,8 @@ tr:last-child td { border-bottom: none; }
     .stocks-status,
     .stock-rule-copy,
     .stock-rules-grid,
+    .stock-risk-panel,
+    .risk-output,
     .holdings-form { grid-template-columns: 1fr; }
     .coin-rail { grid-template-columns: repeat(4, 1fr); }
     .compact-rail { grid-template-columns: repeat(4, minmax(68px, 1fr)); }
