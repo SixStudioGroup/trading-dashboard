@@ -185,6 +185,8 @@ let tradeJournal = loadCollection(TRADE_JOURNAL_STORAGE_KEY);
 let analysisWatchlist = loadCollection(ANALYSIS_WATCHLIST_STORAGE_KEY);
 let signalHistory = loadCollection(SIGNAL_HISTORY_STORAGE_KEY);
 let sessionChecklist = loadChecklist();
+let previousCryptoAlertIds = new Set();
+let alertTabsWired = false;
 
 const compactMoney = new Intl.NumberFormat("en-AU", {
     style: "currency",
@@ -2341,64 +2343,249 @@ function observationFor(item) {
 }
 
 function renderLogs(model) {
+    const now = new Date().toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit", timeZone: "Australia/Brisbane" });
+
+    // --- Crypto log ---
     const logsBody = document.getElementById("logs-body");
-    if (!logsBody) return;
-    const systemRows = model.dataConfidence?.isFallback ? `
+    const cryptoLogCount = document.getElementById("crypto-log-count");
+    if (logsBody) {
+        const systemRows = model.dataConfidence?.isFallback ? `
             <tr>
-                <td>${new Date().toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit", timeZone: "Australia/Brisbane" })}</td>
+                <td>${now}</td>
                 <td>SYS</td>
                 <td class="num">-</td>
                 <td class="num">-</td>
                 <td class="num">-</td>
                 <td><span class="badge wait">Fallback Snapshot</span></td>
                 <td>Live API unavailable. Rendering fallback snapshot. Reason: ${escapeHtml(model.dataConfidence.failureReason)}.</td>
-            </tr>
-    ` : "";
-    const rows = model.assets.slice(0, 16).map(item => {
-        const observation = observationFor(item);
-        return `
-            <tr>
-                <td>${new Date().toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit", timeZone: "Australia/Brisbane" })}</td>
+            </tr>` : "";
+        const cryptoAssets = model.assets.slice(0, 16);
+        const rows = cryptoAssets.map(item => {
+            const observation = observationFor(item);
+            return `<tr>
+                <td>${now}</td>
                 <td>${coinCell(item.coin)}</td>
                 <td class="num">${formatPrice(item.coin.current_price)}</td>
                 <td class="num ${percentClass(item.coin.price_change_percentage_1h_in_currency)}">${formatPercent(item.coin.price_change_percentage_1h_in_currency)}</td>
                 <td class="num ${percentClass(item.coin.price_change_percentage_24h)}">${formatPercent(item.coin.price_change_percentage_24h)}</td>
                 <td><span class="badge ${observation.klass}">${observation.label}</span></td>
                 <td>${observation.note}</td>
-            </tr>
-        `;
-    }).join("");
-    logsBody.innerHTML = systemRows + rows;
+            </tr>`;
+        }).join("");
+        logsBody.innerHTML = systemRows + rows;
+        if (cryptoLogCount) {
+            cryptoLogCount.textContent = `${cryptoAssets.length} entries`;
+            cryptoLogCount.className = `alert-count-badge${cryptoAssets.length > 0 ? " has-alerts" : ""}`;
+        }
+    }
 
+    // --- Stocks / Options log ---
+    const stocksLogBody = document.getElementById("stocks-log-body");
+    const stocksLogCount = document.getElementById("stocks-log-count");
+    if (stocksLogBody) {
+        const trades = loadStockWorkspaceTrades();
+        const positions = loadStockWorkspacePositions();
+        const signalKlass = s => ({ "Breakout": "strong", "Watch": "watch", "Sell Risk": "risk", "Volume Spike": "volume" }[s] || "wait");
+
+        const tradeRows = trades.map(trade => {
+            const filed = trade.entryDate
+                ? new Date(trade.entryDate).toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit", timeZone: "Australia/Brisbane" })
+                : "—";
+            return `<tr>
+                <td>${filed}</td>
+                <td><strong>${escapeHtml(trade.symbol)}</strong> <span class="muted">${escapeHtml(trade.name)}</span></td>
+                <td><span class="badge ${signalKlass(trade.signalState)}">${escapeHtml(trade.signalState)}</span></td>
+                <td class="num">${trade.entryPrice ? formatPrice(trade.entryPrice) : "—"}</td>
+                <td>${escapeHtml(trade.reasonEntry)}</td>
+                <td>${escapeHtml(trade.plannedInvalidation)}</td>
+            </tr>`;
+        });
+
+        const positionRows = positions.map(pos => {
+            const unrealised = pos.avgEntryPrice && pos.referencePrice
+                ? (pos.referencePrice - pos.avgEntryPrice) / pos.avgEntryPrice * 100
+                : null;
+            const klass = unrealised === null ? "wait" : unrealised > 0 ? "watch" : "risk";
+            return `<tr>
+                <td>—</td>
+                <td><strong>${escapeHtml(pos.symbol)}</strong> <span class="muted">${escapeHtml(pos.name)}</span></td>
+                <td><span class="badge ${klass}">Position</span></td>
+                <td class="num">${formatPrice(pos.avgEntryPrice)}</td>
+                <td>Ref ${formatPrice(pos.referencePrice)} · ${pos.units} units</td>
+                <td>${escapeHtml(pos.note) || "—"}</td>
+            </tr>`;
+        });
+
+        const allRows = [...tradeRows, ...positionRows].join("");
+        stocksLogBody.innerHTML = allRows || `<tr><td colspan="6" class="loading-cell">No stock plans or positions recorded.</td></tr>`;
+        if (stocksLogCount) {
+            const count = trades.length + positions.length;
+            stocksLogCount.textContent = `${count} entr${count === 1 ? "y" : "ies"}`;
+            stocksLogCount.className = `alert-count-badge${count > 0 ? " has-alerts" : ""}`;
+        }
+    }
+
+    // --- Crypto watchlist snapshot ---
     const { markets } = model;
     const watchlist = WATCHLIST_IDS.map(id => byId(markets, id)).filter(Boolean);
     const watchlistBody = document.getElementById("logs-watchlist-body");
-    if (!watchlistBody) return;
-    watchlistBody.innerHTML = watchlist.map(coin => `
-        <tr>
-            <td>${coinCell(coin)}</td>
-            <td class="num">${formatPrice(coin.current_price)}</td>
-            <td class="num">${formatPrice(sellPrice(coin.current_price))}</td>
-            <td class="num">${formatBig(coin.total_volume)}</td>
-            <td class="num ${percentClass(coin.price_change_percentage_24h)}">${formatPercent(coin.price_change_percentage_24h)}</td>
-        </tr>
-    `).join("");
+    if (watchlistBody) {
+        watchlistBody.innerHTML = watchlist.map(coin => `
+            <tr>
+                <td>${coinCell(coin)}</td>
+                <td class="num">${formatPrice(coin.current_price)}</td>
+                <td class="num">${formatPrice(sellPrice(coin.current_price))}</td>
+                <td class="num">${formatBig(coin.total_volume)}</td>
+                <td class="num ${percentClass(coin.price_change_percentage_24h)}">${formatPercent(coin.price_change_percentage_24h)}</td>
+            </tr>
+        `).join("");
+    }
+}
+
+function buildOptionsAlertEvents() {
+    const trades = loadStockWorkspaceTrades();
+    const positions = loadStockWorkspacePositions();
+    const events = [];
+
+    const stateMap = {
+        "Breakout":     { type: "Breakout Plan", klass: "strong", rule: "Plan filed with Breakout signal state" },
+        "Watch":        { type: "Watch Plan",    klass: "watch",  rule: "Plan filed with Watch signal state" },
+        "Sell Risk":    { type: "Sell Risk",     klass: "risk",   rule: "Plan filed with Sell Risk signal state" },
+        "Volume Spike": { type: "Volume Spike",  klass: "volume", rule: "Plan filed with Volume Spike signal state" }
+    };
+
+    trades.forEach(trade => {
+        const def = stateMap[trade.signalState];
+        if (!def) return;
+        events.push({
+            type: def.type, klass: def.klass, rule: def.rule,
+            symbol: trade.symbol, name: trade.name,
+            triggerState: trade.signalState,
+            entryRef: trade.entryPrice,
+            whyNow: trade.reasonEntry,
+            invalidation: trade.plannedInvalidation
+        });
+    });
+
+    positions.forEach(pos => {
+        if (!pos.avgEntryPrice || !pos.referencePrice) return;
+        const ratio = pos.referencePrice / pos.avgEntryPrice;
+        if (ratio > 1.03) {
+            events.push({
+                type: "Profit Zone", klass: "watch",
+                rule: "Reference price outside entry band +3%",
+                symbol: pos.symbol, name: pos.name,
+                triggerState: "profit_zone",
+                entryRef: pos.avgEntryPrice,
+                whyNow: `Ref ${formatPrice(pos.referencePrice)} vs entry ${formatPrice(pos.avgEntryPrice)}`,
+                invalidation: "Manual review required"
+            });
+        } else if (ratio < 0.97) {
+            events.push({
+                type: "Invalidation Risk", klass: "risk",
+                rule: "Reference price outside entry band -3%",
+                symbol: pos.symbol, name: pos.name,
+                triggerState: "invalidation_breach",
+                entryRef: pos.avgEntryPrice,
+                whyNow: `Ref ${formatPrice(pos.referencePrice)} vs entry ${formatPrice(pos.avgEntryPrice)}`,
+                invalidation: "Manual review required"
+            });
+        }
+    });
+
+    const order = { "Sell Risk": 0, "Invalidation Risk": 1, "Breakout Plan": 2, "Watch Plan": 3, "Profit Zone": 4, "Volume Spike": 5 };
+    events.sort((a, b) => (order[a.type] ?? 99) - (order[b.type] ?? 99));
+    return events;
 }
 
 function renderAlerts(model) {
+    // --- Crypto panel ---
     const alertsBody = document.getElementById("alerts-body");
-    if (!alertsBody) return;
-    const rows = model.alertEvents.slice(0, 18).map(({ item, event }) => `
-            <tr>
+    const cryptoBadge = document.getElementById("crypto-alert-count");
+    if (alertsBody) {
+        const events = model.alertEvents.slice(0, 18);
+        const newIds = new Set(events.map(({ item }) => item.coin.id));
+        const rows = events.map(({ item, event }) => {
+            const isNew = !previousCryptoAlertIds.has(item.coin.id);
+            const isRisk = event.klass === "risk";
+            const rowClass = [isNew ? "alert-row-new" : "", isRisk ? "alert-row-risk" : ""].filter(Boolean).join(" ");
+            return `<tr class="${rowClass}">
                 <td><span class="badge ${event.klass}">${event.type}</span></td>
                 <td>${coinCell(item.coin)}</td>
                 <td><span class="state-token">${event.triggerState}</span></td>
                 <td class="num">${event.type === "Volume Spike" ? formatBig(event.value) : formatPercent(event.value)}</td>
                 <td class="num">${formatPrice(item.coin.current_price)}</td>
                 <td>${event.rule}</td>
-            </tr>
-    `).join("");
-    alertsBody.innerHTML = rows || `<tr><td colspan="6" class="loading-cell">No threshold events in the current market state.</td></tr>`;
+            </tr>`;
+        }).join("");
+        alertsBody.innerHTML = rows || `<tr><td colspan="6" class="loading-cell">No threshold events in the current market state.</td></tr>`;
+        previousCryptoAlertIds = newIds;
+        if (cryptoBadge) {
+            const count = events.length;
+            const hasRisk = events.some(({ event }) => event.klass === "risk");
+            cryptoBadge.textContent = `${count} active`;
+            cryptoBadge.className = `alert-count-badge${hasRisk ? " has-risk" : count > 0 ? " has-alerts" : ""}`;
+        }
+    }
+
+    // --- Options panel ---
+    const optionsBody = document.getElementById("options-alerts-body");
+    const optionsBadge = document.getElementById("options-alert-count");
+    if (optionsBody) {
+        const optEvents = buildOptionsAlertEvents();
+        const rows = optEvents.map(ev => {
+            const isRisk = ev.klass === "risk";
+            return `<tr class="${isRisk ? "alert-row-risk" : ""}">
+                <td><span class="badge ${ev.klass}">${ev.type}</span></td>
+                <td><strong>${escapeHtml(ev.symbol)}</strong> <span class="muted">${escapeHtml(ev.name)}</span></td>
+                <td><span class="state-token">${escapeHtml(ev.triggerState)}</span></td>
+                <td class="num">${ev.entryRef ? formatPrice(ev.entryRef) : "—"}</td>
+                <td>${escapeHtml(ev.whyNow)}</td>
+                <td>${escapeHtml(ev.invalidation)}</td>
+            </tr>`;
+        }).join("");
+        optionsBody.innerHTML = rows || `<tr><td colspan="6" class="loading-cell">No options alerts. File a stock plan to generate alerts.</td></tr>`;
+        if (optionsBadge) {
+            const count = optEvents.length;
+            const hasRisk = optEvents.some(ev => ev.klass === "risk");
+            optionsBadge.textContent = `${count} active`;
+            optionsBadge.className = `alert-count-badge${hasRisk ? " has-risk" : count > 0 ? " has-alerts" : ""}`;
+        }
+    }
+
+    // --- Hotbar ---
+    const hotbarPills = document.getElementById("hotbar-pills");
+    if (hotbarPills) {
+        const cryptoPills = model.alertEvents.slice(0, 5).map(({ item, event }) =>
+            `<span class="hotbar-pill ${event.klass}"><span class="hotbar-cls">C</span>${escapeHtml((item.coin.symbol || item.coin.name || "").toUpperCase())} · ${event.type}</span>`
+        );
+        const optionsPills = buildOptionsAlertEvents().slice(0, 3).map(ev =>
+            `<span class="hotbar-pill ${ev.klass}"><span class="hotbar-cls">S</span>${escapeHtml(ev.symbol)} · ${ev.type}</span>`
+        );
+        const all = [...cryptoPills, ...optionsPills];
+        hotbarPills.innerHTML = all.length
+            ? all.join("")
+            : `<span class="hotbar-pill wait">No active alerts across either asset class</span>`;
+    }
+
+    // --- Tab filter (wire once) ---
+    if (!alertTabsWired) {
+        alertTabsWired = true;
+        const tabBar = document.getElementById("alert-tab-bar");
+        const cryptoPanel = document.getElementById("crypto-alerts-panel");
+        const optionsPanel = document.getElementById("options-alerts-panel");
+        if (tabBar && cryptoPanel && optionsPanel) {
+            tabBar.addEventListener("click", e => {
+                const btn = e.target.closest(".alert-tab-btn");
+                if (!btn) return;
+                tabBar.querySelectorAll(".alert-tab-btn").forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                const tab = btn.dataset.alertTab;
+                cryptoPanel.style.display = tab === "options" ? "none" : "";
+                optionsPanel.style.display = tab === "crypto" ? "none" : "";
+            });
+        }
+    }
 }
 
 function localDateKey(value) {

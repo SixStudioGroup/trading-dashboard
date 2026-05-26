@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Market Logs — ZenCloud Trading OS</title>
-    <link rel="stylesheet" href="styles.css?v=ui-20260526">
+    <link rel="stylesheet" href="styles.css?v=alerts-20260526">
     <script src="https://unpkg.com/lucide@0.441.0/dist/umd/lucide.min.js"></script>
 </head>
 <body data-page="logs">
@@ -48,11 +48,15 @@
             </div>
         </section>
 
-        <section class="wide-grid">
+        <section class="alerts-dual-grid">
+
             <section class="panel">
                 <div class="panel-header">
-                    <h2 class="panel-title">Live Signal Log</h2>
-                    <p class="panel-subtitle">System observations only</p>
+                    <div class="panel-header-row">
+                        <h2 class="panel-title">Crypto Signal Log</h2>
+                        <span class="alert-count-badge" id="crypto-log-count">— entries</span>
+                    </div>
+                    <p class="panel-subtitle"><span class="live-pulse-dot"></span>Live observations from crypto pipeline</p>
                 </div>
                 <table>
                     <thead>
@@ -72,30 +76,56 @@
                 </table>
             </section>
 
-            <details class="panel collapsible-panel">
-                <summary>
-                    <span>Watchlist Snapshot</span>
-                    <small>Debug view of formatted watchlist inputs</small>
-                </summary>
-                <table class="watchlist-table">
+            <section class="panel">
+                <div class="panel-header">
+                    <div class="panel-header-row">
+                        <h2 class="panel-title">Stocks / Options Log</h2>
+                        <span class="alert-count-badge" id="stocks-log-count">— entries</span>
+                    </div>
+                    <p class="panel-subtitle"><span class="badge wait" style="font-size:11px;padding:2px 7px;vertical-align:middle;">Manual Review</span>&ensp;Stock plans and positions from workspace</p>
+                </div>
+                <table>
                     <thead>
                         <tr>
-                            <th>Coin</th>
-                            <th class="num">Price</th>
-                            <th class="num">Sell Est.</th>
-                            <th class="num">Volume (24hr)</th>
-                            <th class="num">Change (24hr)</th>
+                            <th>Filed (AEST)</th>
+                            <th>Ticker</th>
+                            <th>Signal</th>
+                            <th class="num">Entry Ref</th>
+                            <th>Why Now</th>
+                            <th>Invalidation</th>
                         </tr>
                     </thead>
-                    <tbody id="logs-watchlist-body">
-                        <tr><td colspan="5" class="loading-cell">Loading live snapshot...</td></tr>
+                    <tbody id="stocks-log-body">
+                        <tr><td colspan="6" class="loading-cell">Loading stocks log...</td></tr>
                     </tbody>
                 </table>
-            </details>
+            </section>
+
         </section>
+
+        <details class="panel collapsible-panel">
+            <summary>
+                <span>Crypto Watchlist Snapshot</span>
+                <small>Debug view of formatted watchlist inputs</small>
+            </summary>
+            <table class="watchlist-table">
+                <thead>
+                    <tr>
+                        <th>Coin</th>
+                        <th class="num">Price</th>
+                        <th class="num">Sell Est.</th>
+                        <th class="num">Volume (24hr)</th>
+                        <th class="num">Change (24hr)</th>
+                    </tr>
+                </thead>
+                <tbody id="logs-watchlist-body">
+                    <tr><td colspan="5" class="loading-cell">Loading live snapshot...</td></tr>
+                </tbody>
+            </table>
+        </details>
     </main>
 
-    <script src="app.js?v=ui-20260526"></script>
+    <script src="app.js?v=alerts-20260526"></script>
 <script>if(typeof lucide!=="undefined")lucide.createIcons();</script>
 </body>
 </html>

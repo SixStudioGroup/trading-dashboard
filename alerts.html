@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Alerts — ZenCloud Trading OS</title>
-    <link rel="stylesheet" href="styles.css?v=ui-20260526">
+    <link rel="stylesheet" href="styles.css?v=alerts-20260526">
     <script src="https://unpkg.com/lucide@0.441.0/dist/umd/lucide.min.js"></script>
 </head>
 <body data-page="alerts">
@@ -48,11 +48,28 @@
             </div>
         </section>
 
-        <section class="wide-grid">
-            <section class="panel">
+        <section class="alert-hotbar" id="alert-hotbar">
+            <span class="hotbar-label">Active Alerts</span>
+            <div class="hotbar-pills" id="hotbar-pills">
+                <span class="hotbar-pill wait">Loading...</span>
+            </div>
+        </section>
+
+        <div class="alert-tab-bar" id="alert-tab-bar">
+            <button class="alert-tab-btn active" data-alert-tab="all">All</button>
+            <button class="alert-tab-btn" data-alert-tab="crypto">Crypto</button>
+            <button class="alert-tab-btn" data-alert-tab="options">Options</button>
+        </div>
+
+        <section class="alerts-dual-grid" id="alerts-dual-grid">
+
+            <section class="panel" id="crypto-alerts-panel">
                 <div class="panel-header">
-                    <h2 class="panel-title">Live Alerts</h2>
-                    <p class="panel-subtitle">One row per threshold trigger</p>
+                    <div class="panel-header-row">
+                        <h2 class="panel-title">Crypto Live Alerts</h2>
+                        <span class="alert-count-badge" id="crypto-alert-count">0 active</span>
+                    </div>
+                    <p class="panel-subtitle"><span class="live-pulse-dot"></span>Refreshes every 60s — threshold events from live feed</p>
                 </div>
                 <table>
                     <thead>
@@ -71,23 +88,65 @@
                 </table>
             </section>
 
-            <section class="panel compact-rules">
+            <section class="panel" id="options-alerts-panel">
                 <div class="panel-header">
-                    <h2 class="panel-title">Alert Rules</h2>
-                    <p class="panel-subtitle">Compact threshold reference</p>
+                    <div class="panel-header-row">
+                        <h2 class="panel-title">Options / Stocks Alerts</h2>
+                        <span class="alert-count-badge" id="options-alert-count">0 active</span>
+                    </div>
+                    <p class="panel-subtitle"><span class="badge wait" style="font-size:11px;padding:2px 7px;vertical-align:middle;">Manual Review</span>&ensp;Plan-state alerts — no live price feed</p>
                 </div>
-                <div class="panel-body rules-grid">
-                    <div class="rule-card strong"><strong>Breakout Event</strong><span>24hr above 5% with positive 1hr</span></div>
-                    <div class="rule-card watch"><strong>Watch Event</strong><span>24hr above 2%</span></div>
-                    <div class="rule-card risk"><strong>Sell Risk</strong><span>24hr below -3%</span></div>
-                    <div class="rule-card volume"><strong>Volume Spike</strong><span>Top live AUD volume band</span></div>
-                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Event Type</th>
+                            <th>Ticker</th>
+                            <th>Signal State</th>
+                            <th class="num">Entry Ref</th>
+                            <th>Why Now</th>
+                            <th>Invalidation</th>
+                        </tr>
+                    </thead>
+                    <tbody id="options-alerts-body">
+                        <tr><td colspan="6" class="loading-cell">Loading options alerts...</td></tr>
+                    </tbody>
+                </table>
             </section>
 
         </section>
+
+        <section class="panel">
+            <div class="panel-header">
+                <h2 class="panel-title">Alert Rules</h2>
+                <p class="panel-subtitle">Threshold reference — both asset classes</p>
+            </div>
+            <div class="panel-body">
+                <div class="dual-rules-body">
+                    <div>
+                        <div class="rules-section-label">Crypto</div>
+                        <div class="rules-grid rules-grid-2">
+                            <div class="rule-card strong"><strong>Breakout Event</strong><span>24hr above 5% with positive 1hr</span></div>
+                            <div class="rule-card watch"><strong>Watch Event</strong><span>24hr above 2%</span></div>
+                            <div class="rule-card risk"><strong>Sell Risk</strong><span>24hr below -3%</span></div>
+                            <div class="rule-card volume"><strong>Volume Spike</strong><span>Top live AUD volume band</span></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="rules-section-label">Options / Stocks</div>
+                        <div class="rules-grid rules-grid-2">
+                            <div class="rule-card strong"><strong>Breakout Plan</strong><span>Plan filed with Breakout signal state</span></div>
+                            <div class="rule-card watch"><strong>Watch Plan</strong><span>Plan filed with Watch signal state</span></div>
+                            <div class="rule-card risk"><strong>Sell Risk Plan</strong><span>Plan filed with Sell Risk signal state</span></div>
+                            <div class="rule-card volume"><strong>Position Review</strong><span>Reference price outside entry band ±3%</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
     </main>
 
-    <script src="app.js?v=ui-20260526"></script>
+    <script src="app.js?v=alerts-20260526"></script>
 <script>if(typeof lucide!=="undefined")lucide.createIcons();</script>
 </body>
 </html>
