@@ -26,7 +26,7 @@ body {
     margin: 0;
     background: var(--page);
     color: var(--text);
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
     font-size: 14px;
 }
 
@@ -1741,24 +1741,29 @@ tr:last-child td { border-bottom: none; }
         flex-direction: column;
     }
 }
-.nav-workspace-btn {
+/* Workspace switcher — scoped to .navlinks a to beat .navlinks a specificity */
+.navlinks a.nav-workspace-btn {
     border: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
     border-radius: 6px;
-    padding: 2px 10px;
-    background: var(--panel);
-    transition: background 0.15s, color 0.15s;
+    padding: 4px 12px;
+    background: var(--panel-soft);
+    color: var(--muted);
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
-.nav-workspace-btn:hover {
-    background: var(--brand-blue);
-    color: #fff;
+.navlinks a.nav-workspace-btn:hover {
+    background: rgba(37, 99, 235, 0.07);
+    color: var(--brand-blue);
     border-color: var(--brand-blue);
+    border-bottom: 1px solid var(--brand-blue);
+    text-decoration: none;
 }
-.nav-workspace-btn.active {
-    background: var(--brand-blue);
-    color: #fff;
-    border-color: var(--brand-blue);
+.navlinks a.nav-workspace-btn.active {
+    background: rgba(37, 99, 235, 0.09);
+    color: var(--brand-blue);
+    border: 1px solid var(--brand-blue);
 }
-.nav-workspace-btn:focus-visible {
+.navlinks a.nav-workspace-btn:focus-visible {
     outline: 2px solid var(--brand-blue);
     outline-offset: 2px;
 }
@@ -1767,6 +1772,14 @@ tr:last-child td { border-bottom: none; }
     width: 1px;
     height: 1em;
     background: var(--line);
-    margin: 0 4px;
+    margin: 0 2px;
     vertical-align: middle;
+}
+/* Icon sizing inside nav links */
+.navlinks a svg {
+    width: 13px;
+    height: 13px;
+    vertical-align: -2px;
+    margin-right: 4px;
+    flex-shrink: 0;
 }

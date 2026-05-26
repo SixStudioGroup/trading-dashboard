@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Market Logs — ZenCloud Trading OS</title>
-    <link rel="stylesheet" href="styles.css?v=nav-20260526">
+    <link rel="stylesheet" href="styles.css?v=ui-20260526">
+    <script src="https://unpkg.com/lucide@0.441.0/dist/umd/lucide.min.js"></script>
 </head>
 <body data-page="logs">
     <header class="topbar">
@@ -13,15 +14,15 @@
             <span>ZenCloud Trading OS</span>
         </a>
         <nav class="navlinks" aria-label="Main navigation">
-            <a class="nav-workspace-btn" href="index.html">Crypto</a>
-            <a class="nav-workspace-btn" href="stocks.html">Stocks</a>
+            <a class="nav-workspace-btn" href="index.html"><i data-lucide="trending-up"></i> Crypto</a>
+            <a class="nav-workspace-btn" href="stocks.html"><i data-lucide="bar-chart-2"></i> Stocks</a>
             <span class="nav-divider" aria-hidden="true"></span>
-            <a class="active" href="logs.html">Logs</a>
-            <a href="alerts.html">Alerts</a>
-            <a href="journal.html">Journal</a>
-            <a href="reports.html">Reports</a>
-            <a href="guide.html">Guide</a>
-            <a href="settings.html">Settings</a>
+            <a class="active" href="logs.html"><i data-lucide="file-text"></i> Logs</a>
+            <a href="alerts.html"><i data-lucide="bell"></i> Alerts</a>
+            <a href="journal.html"><i data-lucide="book-open"></i> Journal</a>
+            <a href="reports.html"><i data-lucide="pie-chart"></i> Reports</a>
+            <a href="guide.html"><i data-lucide="help-circle"></i> Guide</a>
+            <a href="settings.html"><i data-lucide="settings-2"></i> Settings</a>
         </nav>
     </header>
 
@@ -94,6 +95,7 @@
         </section>
     </main>
 
-    <script src="app.js?v=nav-20260526"></script>
+    <script src="app.js?v=ui-20260526"></script>
+<script>if(typeof lucide!=="undefined")lucide.createIcons();</script>
 </body>
 </html>
