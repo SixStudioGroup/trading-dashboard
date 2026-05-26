@@ -2736,7 +2736,7 @@ function renderJournal() {
                 <td>${escapeHtml(trade.lessonLearned || "Not recorded")}</td>
                 <td>${escapeHtml(trade.notes || "Not recorded")}</td>
             </tr>
-        `).join("") : `<tr><td colspan="18" class="loading-cell">No journal records.</td></tr>`;
+        `).join("") : `<tr><td colspan="19" class="loading-cell">No journal records.</td></tr>`;
     }
     openBody.innerHTML = openRows.length ? openRows.map(trade => `
         <tr>
@@ -3090,7 +3090,7 @@ function initSharePanel() {
             const url = await createGist(payload);
             try { await navigator.clipboard.writeText(url); } catch {}
             if (resultBox) {
-                resultBox.innerHTML = `Gist created. Link copied to clipboard.<br><a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a>`;
+                resultBox.innerHTML = `Gist created. Link copied to clipboard.<br><a href="${url}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a>`;
                 resultBox.style.display = "block";
             }
             if (warningBox) warningBox.style.display = "none";
