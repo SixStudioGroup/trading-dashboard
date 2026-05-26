@@ -104,8 +104,13 @@
                 <h2 class="panel-title">All Journal Records</h2>
                 <p class="panel-subtitle">Crypto and stock records with full review fields</p>
             </div>
+            <div class="share-toolbar" id="share-toolbar">
+                <button class="table-action" type="button" id="share-toggle-btn">Share</button>
+                <span id="share-selected-count" style="font-size:12px;color:var(--muted);display:none;">0 selected</span>
+                <button class="button-primary" type="button" id="share-configure-btn" style="display:none;" disabled>Configure Share</button>
+            </div>
             <table class="compact-table journal-records-table">
-                <thead><tr><th>Class</th><th>Symbol / Ticker</th><th>Entry</th><th class="num">Entry price</th><th class="num">Position size</th><th>Signal</th><th>Consensus</th><th>Reason</th><th>Invalidation</th><th>Exit</th><th class="num">Exit price</th><th>Exit reason</th><th>Result</th><th>Plan?</th><th>ZenCloud?</th><th>Mistake</th><th>Lesson</th><th>Notes</th></tr></thead>
+                <thead><tr><th class="share-checkbox-col" id="share-all-th" style="display:none;"><input type="checkbox" id="share-select-all" aria-label="Select all"></th><th>Class</th><th>Symbol / Ticker</th><th>Entry</th><th class="num">Entry price</th><th class="num">Position size</th><th>Signal</th><th>Consensus</th><th>Reason</th><th>Invalidation</th><th>Exit</th><th class="num">Exit price</th><th>Exit reason</th><th>Result</th><th>Plan?</th><th>ZenCloud?</th><th>Mistake</th><th>Lesson</th><th>Notes</th></tr></thead>
                 <tbody id="all-journal-body"><tr><td colspan="18" class="loading-cell">No journal records.</td></tr></tbody>
             </table>
         </section>
@@ -131,6 +136,30 @@
                 <tbody id="closed-trades-body"><tr><td colspan="11" class="loading-cell">No closed trades.</td></tr></tbody>
             </table>
         </section>
+    <div class="share-modal-overlay" id="share-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="share-modal-title">
+        <div class="share-modal">
+            <h3 id="share-modal-title">Configure Share</h3>
+            <p style="font-size:12px;color:var(--muted);margin:0 0 14px;">Select which fields to include for all selected trades.</p>
+            <div class="share-fields-grid">
+                <label class="share-field-check"><input type="checkbox" id="sf-symbol" checked disabled> Symbol</label>
+                <label class="share-field-check"><input type="checkbox" id="sf-direction" checked disabled> Direction</label>
+                <label class="share-field-check"><input type="checkbox" id="sf-date" checked disabled> Date</label>
+                <label class="share-field-check"><input type="checkbox" id="sf-quantity"> Quantity</label>
+                <label class="share-field-check"><input type="checkbox" id="sf-entry-price"> Entry price</label>
+                <label class="share-field-check"><input type="checkbox" id="sf-pnl"> P&amp;L</label>
+                <label class="share-field-check"><input type="checkbox" id="sf-notes"> Notes</label>
+            </div>
+            <div class="share-warning" id="share-warning-box" style="display:none;">
+                <strong>Warning:</strong> Secret Gists are accessible to anyone with the URL. Do not share sensitive financial data you are not comfortable making accessible.
+            </div>
+            <div class="share-result" id="share-result-box" style="display:none;"></div>
+            <div class="share-error" id="share-error-box" style="display:none;"></div>
+            <div class="share-modal-actions">
+                <button class="table-action" type="button" id="share-modal-close">Cancel</button>
+                <button class="button-primary" type="button" id="share-confirm-btn">Create Gist</button>
+            </div>
+        </div>
+    </div>
     </main>
 
     <script src="app.js?v=package1-nav-20260525"></script>
