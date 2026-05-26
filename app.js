@@ -2805,6 +2805,7 @@ function clearJournalForm() {
 }
 
 function initJournalControls() {
+    migrateAssetClassTags();
     const form = document.getElementById("journal-form");
     if (!form) return;
     clearJournalForm();
@@ -2850,7 +2851,31 @@ function initJournalControls() {
     renderJournal();
 }
 
+function migrateAssetClassTags() {
+    if (isPublicDemoMode()) return;
+    if (!storageAvailable()) return;
+    const stored = window.localStorage.getItem(TRADE_JOURNAL_STORAGE_KEY);
+    if (!stored) return;
+    let records;
+    try { records = JSON.parse(stored); } catch { return; }
+    if (!Array.isArray(records)) return;
+    let changed = false;
+    const migrated = records.map(record => {
+        const ac = record.assetClass;
+        if (ac === CRYPTO_ASSET_CLASS || ac === STOCK_ASSET_CLASS || ac === UNKNOWN_ASSET_CLASS) return record;
+        changed = true;
+        const symbol = String(record.symbol || "").toUpperCase();
+        const assetClass = KNOWN_CRYPTO_SYMBOLS.has(symbol) ? CRYPTO_ASSET_CLASS : UNKNOWN_ASSET_CLASS;
+        return { ...record, assetClass };
+    });
+    if (!changed) return;
+    window.localStorage.setItem(TRADE_JOURNAL_STORAGE_KEY, JSON.stringify(migrated));
+    const unknownCount = migrated.filter(r => r.assetClass === UNKNOWN_ASSET_CLASS).length;
+    if (unknownCount) console.warn(`ZenCloud migration: ${unknownCount} record(s) tagged "unknown" — review asset class in Journal.`);
+}
+
 async function boot() {
+    migrateAssetClassTags();
     const markets = await getMarkets();
     const model = buildDecisionPipeline(markets);
     recordSignalHistory(model.assets);
