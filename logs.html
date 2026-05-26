@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Market Logs — ZenCloud Trading OS</title>
-    <link rel="stylesheet" href="styles.css?v=alerts-20260526">
+    <link rel="stylesheet" href="styles.css?v=watchlist-20260527">
     <script src="https://unpkg.com/lucide@0.441.0/dist/umd/lucide.min.js"></script>
 </head>
 <body data-page="logs">
@@ -103,29 +103,57 @@
 
         </section>
 
-        <details class="panel collapsible-panel">
-            <summary>
-                <span>Crypto Watchlist Snapshot</span>
-                <small>Debug view of formatted watchlist inputs</small>
-            </summary>
-            <table class="watchlist-table">
-                <thead>
-                    <tr>
-                        <th>Coin</th>
-                        <th class="num">Price</th>
-                        <th class="num">Sell Est.</th>
-                        <th class="num">Volume (24hr)</th>
-                        <th class="num">Change (24hr)</th>
-                    </tr>
-                </thead>
-                <tbody id="logs-watchlist-body">
-                    <tr><td colspan="5" class="loading-cell">Loading live snapshot...</td></tr>
-                </tbody>
-            </table>
-        </details>
+        <section class="alerts-dual-grid">
+
+            <details class="panel collapsible-panel">
+                <summary>
+                    <span>Crypto Watchlist Snapshot</span>
+                    <small>Live snapshot for watchlist coins</small>
+                </summary>
+                <table class="watchlist-table">
+                    <thead>
+                        <tr>
+                            <th>Coin</th>
+                            <th class="num">Price</th>
+                            <th class="num">Sell Est.</th>
+                            <th class="num">Volume (24hr)</th>
+                            <th class="num">24hr</th>
+                            <th>Signal</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logs-watchlist-body">
+                        <tr><td colspan="6" class="loading-cell">Loading live snapshot...</td></tr>
+                    </tbody>
+                </table>
+            </details>
+
+            <details class="panel collapsible-panel">
+                <summary>
+                    <span>Stock Watchlist Snapshot</span>
+                    <small><span class="badge wait" style="font-size:11px;padding:2px 7px;vertical-align:middle;">Demo</span>&ensp;ASX demo watchlist</small>
+                </summary>
+                <table class="watchlist-table">
+                    <thead>
+                        <tr>
+                            <th>Ticker</th>
+                            <th>Sector</th>
+                            <th class="num">Price</th>
+                            <th class="num">1d %</th>
+                            <th class="num">5d %</th>
+                            <th class="num">Rel. Vol</th>
+                            <th>Signal</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logs-stock-watchlist-body">
+                        <tr><td colspan="7" class="loading-cell">Loading stock snapshot...</td></tr>
+                    </tbody>
+                </table>
+            </details>
+
+        </section>
     </main>
 
-    <script src="app.js?v=alerts-20260526"></script>
+    <script src="app.js?v=watchlist-20260527"></script>
 <script>if(typeof lucide!=="undefined")lucide.createIcons();</script>
 </body>
 </html>

@@ -141,6 +141,15 @@ const DEMO_STOCK_POSITIONS = [
     { assetClass: "stock", symbol: "CBA", name: "Demo CBA", market: "ASX", units: 6, avgEntryPrice: 124.0, referencePrice: 128.4, note: "Demo stock position - not real trading data" }
 ];
 
+const STOCK_WATCHLIST = [
+    { symbol: "BHP", name: "BHP Group",          sector: "Materials",              price: 43.2,  oneDayChange:  1.4, fiveDayChange:  4.8, relativeVolume: 1.7, signalState: "Breakout"    },
+    { symbol: "CBA", name: "Commonwealth Bank",  sector: "Financials",             price: 128.4, oneDayChange:  0.6, fiveDayChange:  2.1, relativeVolume: 1.2, signalState: "Watch"       },
+    { symbol: "CSL", name: "CSL",                sector: "Healthcare",             price: 284.1, oneDayChange: -1.1, fiveDayChange: -3.6, relativeVolume: 1.4, signalState: "Sell Risk"   },
+    { symbol: "WES", name: "Wesfarmers",         sector: "Consumer Staples",       price: 69.8,  oneDayChange:  0.2, fiveDayChange:  1.3, relativeVolume: 0.9, signalState: "Watch"       },
+    { symbol: "MQG", name: "Macquarie Group",    sector: "Financials",             price: 198.7, oneDayChange:  2.2, fiveDayChange: -0.4, relativeVolume: 2.1, signalState: "Volume Spike" },
+    { symbol: "TLS", name: "Telstra Group",      sector: "Communication Services", price: 4.08,  oneDayChange: -0.1, fiveDayChange:  0.2, relativeVolume: 0.7, signalState: "No Action"   }
+];
+
 const COINSPOT_SUPPORTED_SYMBOLS = new Set(["ADA", "BNB", "BTC", "DOGE", "DOT", "ETH", "FET", "LTC", "NEAR", "THETA", "XLM"]);
 
 const page = document.body.dataset.page;
@@ -2430,13 +2439,34 @@ function renderLogs(model) {
     const watchlist = WATCHLIST_IDS.map(id => byId(markets, id)).filter(Boolean);
     const watchlistBody = document.getElementById("logs-watchlist-body");
     if (watchlistBody) {
-        watchlistBody.innerHTML = watchlist.map(coin => `
-            <tr>
+        const assetById = Object.fromEntries(model.assets.map(a => [a.coin.id, a]));
+        watchlistBody.innerHTML = watchlist.map(coin => {
+            const asset = assetById[coin.id];
+            const obs = asset ? observationFor(asset) : { label: "—", klass: "wait" };
+            return `<tr>
                 <td>${coinCell(coin)}</td>
                 <td class="num">${formatPrice(coin.current_price)}</td>
                 <td class="num">${formatPrice(sellPrice(coin.current_price))}</td>
                 <td class="num">${formatBig(coin.total_volume)}</td>
                 <td class="num ${percentClass(coin.price_change_percentage_24h)}">${formatPercent(coin.price_change_percentage_24h)}</td>
+                <td><span class="badge ${obs.klass}">${obs.label}</span></td>
+            </tr>`;
+        }).join("");
+    }
+
+    // --- Stock watchlist snapshot ---
+    const stockWatchlistBody = document.getElementById("logs-stock-watchlist-body");
+    if (stockWatchlistBody) {
+        const signalKlass = s => ({ "Breakout": "strong", "Watch": "watch", "Sell Risk": "risk", "Volume Spike": "volume" }[s] || "wait");
+        stockWatchlistBody.innerHTML = STOCK_WATCHLIST.map(s => `
+            <tr>
+                <td><strong>${escapeHtml(s.symbol)}</strong> <span class="muted">${escapeHtml(s.name)}</span></td>
+                <td><span class="muted">${escapeHtml(s.sector)}</span></td>
+                <td class="num">${formatPrice(s.price)}</td>
+                <td class="num ${percentClass(s.oneDayChange)}">${formatPercent(s.oneDayChange)}</td>
+                <td class="num ${percentClass(s.fiveDayChange)}">${formatPercent(s.fiveDayChange)}</td>
+                <td class="num">${s.relativeVolume.toFixed(1)}x</td>
+                <td><span class="badge ${signalKlass(s.signalState)}">${escapeHtml(s.signalState)}</span></td>
             </tr>
         `).join("");
     }

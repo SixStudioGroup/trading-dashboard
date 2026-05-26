@@ -1041,6 +1041,10 @@ a:hover { text-decoration: underline; }
     margin-top: 14px;
 }
 
+.alerts-dual-grid > .collapsible-panel {
+    margin-top: 0;
+}
+
 .collapsible-panel summary {
     cursor: pointer;
     list-style: none;
