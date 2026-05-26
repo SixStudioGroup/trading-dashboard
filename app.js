@@ -2544,7 +2544,7 @@ function renderAlerts(model) {
                 <td>${escapeHtml(ev.invalidation)}</td>
             </tr>`;
         }).join("");
-        optionsBody.innerHTML = rows || `<tr><td colspan="6" class="loading-cell">No options alerts. File a stock plan to generate alerts.</td></tr>`;
+        optionsBody.innerHTML = rows || `<tr><td colspan="6" class="loading-cell">No stocks alerts. File a stock plan to generate alerts.</td></tr>`;
         if (optionsBadge) {
             const count = optEvents.length;
             const hasRisk = optEvents.some(ev => ev.klass === "risk");
