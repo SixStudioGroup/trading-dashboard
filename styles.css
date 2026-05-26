@@ -1741,3 +1741,22 @@ tr:last-child td { border-bottom: none; }
         flex-direction: column;
     }
 }
+.nav-workspace-btn {
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 2px 10px;
+    background: var(--panel);
+}
+.nav-workspace-btn.active {
+    background: var(--brand-blue);
+    color: #fff;
+    border-color: var(--brand-blue);
+}
+.nav-divider {
+    display: inline-block;
+    width: 1px;
+    height: 1em;
+    background: var(--line);
+    margin: 0 4px;
+    vertical-align: middle;
+}
