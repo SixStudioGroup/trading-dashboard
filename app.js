@@ -146,6 +146,14 @@ const COINSPOT_SUPPORTED_SYMBOLS = new Set(["ADA", "BNB", "BTC", "DOGE", "DOT", 
 const page = document.body.dataset.page;
 const CRYPTO_ASSET_CLASS = "crypto";
 const STOCK_ASSET_CLASS = "stock";
+const UNKNOWN_ASSET_CLASS = "unknown";
+const GITHUB_PAT_STORAGE_KEY = "zencloud.githubPat.v1";
+const JOURNAL_FILTER_KEY = "zencloud.journalFilter.v1";
+const KNOWN_CRYPTO_SYMBOLS = new Set([
+    "BTC","ETH","BNB","ADA","DOT","LTC","XLM","DOGE","THETA","FET",
+    "NEAR","ETC","TRB","XRP","SOL","AVAX","MATIC","LINK","UNI","AAVE",
+    "ATOM","ALGO","MANA","SAND","CRV","SUSHI","YFI","SNX"
+]);
 const HOLDINGS_STORAGE_KEY = "zencloud.manualHoldings.v1";
 const TRADE_JOURNAL_STORAGE_KEY = "zencloud.tradeJournal.v1";
 const STOCK_JOURNAL_STORAGE_KEY = "zencloud.stocks.tradeJournal.v1";
@@ -612,7 +620,9 @@ function normalizeTrade(trade = {}) {
     const hasResultPercent = trade.resultPercent !== "" && trade.resultPercent !== null && trade.resultPercent !== undefined;
     const resultAud = hasResultAud ? Number(trade.resultAud) : NaN;
     const resultPercent = hasResultPercent ? Number(trade.resultPercent) : NaN;
-    const assetClass = trade.assetClass === STOCK_ASSET_CLASS ? STOCK_ASSET_CLASS : CRYPTO_ASSET_CLASS;
+    const assetClass = [CRYPTO_ASSET_CLASS, STOCK_ASSET_CLASS, UNKNOWN_ASSET_CLASS].includes(trade.assetClass)
+        ? trade.assetClass
+        : CRYPTO_ASSET_CLASS;
     const cleanEntryPrice = Number.isFinite(entryPrice) && entryPrice >= 0 ? entryPrice : 0;
     const cleanPositionSize = Number.isFinite(positionSize) && positionSize >= 0 ? positionSize : 0;
     const cleanExitPrice = Number.isFinite(exitPrice) && exitPrice >= 0 ? exitPrice : null;
@@ -706,7 +716,7 @@ function sharedJournalTrades() {
 
 function filterTradesByAssetClass(trades, filter = "all") {
     if (filter === CRYPTO_ASSET_CLASS || filter === STOCK_ASSET_CLASS) {
-        return trades.filter(trade => trade.assetClass === filter);
+        return trades.filter(trade => trade.assetClass === filter || trade.assetClass === UNKNOWN_ASSET_CLASS);
     }
     return trades;
 }
@@ -716,12 +726,14 @@ function currentReportAssetFilter() {
 }
 
 function assetClassLabel(assetClass) {
-    return assetClass === STOCK_ASSET_CLASS ? "Stock" : "Crypto";
+    if (assetClass === STOCK_ASSET_CLASS) return "Stock";
+    if (assetClass === UNKNOWN_ASSET_CLASS) return "?";
+    return "Crypto";
 }
 
 function assetClassBadge(assetClass) {
     const label = assetClassLabel(assetClass);
-    const klass = assetClass === STOCK_ASSET_CLASS ? "stock" : "crypto";
+    const klass = assetClass === STOCK_ASSET_CLASS ? "stock" : assetClass === UNKNOWN_ASSET_CLASS ? "unknown" : "crypto";
     return `<span class="asset-class-badge ${klass}">${label}</span>`;
 }
 
@@ -1234,7 +1246,8 @@ function renderDashboard(model) {
     const recent = [...markets].sort((a, b) =>
         Math.abs(b.price_change_percentage_1h_in_currency || 0) - Math.abs(a.price_change_percentage_1h_in_currency || 0)
     ).slice(0, 6);
-    document.getElementById("recent-movers-body").innerHTML = recent.map(coin => `
+    const recentMoversBody = document.getElementById("recent-movers-body");
+    if (recentMoversBody) recentMoversBody.innerHTML = recent.map(coin => `
         <tr>
             <td>${coinCell(coin)}</td>
             <td class="num">${formatPrice(coin.current_price)}</td>
@@ -1248,7 +1261,8 @@ function renderDashboard(model) {
         .filter(coin => coin.current_price > 0 && coin.total_volume > 0)
         .slice(-8)
         .reverse();
-    document.getElementById("new-coins-body").innerHTML = newCoins.map(coin => `
+    const newCoinsBody = document.getElementById("new-coins-body");
+    if (newCoinsBody) newCoinsBody.innerHTML = newCoins.map(coin => `
         <tr>
             <td>${coinCell(coin)}</td>
             <td class="num">${formatPrice(coin.current_price)}</td>
@@ -2191,8 +2205,10 @@ function renderTodayMovers(markets) {
             <td class="num ${percentClass(coin.price_change_percentage_24h)}">${formatPercent(coin.price_change_percentage_24h)}</td>
         </tr>
     `;
-    document.getElementById("today-up-body").innerHTML = up.map(row).join("");
-    document.getElementById("today-down-body").innerHTML = down.map(row).join("");
+    const upBody = document.getElementById("today-up-body");
+    const downBody = document.getElementById("today-down-body");
+    if (upBody) upBody.innerHTML = up.map(row).join("");
+    if (downBody) downBody.innerHTML = down.map(row).join("");
 }
 
 function tile(coin) {
@@ -2291,6 +2307,8 @@ function observationFor(item) {
 }
 
 function renderLogs(model) {
+    const logsBody = document.getElementById("logs-body");
+    if (!logsBody) return;
     const systemRows = model.dataConfidence?.isFallback ? `
             <tr>
                 <td>${new Date().toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit", timeZone: "Australia/Brisbane" })}</td>
@@ -2316,11 +2334,13 @@ function renderLogs(model) {
             </tr>
         `;
     }).join("");
-    document.getElementById("logs-body").innerHTML = systemRows + rows;
+    logsBody.innerHTML = systemRows + rows;
 
     const { markets } = model;
     const watchlist = WATCHLIST_IDS.map(id => byId(markets, id)).filter(Boolean);
-    document.getElementById("logs-watchlist-body").innerHTML = watchlist.map(coin => `
+    const watchlistBody = document.getElementById("logs-watchlist-body");
+    if (!watchlistBody) return;
+    watchlistBody.innerHTML = watchlist.map(coin => `
         <tr>
             <td>${coinCell(coin)}</td>
             <td class="num">${formatPrice(coin.current_price)}</td>
@@ -2332,6 +2352,8 @@ function renderLogs(model) {
 }
 
 function renderAlerts(model) {
+    const alertsBody = document.getElementById("alerts-body");
+    if (!alertsBody) return;
     const rows = model.alertEvents.slice(0, 18).map(({ item, event }) => `
             <tr>
                 <td><span class="badge ${event.klass}">${event.type}</span></td>
@@ -2342,7 +2364,7 @@ function renderAlerts(model) {
                 <td>${event.rule}</td>
             </tr>
     `).join("");
-    document.getElementById("alerts-body").innerHTML = rows || `<tr><td colspan="6" class="loading-cell">No threshold events in the current market state.</td></tr>`;
+    alertsBody.innerHTML = rows || `<tr><td colspan="6" class="loading-cell">No threshold events in the current market state.</td></tr>`;
 }
 
 function localDateKey(value) {
@@ -2832,7 +2854,11 @@ async function boot() {
     const markets = await getMarkets();
     const model = buildDecisionPipeline(markets);
     recordSignalHistory(model.assets);
-    if (page === "dashboard") renderDashboard(model);
+    if (page === "dashboard") {
+        renderDashboard(model);
+        renderLogs(model);
+        renderAlerts(model);
+    }
     if (page === "logs") renderLogs(model);
     if (page === "alerts") renderAlerts(model);
     if (page === "reports") renderReports(model);
