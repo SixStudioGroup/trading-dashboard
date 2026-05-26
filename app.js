@@ -328,6 +328,22 @@ function isPublicDemoMode() {
     return portalMode !== PRIVATE_LOCAL_MODE;
 }
 
+function loadGithubPat() {
+    if (isPublicDemoMode()) return "";
+    if (!storageAvailable()) return "";
+    try { return window.localStorage.getItem(GITHUB_PAT_STORAGE_KEY) || ""; } catch { return ""; }
+}
+
+function saveGithubPat(pat) {
+    if (isPublicDemoMode()) return false;
+    if (!storageAvailable()) return false;
+    try {
+        if (pat) window.localStorage.setItem(GITHUB_PAT_STORAGE_KEY, pat);
+        else window.localStorage.removeItem(GITHUB_PAT_STORAGE_KEY);
+        return true;
+    } catch { return false; }
+}
+
 function demoHoldings() {
     return DEMO_HOLDINGS.map(normalizeHolding);
 }
@@ -2894,6 +2910,34 @@ function migrateAssetClassTags() {
     if (unknownCount) console.warn(`ZenCloud migration: ${unknownCount} record(s) tagged "unknown" — review asset class in Journal.`);
 }
 
+function initSettingsPage() {
+    if (page !== "settings") return;
+    const patInput = document.getElementById("github-pat-input");
+    const patMsg = document.getElementById("github-pat-message");
+    const patSave = document.getElementById("github-pat-save");
+    const patClear = document.getElementById("github-pat-clear");
+    if (!patInput) return;
+    if (isPublicDemoMode()) {
+        patInput.disabled = true;
+        if (patMsg) patMsg.textContent = "GitHub sharing requires Private Local Mode.";
+        return;
+    }
+    patInput.value = loadGithubPat() ? "••••••••••••••••" : "";
+    patSave?.addEventListener("click", () => {
+        const val = patInput.value.trim();
+        if (!val || val === "••••••••••••••••") return;
+        if (saveGithubPat(val)) {
+            patInput.value = "••••••••••••••••";
+            if (patMsg) { patMsg.textContent = "PAT saved."; patMsg.className = "form-message"; }
+        }
+    });
+    patClear?.addEventListener("click", () => {
+        saveGithubPat("");
+        patInput.value = "";
+        if (patMsg) { patMsg.textContent = "PAT cleared."; patMsg.className = "form-message"; }
+    });
+}
+
 async function boot() {
     migrateAssetClassTags();
     const markets = await getMarkets();
@@ -2923,6 +2967,7 @@ function injectSkeletonRows(bodyId, cols, count = 5) {
 initPortalModeControls();
 initPrivacyToggle();
 initMasterRuleFooter();
+initSettingsPage();
 
 if (page === "dashboard") {
     injectSkeletonRows("opportunities-body", 7);

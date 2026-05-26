@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - ZenCloud Trading OS</title>
+    <link rel="stylesheet" href="styles.css?v=package1-nav-20260525">
+</head>
+<body data-page="settings">
+    <header class="topbar">
+        <a class="brand" href="index.html" aria-label="ZenCloud Trading OS">
+            <span class="brand-mark">Z</span>
+            <span>ZenCloud Trading OS</span>
+        </a>
+        <nav class="navlinks" aria-label="Main navigation">
+            <a href="index.html">Crypto Workspace</a>
+            <a href="stocks.html">Stocks Workspace</a>
+            <a href="journal.html">Journal</a>
+            <a href="reports.html">Reports</a>
+            <a href="guide.html">Guide</a>
+            <a class="active" href="settings.html">Settings</a>
+        </nav>
+    </header>
+
+    <main class="shell">
+        <section class="welcome">
+            <div>
+                <h1>Settings</h1>
+                <p>Global workspace controls for Public Demo Mode, Private Local Mode, and Hide Values.</p>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-header">
+                <h2 class="panel-title">Privacy Mode</h2>
+                <p class="panel-subtitle">Applies to Crypto Workspace, Stocks Workspace, Journal, and Reports</p>
+            </div>
+            <div class="panel-body">
+                <p><strong>Public Demo Mode</strong> uses demo-only data and is safe to share.</p>
+                <p><strong>Private Local Mode</strong> stores records in this browser only. It does not sync across users or devices.</p>
+                <p><strong>Hide Values</strong> masks holdings, positions, entry prices, trade amounts, unrealised P/L, and report values across both workspaces.</p>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-header">
+                <h2 class="panel-title">Share Settings</h2>
+                <p class="panel-subtitle">GitHub PAT for Gist sharing — Private Local Mode only</p>
+            </div>
+            <div class="panel-body">
+                <p>To share trade snapshots via GitHub Gist, provide a GitHub Personal Access Token with <strong>gist</strong> scope. The token is stored in this browser only and never committed or transmitted except to <code>api.github.com</code>.</p>
+                <p>Create a token at <strong>github.com → Settings → Developer settings → Personal access tokens</strong>. Select only the <code>gist</code> scope.</p>
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px;">
+                    <input id="github-pat-input" type="password" placeholder="ghp_••••••••••••••••" style="flex:1;min-width:200px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px;">
+                    <button id="github-pat-save" class="button-primary" type="button">Save PAT</button>
+                    <button id="github-pat-clear" class="table-action" type="button">Clear</button>
+                </div>
+                <p class="form-message" id="github-pat-message" aria-live="polite"></p>
+            </div>
+        </section>
+
+        <section class="panel rule-banner">
+            <strong>If the idea did not start in ZenCloud, do not execute it in the broker.</strong>
+            <span>ZenCloud decides. The execution venue executes. ZenCloud records and reviews.</span>
+        </section>
+    </main>
+
+    <script src="app.js?v=package1-nav-20260525"></script>
+</body>
+</html>
