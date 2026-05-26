@@ -1743,14 +1743,24 @@ tr:last-child td { border-bottom: none; }
 }
 .nav-workspace-btn {
     border: 1px solid var(--line);
-    border-radius: 4px;
+    border-radius: 6px;
     padding: 2px 10px;
     background: var(--panel);
+    transition: background 0.15s, color 0.15s;
+}
+.nav-workspace-btn:hover {
+    background: var(--brand-blue);
+    color: #fff;
+    border-color: var(--brand-blue);
 }
 .nav-workspace-btn.active {
     background: var(--brand-blue);
     color: #fff;
     border-color: var(--brand-blue);
+}
+.nav-workspace-btn:focus-visible {
+    outline: 2px solid var(--brand-blue);
+    outline-offset: 2px;
 }
 .nav-divider {
     display: inline-block;
