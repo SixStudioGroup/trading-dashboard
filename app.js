@@ -2716,6 +2716,7 @@ function renderJournal() {
     if (allBody) {
         allBody.innerHTML = trades.length ? trades.map(trade => `
             <tr>
+                <td class="share-checkbox-col-cell" style="display:none;"><input type="checkbox" class="share-row-cb" data-trade-id="${escapeHtml(trade.id)}" aria-label="Select trade ${escapeHtml(trade.id)}"></td>
                 <td>${assetClassBadge(trade.assetClass)}</td>
                 <td>${escapeHtml(trade.symbol)} / ${escapeHtml(trade.name)}</td>
                 <td>${formatTimestamp(trade.entryDate)}</td>
@@ -2842,6 +2843,7 @@ function clearJournalForm() {
 function initJournalControls() {
     migrateAssetClassTags();
     initJournalFilterBar();
+    initSharePanel();
     const form = document.getElementById("journal-form");
     if (!form) return;
     clearJournalForm();
@@ -2935,6 +2937,168 @@ function initSettingsPage() {
         saveGithubPat("");
         patInput.value = "";
         if (patMsg) { patMsg.textContent = "PAT cleared."; patMsg.className = "form-message"; }
+    });
+}
+
+function buildGistPayload(trades, fields) {
+    const rows = trades.map(trade => {
+        const obj = {};
+        obj.symbol = trade.symbol;
+        if (fields.direction) obj.direction = trade.status === "closed"
+            ? (trade.resultAud > 0 ? "buy-win" : trade.resultAud < 0 ? "buy-loss" : "buy-closed")
+            : "buy-open";
+        if (fields.date) obj.date = trade.entryDate ? trade.entryDate.slice(0, 10) : "";
+        if (fields.quantity) obj.quantity = trade.positionSize;
+        if (fields.entryPrice) obj.entry_price = trade.entryPrice;
+        if (fields.pnl && trade.resultAud !== null) obj.pnl_aud = trade.resultAud;
+        if (fields.notes && trade.notes) obj.notes = trade.notes;
+        return obj;
+    });
+    const classes = [...new Set(trades.map(t => t.assetClass))];
+    return {
+        zencloud_export: true,
+        exported_at: new Date().toISOString(),
+        asset_class_filter: classes.length === 1 ? classes[0] : "mixed",
+        trades: rows
+    };
+}
+
+async function createGist(payload) {
+    const pat = loadGithubPat();
+    if (!pat) throw new Error("No GitHub PAT saved. Add one in Settings → Share Settings.");
+    const body = {
+        description: "ZenCloud Trading OS — shared trade snapshot",
+        public: false,
+        files: { "zencloud-trades.json": { content: JSON.stringify(payload, null, 2) } }
+    };
+    const response = await fetch("https://api.github.com/gists", {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${pat}`,
+            "Accept": "application/vnd.github+json",
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+    });
+    if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.message || `GitHub API error ${response.status}`);
+    }
+    const data = await response.json();
+    return data.html_url;
+}
+
+function initSharePanel() {
+    if (page !== "journal") return;
+
+    const toggleBtn = document.getElementById("share-toggle-btn");
+    const configureBtn = document.getElementById("share-configure-btn");
+    const selectedCount = document.getElementById("share-selected-count");
+    const overlay = document.getElementById("share-modal-overlay");
+    const closeBtn = document.getElementById("share-modal-close");
+    const confirmBtn = document.getElementById("share-confirm-btn");
+    const warningBox = document.getElementById("share-warning-box");
+    const resultBox = document.getElementById("share-result-box");
+    const errorBox = document.getElementById("share-error-box");
+    const selectAllCb = document.getElementById("share-select-all");
+    const allTh = document.getElementById("share-all-th");
+
+    if (!toggleBtn) return;
+
+    let shareMode = false;
+    let confirmed = false;
+
+    function getSelectedIds() {
+        return [...document.querySelectorAll(".share-row-cb:checked")].map(cb => cb.dataset.tradeId);
+    }
+
+    function updateShareCount() {
+        const ids = getSelectedIds();
+        const count = ids.length;
+        if (selectedCount) {
+            selectedCount.textContent = `${count} selected`;
+            selectedCount.style.display = shareMode ? "inline" : "none";
+        }
+        if (configureBtn) {
+            configureBtn.style.display = shareMode ? "inline-flex" : "none";
+            configureBtn.disabled = count === 0;
+        }
+    }
+
+    function toggleShareMode() {
+        shareMode = !shareMode;
+        toggleBtn.textContent = shareMode ? "Cancel Share" : "Share";
+        toggleBtn.classList.toggle("danger-action", shareMode);
+        if (allTh) allTh.style.display = shareMode ? "" : "none";
+        document.querySelectorAll(".share-checkbox-col-cell").forEach(td => {
+            td.style.display = shareMode ? "" : "none";
+        });
+        if (!shareMode && selectAllCb) selectAllCb.checked = false;
+        updateShareCount();
+    }
+
+    toggleBtn.addEventListener("click", toggleShareMode);
+
+    const allJournalBody = document.getElementById("all-journal-body");
+    allJournalBody?.addEventListener("change", event => {
+        if (event.target.classList.contains("share-row-cb")) updateShareCount();
+    });
+
+    if (selectAllCb) {
+        selectAllCb.addEventListener("change", () => {
+            document.querySelectorAll(".share-row-cb").forEach(cb => { cb.checked = selectAllCb.checked; });
+            updateShareCount();
+        });
+    }
+
+    configureBtn?.addEventListener("click", () => {
+        confirmed = false;
+        if (warningBox) warningBox.style.display = "block";
+        if (resultBox) { resultBox.style.display = "none"; resultBox.textContent = ""; }
+        if (errorBox) { errorBox.style.display = "none"; errorBox.textContent = ""; }
+        if (confirmBtn) confirmBtn.textContent = "Create Gist";
+        overlay?.classList.add("open");
+    });
+
+    closeBtn?.addEventListener("click", () => overlay?.classList.remove("open"));
+    overlay?.addEventListener("click", event => { if (event.target === overlay) overlay.classList.remove("open"); });
+
+    confirmBtn?.addEventListener("click", async () => {
+        if (!confirmed) {
+            confirmed = true;
+            if (confirmBtn) confirmBtn.textContent = "Confirm & Create";
+            return;
+        }
+        const ids = getSelectedIds();
+        const allTrades = sharedJournalTrades();
+        const selectedTrades = allTrades.filter(t => ids.includes(t.id));
+        if (!selectedTrades.length) {
+            if (errorBox) { errorBox.textContent = "No trades selected."; errorBox.style.display = "block"; }
+            return;
+        }
+        const fields = {
+            direction: document.getElementById("sf-direction")?.checked ?? true,
+            date: document.getElementById("sf-date")?.checked ?? true,
+            quantity: document.getElementById("sf-quantity")?.checked ?? false,
+            entryPrice: document.getElementById("sf-entry-price")?.checked ?? false,
+            pnl: document.getElementById("sf-pnl")?.checked ?? false,
+            notes: document.getElementById("sf-notes")?.checked ?? false
+        };
+        if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = "Creating…"; }
+        try {
+            const payload = buildGistPayload(selectedTrades, fields);
+            const url = await createGist(payload);
+            try { await navigator.clipboard.writeText(url); } catch {}
+            if (resultBox) {
+                resultBox.innerHTML = `Gist created. Link copied to clipboard.<br><a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a>`;
+                resultBox.style.display = "block";
+            }
+            if (warningBox) warningBox.style.display = "none";
+            if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = "Done"; }
+        } catch (err) {
+            if (errorBox) { errorBox.textContent = `Error: ${err.message}`; errorBox.style.display = "block"; }
+            if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = "Confirm & Create"; }
+        }
     });
 }
 
