@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shared Journal - ZenCloud Trading OS</title>
-    <link rel="stylesheet" href="styles.css?v=multi-asset-20260525">
+    <link rel="stylesheet" href="styles.css?v=package1-nav-20260525">
 </head>
 <body data-page="journal">
     <header class="topbar">
@@ -15,11 +15,10 @@
         <nav class="navlinks" aria-label="Main navigation">
             <a href="index.html">Crypto Workspace</a>
             <a href="stocks.html">Stocks Workspace</a>
-            <a href="logs.html">Market Logs</a>
-            <a href="alerts.html">Alerts</a>
-            <a class="active" href="journal.html">Shared Journal</a>
-            <a href="reports.html">Shared Reports</a>
-            <a href="guide.html">Shared User Guide</a>
+            <a class="active" href="journal.html">Journal</a>
+            <a href="reports.html">Reports</a>
+            <a href="guide.html">Guide</a>
+            <a href="settings.html">Settings</a>
         </nav>
     </header>
 
@@ -28,6 +27,17 @@
             <div>
                 <h1>Shared Journal</h1>
                 <p>Manual trade planning, open-position tracking, and closed-trade review across crypto and stocks.</p>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-body">
+                <div class="journal-filter-bar" role="group" aria-label="Asset class filter">
+                    <span style="font-size:12px;font-weight:600;color:var(--muted);margin-right:4px;">Filter:</span>
+                    <button class="filter-btn active" type="button" data-filter="all">All</button>
+                    <button class="filter-btn" type="button" data-filter="crypto">Crypto</button>
+                    <button class="filter-btn" type="button" data-filter="stock">Stocks</button>
+                </div>
             </div>
         </section>
 
@@ -123,6 +133,6 @@
         </section>
     </main>
 
-    <script src="app.js?v=multi-asset-20260525"></script>
+    <script src="app.js?v=package1-nav-20260525"></script>
 </body>
 </html>

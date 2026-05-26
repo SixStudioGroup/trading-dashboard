@@ -725,6 +725,24 @@ function currentReportAssetFilter() {
     return document.getElementById("report-asset-filter")?.value || "all";
 }
 
+function currentJournalFilter() {
+    try { return sessionStorage.getItem(JOURNAL_FILTER_KEY) || "all"; } catch { return "all"; }
+}
+
+function initJournalFilterBar() {
+    const btns = document.querySelectorAll("[data-filter]");
+    if (!btns.length) return;
+    const active = currentJournalFilter();
+    btns.forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.filter === active);
+        btn.addEventListener("click", () => {
+            try { sessionStorage.setItem(JOURNAL_FILTER_KEY, btn.dataset.filter); } catch {}
+            btns.forEach(b => b.classList.toggle("active", b === btn));
+            renderJournal();
+        });
+    });
+}
+
 function assetClassLabel(assetClass) {
     if (assetClass === STOCK_ASSET_CLASS) return "Stock";
     if (assetClass === UNKNOWN_ASSET_CLASS) return "?";
@@ -2675,7 +2693,8 @@ function renderJournal() {
     const openBody = document.getElementById("open-trades-body");
     const closedBody = document.getElementById("closed-trades-body");
     if (!openBody || !closedBody) return;
-    const trades = sharedJournalTrades();
+    const allTrades = sharedJournalTrades();
+    const trades = filterTradesByAssetClass(allTrades, currentJournalFilter());
     const openRows = trades.filter(trade => trade.status !== "closed");
     const closedRows = trades.filter(trade => trade.status === "closed");
     if (allBody) {
@@ -2806,6 +2825,7 @@ function clearJournalForm() {
 
 function initJournalControls() {
     migrateAssetClassTags();
+    initJournalFilterBar();
     const form = document.getElementById("journal-form");
     if (!form) return;
     clearJournalForm();
