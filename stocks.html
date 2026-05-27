@@ -42,7 +42,7 @@
             </div>
             <div class="status-metric">
                 <span>Source</span>
-                <strong>Manual review only</strong>
+                <strong id="stock-source-badge">Loading...</strong>
             </div>
             <div class="status-metric">
                 <span>Mode</span>
@@ -53,6 +53,10 @@
                 <strong>ZenCloud-origin only</strong>
             </div>
         </section>
+
+        <div id="stock-staleness-warning" class="privacy-status-line" hidden>
+            <span><strong>Snapshot data may be stale</strong> — last updated more than 24 hours ago. Data may not reflect current market conditions.</span>
+        </div>
 
         <section class="panel market-regime-panel stock-workspace-summary">
             <div class="regime-header">
@@ -79,8 +83,9 @@
             <section class="panel opportunity-panel">
                 <div class="panel-header">
                     <h2 class="panel-title">Stocks Opportunity Queue</h2>
-                    <p class="panel-subtitle">Demo-only ranked review list. No live feed or paid API.</p>
+                    <p class="panel-subtitle" id="stock-queue-subtitle">Demo-only ranked review list. No live feed or paid API.</p>
                 </div>
+                <div id="stock-region-filters" class="journal-filter-bar"></div>
                 <table class="watchlist-table">
                     <thead>
                         <tr>

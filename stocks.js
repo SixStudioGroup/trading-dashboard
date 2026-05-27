@@ -60,6 +60,9 @@ let selectedStockSymbol = "";
 let completedBrokerChecks = new Set();
 let stockJournal = loadCollection(STOCK_JOURNAL_STORAGE_KEY);
 let stockHoldings = loadCollection(STOCK_HOLDINGS_STORAGE_KEY);
+let snapshotData = null;
+let snapshotSource = "demo";
+let activeRegionFilter = "All";
 
 function storageAvailable() {
     try {
@@ -246,8 +249,68 @@ function normalizeHolding(holding = {}) {
     };
 }
 
+const SNAPSHOT_REGIONS = ["All", "Australia", "U.S. Tech", "U.S. Large Cap", "Global ADRs"];
+
+function normalizeSnapshotAsset(asset) {
+    const symbol = safeText(asset.symbol);
+    return {
+        symbol,
+        name: safeText(asset.name, symbol || "Unknown"),
+        market: safeText(asset.exchange, "N/A"),
+        sector: safeText(asset.sector, "Unknown"),
+        signalState: safeText(asset.signalState, "No Action"),
+        riskState: safeText(asset.riskState, "Normal"),
+        price: finiteNumber(asset.price),
+        oneDayChange: finiteNumber(asset.change1d),
+        fiveDayChange: finiteNumber(asset.change5d),
+        relativeVolume: finiteNumber(asset.relativeVolume, 1),
+        marketRegime: safeText(asset.marketRegime, "Mixed"),
+        region: safeText(asset.region, "Unknown"),
+        currency: safeText(asset.currency, "USD"),
+        reason: "Derived from Stooq snapshot — review only. Not a buy/sell recommendation.",
+        invalidation: "Review if price action or sector context changes materially.",
+        source: "snapshot"
+    };
+}
+
+function allLiveStocks() {
+    if (snapshotSource === "snapshot" && snapshotData && Array.isArray(snapshotData.assets) && snapshotData.assets.length > 0) {
+        return snapshotData.assets.map(normalizeSnapshotAsset);
+    }
+    return DEMO_STOCKS.map(s => ({ ...s, source: "demo" }));
+}
+
+function currentStocks() {
+    const stocks = allLiveStocks();
+    if (snapshotSource !== "snapshot" || activeRegionFilter === "All") return stocks;
+    return stocks.filter(s => s.region === activeRegionFilter);
+}
+
+function isSnapshotStale(lastUpdated) {
+    if (!lastUpdated) return false;
+    const updated = new Date(lastUpdated);
+    return !Number.isNaN(updated.getTime()) && (Date.now() - updated.getTime()) > 24 * 60 * 60 * 1000;
+}
+
+async function loadSnapshotData() {
+    try {
+        const resp = await fetch("data/stocks-snapshot.json", { cache: "no-cache" });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json();
+        if (data && Array.isArray(data.assets) && data.assets.length > 0) {
+            snapshotData = data;
+            snapshotSource = "snapshot";
+        } else {
+            snapshotSource = "demo";
+        }
+    } catch (_e) {
+        snapshotSource = "demo";
+    }
+    renderAll();
+}
+
 function findSelectedStock() {
-    return DEMO_STOCKS.find(stock => stock.symbol === selectedStockSymbol) || null;
+    return allLiveStocks().find(stock => stock.symbol === selectedStockSymbol) || null;
 }
 
 function fillPlanFromStock(stock) {
@@ -368,7 +431,7 @@ function stockRankingScore(stock) {
 }
 
 function rankedStocks() {
-    return DEMO_STOCKS
+    return currentStocks()
         .map(stock => ({ ...stock, rankingScore: stockRankingScore(stock) }))
         .sort((a, b) => b.rankingScore - a.rankingScore);
 }
@@ -744,8 +807,49 @@ function initTabs() {
     });
 }
 
+function renderSourceBadge() {
+    const badge = document.getElementById("stock-source-badge");
+    if (!badge) return;
+    const subtitle = document.getElementById("stock-queue-subtitle");
+    if (snapshotSource === "snapshot" && snapshotData) {
+        badge.textContent = "Stooq Snapshot";
+        if (subtitle) subtitle.textContent = "Ranked from Stooq snapshot. Signals are derived — review only. Not buy/sell recommendations.";
+    } else {
+        badge.textContent = "Demo fallback";
+        if (subtitle) subtitle.textContent = "Demo-only ranked review list. No live feed or paid API.";
+    }
+}
+
+function renderStalenessWarning() {
+    const warning = document.getElementById("stock-staleness-warning");
+    if (!warning) return;
+    warning.hidden = !(snapshotSource === "snapshot" && snapshotData && isSnapshotStale(snapshotData.lastUpdated));
+}
+
+function renderRegionFilters() {
+    const container = document.getElementById("stock-region-filters");
+    if (!container) return;
+    if (snapshotSource !== "snapshot") {
+        container.innerHTML = "";
+        return;
+    }
+    container.innerHTML = SNAPSHOT_REGIONS.map(region =>
+        `<button class="filter-btn${activeRegionFilter === region ? " active" : ""}" type="button" data-region-filter="${escapeHtml(region)}">${escapeHtml(region)}</button>`
+    ).join("");
+    container.querySelectorAll("[data-region-filter]").forEach(btn => {
+        btn.addEventListener("click", event => {
+            activeRegionFilter = event.currentTarget.dataset.regionFilter;
+            selectedStockSymbol = "";
+            renderAll();
+        });
+    });
+}
+
 function renderAll() {
     renderModeDisplay();
+    renderSourceBadge();
+    renderStalenessWarning();
+    renderRegionFilters();
     renderOpportunityQueue();
     renderAnalysis();
     renderStockJournal();
@@ -758,3 +862,4 @@ initMasterRuleFooter();
 initPlanForm();
 initTabs();
 renderAll();
+loadSnapshotData();
