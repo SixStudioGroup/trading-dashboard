@@ -71,6 +71,7 @@
                     </div>
                     <p class="panel-subtitle"><span class="live-pulse-dot"></span>Refreshes every 60s — threshold events from live feed</p>
                 </div>
+                <div class="table-scroll">
                 <table>
                     <thead>
                         <tr>
@@ -79,13 +80,14 @@
                             <th>Trigger State</th>
                             <th class="num">Threshold Value</th>
                             <th class="num">Price</th>
-                            <th>Rule</th>
+                            <th class="alert-note-cell">Rule</th>
                         </tr>
                     </thead>
                     <tbody id="alerts-body">
                         <tr><td colspan="6" class="loading-cell">Loading live alerts...</td></tr>
                     </tbody>
                 </table>
+                </div>
             </section>
 
             <section class="panel" id="options-alerts-panel">
@@ -96,6 +98,7 @@
                     </div>
                     <p class="panel-subtitle"><span class="badge wait" style="font-size:11px;padding:2px 7px;vertical-align:middle;">Manual Review</span>&ensp;Plan-state alerts — no live price feed</p>
                 </div>
+                <div class="table-scroll">
                 <table>
                     <thead>
                         <tr>
@@ -103,14 +106,15 @@
                             <th>Ticker</th>
                             <th>Signal State</th>
                             <th class="num">Entry Ref</th>
-                            <th>Why Now</th>
-                            <th>Invalidation</th>
+                            <th class="alert-note-cell">Why Now</th>
+                            <th class="alert-note-cell">Invalidation</th>
                         </tr>
                     </thead>
                     <tbody id="options-alerts-body">
                         <tr><td colspan="6" class="loading-cell">Loading stocks alerts...</td></tr>
                     </tbody>
                 </table>
+                </div>
             </section>
 
         </section>

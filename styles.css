@@ -1670,8 +1670,68 @@ tr:last-child td { border-bottom: none; }
     margin-bottom: 14px;
 }
 
+/* Grid children must be able to shrink below content size */
+.alerts-dual-grid > .panel,
+.alerts-dual-grid > .collapsible-panel {
+    min-width: 0;
+}
+
 @media (max-width: 900px) {
     .alerts-dual-grid { grid-template-columns: 1fr; }
+}
+
+/* Table scroll wrapper — allows wide tables to scroll inside a panel */
+.table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Dual-panel tables: enforce a minimum readable width before scroll kicks in */
+.alerts-dual-grid .table-scroll table {
+    min-width: 480px;
+}
+
+/* Note and text columns — wrap long content safely */
+.log-note-cell,
+.alert-note-cell {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    max-width: 220px;
+}
+
+/* Crypto log — Note column (7th) */
+#logs-body td:nth-child(7) {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    max-width: 220px;
+}
+
+/* Stocks log — Why Now (5th) and Invalidation (6th) */
+#stocks-log-body td:nth-child(5),
+#stocks-log-body td:nth-child(6) {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    max-width: 220px;
+}
+
+/* Crypto alerts — Rule column (6th) */
+#alerts-body td:nth-child(6) {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    max-width: 220px;
+}
+
+/* Stocks alerts — Why Now (5th) and Invalidation (6th) */
+#options-alerts-body td:nth-child(5),
+#options-alerts-body td:nth-child(6) {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    max-width: 220px;
 }
 
 /* === Panel Header Row === */
