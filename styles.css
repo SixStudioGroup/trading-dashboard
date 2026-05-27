@@ -1,7 +1,7 @@
 :root {
     --brand-blue: #2563EB;
     --brand-blue-dark: #1D4ED8;
-    --brand-accent: #4F46E5;
+    --brand-navy: #1E3A8A;
     --page: #F8FAFC;
     --panel: #FFFFFF;
     --panel-soft: #F8FAFC;
@@ -61,7 +61,7 @@ a:hover { text-decoration: underline; }
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    background: var(--brand-blue);
+    background: var(--brand-navy);
     color: #fff;
     display: grid;
     place-items: center;
@@ -605,7 +605,7 @@ a:hover { text-decoration: underline; }
 }
 
 .invalidation-box span {
-    color: #92400E;
+    color: #B45309;
     font-size: 12px;
 }
 
@@ -982,8 +982,8 @@ a:hover { text-decoration: underline; }
     align-items: center;
     justify-content: space-between;
     gap: 14px;
-    background: rgba(79, 70, 229, 0.05);
-    border-color: rgba(79, 70, 229, 0.18);
+    background: rgba(30, 58, 138, 0.04);
+    border-color: rgba(30, 58, 138, 0.15);
 }
 
 .rule-banner strong {
