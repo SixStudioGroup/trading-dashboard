@@ -1955,6 +1955,7 @@ tr:last-child td { border-bottom: none; }
 
 @media (max-width: 1180px) {
     .shell { min-width: 0; }
+    .navlinks { gap: 16px; }
     .command-status,
     .dashboard-grid,
     .decision-grid,
@@ -1989,8 +1990,14 @@ tr:last-child td { border-bottom: none; }
     }
 
     .brand { font-size: 17px; }
-    .navlinks { flex-wrap: wrap; gap: 12px; }
+    .navlinks { flex-wrap: wrap; gap: 10px; }
+    /* base nav links lose bottom border padding on mobile */
     .navlinks a { padding: 4px 0; }
+    /* workspace buttons keep horizontal padding so border is visible */
+    .navlinks a.nav-workspace-btn { padding: 4px 10px; }
+    /* vertical divider between workspace btns and page links: hide on mobile */
+    .nav-divider { display: none; }
+
     .privacy-status-line { flex-direction: column; padding: 8px 16px; }
     .shell { padding: 12px; }
     .command-status { gap: 8px; }
@@ -2001,14 +2008,33 @@ tr:last-child td { border-bottom: none; }
     }
     .welcome { align-items: flex-start; flex-direction: column; }
     .status-card { justify-content: flex-start; width: 100%; }
+    /* data source card: single column on mobile */
+    .data-source-card { grid-template-columns: 1fr; }
     .quick-deposit { align-items: flex-start; flex-direction: column; }
+    /* performance, regime, consensus grids: 2 columns on mobile */
+    .performance-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .regime-grid,
+    .consensus-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .coin-rail,
     .rules-grid { grid-template-columns: repeat(2, 1fr); }
     .swing-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .size-grid { grid-template-columns: 1fr; }
     .workflow-list { columns: 1; }
-    table { min-width: 680px; }
+    /* rule banner stacks on mobile */
+    .rule-banner { flex-direction: column; align-items: flex-start; }
+    /* tables enforce a readable minimum before scrolling inside panels */
+    table { min-width: 540px; }
+    /* guide comparison table is narrower — 3 columns, wrapping text */
+    table.guide-compare { min-width: 380px; }
     .panel { overflow-x: auto; }
+    /* filter and action bars wrap on mobile */
+    .alert-tab-bar { flex-wrap: wrap; }
+    .journal-filter-bar,
+    .report-filter-bar { flex-wrap: wrap; }
+    .share-toolbar { flex-wrap: wrap; }
+    .form-actions { flex-wrap: wrap; }
+    /* share modal: stay within viewport */
+    .share-modal { max-width: calc(100vw - 24px); }
     .privacy-toggle { margin-left: 0; }
     .master-rule-footer {
         margin: 0 12px;
