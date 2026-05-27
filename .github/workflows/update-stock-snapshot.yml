@@ -1,0 +1,41 @@
+name: Update Stock Snapshot
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-snapshot:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Fetch stock snapshot
+        id: fetch
+        run: python scripts/fetch_stocks.py
+        continue-on-error: true
+
+      - name: Commit and push if changed
+        if: steps.fetch.outcome == 'success'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git diff --quiet data/stocks-snapshot.json || (
+            git add data/stocks-snapshot.json &&
+            git commit -m "chore: update stocks snapshot [skip ci]" &&
+            git push
+          )
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
