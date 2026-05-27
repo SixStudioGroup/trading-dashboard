@@ -2146,3 +2146,56 @@ tr:last-child td { border-bottom: none; }
     white-space: normal;
     vertical-align: top;
 }
+
+/* === Alert Summary Strip === */
+.alert-summary-strip {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+
+.alert-summary-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 10px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 88px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.alert-summary-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--muted);
+    letter-spacing: 0.4px;
+    white-space: nowrap;
+}
+
+.alert-summary-count {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1;
+}
+
+.alert-summary-card.card-risk   { background: rgba(220, 38, 38, 0.05); border-color: rgba(220, 38, 38, 0.20); }
+.alert-summary-card.card-risk   .alert-summary-count { color: var(--red); }
+.alert-summary-card.card-strong { background: rgba(22, 163, 74, 0.05); border-color: rgba(22, 163, 74, 0.20); }
+.alert-summary-card.card-strong .alert-summary-count { color: var(--green); }
+.alert-summary-card.card-volume { background: rgba(14, 165, 233, 0.05); border-color: rgba(14, 165, 233, 0.20); }
+.alert-summary-card.card-volume .alert-summary-count { color: var(--cyan); }
+.alert-summary-card.card-watch  { background: rgba(217, 119, 6, 0.05); border-color: rgba(217, 119, 6, 0.20); }
+.alert-summary-card.card-watch  .alert-summary-count { color: var(--amber); }
+
+/* Alert rule cell — wrapping rule text */
+.alert-rule-cell {
+    white-space: normal;
+    overflow-wrap: break-word;
+    min-width: 160px;
+    max-width: 300px;
+}

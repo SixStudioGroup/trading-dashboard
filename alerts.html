@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Alerts — ZenCloud Trading OS</title>
-    <link rel="stylesheet" href="styles.css?v=alerts-20260526">
+    <link rel="stylesheet" href="styles.css?v=alerts-20260527">
     <script src="https://unpkg.com/lucide@0.441.0/dist/umd/lucide.min.js"></script>
 </head>
 <body data-page="alerts">
@@ -27,10 +27,11 @@
     </header>
 
     <main class="shell">
+
         <section class="welcome">
             <div>
                 <h1>Alerts</h1>
-                <p>Threshold events emitted by the live signal pipeline.</p>
+                <p>Threshold events from the live signal pipeline across crypto and stocks.</p>
             </div>
             <div class="status-card">
                 <span class="status-dot"></span>
@@ -48,75 +49,67 @@
             </div>
         </section>
 
-        <section class="alert-hotbar" id="alert-hotbar">
-            <span class="hotbar-label">Active Alerts</span>
-            <div class="hotbar-pills" id="hotbar-pills">
-                <span class="hotbar-pill wait">Loading...</span>
+        <section class="alert-summary-strip">
+            <div class="alert-summary-card">
+                <span class="alert-summary-label">Total</span>
+                <strong class="alert-summary-count" id="alert-sum-total">—</strong>
+            </div>
+            <div class="alert-summary-card card-risk">
+                <span class="alert-summary-label">Sell Risk</span>
+                <strong class="alert-summary-count" id="alert-sum-risk">—</strong>
+            </div>
+            <div class="alert-summary-card card-strong">
+                <span class="alert-summary-label">Breakout</span>
+                <strong class="alert-summary-count" id="alert-sum-breakout">—</strong>
+            </div>
+            <div class="alert-summary-card card-volume">
+                <span class="alert-summary-label">Volume Spike</span>
+                <strong class="alert-summary-count" id="alert-sum-volume">—</strong>
+            </div>
+            <div class="alert-summary-card card-watch">
+                <span class="alert-summary-label">Watch</span>
+                <strong class="alert-summary-count" id="alert-sum-watch">—</strong>
             </div>
         </section>
 
-        <div class="alert-tab-bar" id="alert-tab-bar">
-            <button class="alert-tab-btn active" data-alert-tab="all">All</button>
-            <button class="alert-tab-btn" data-alert-tab="crypto">Crypto</button>
-            <button class="alert-tab-btn" data-alert-tab="options">Stocks</button>
+        <div class="journal-filter-bar" id="alert-filter-bar">
+            <span style="font-size:12px;font-weight:600;color:var(--muted);margin-right:4px;">Filter:</span>
+            <button class="filter-btn active" type="button" data-alert-filter="all">All</button>
+            <button class="filter-btn" type="button" data-alert-filter="crypto">Crypto</button>
+            <button class="filter-btn" type="button" data-alert-filter="stock">Stocks</button>
+            <button class="filter-btn" type="button" data-alert-filter="risk">Sell Risk</button>
+            <button class="filter-btn" type="button" data-alert-filter="strong">Breakout</button>
+            <button class="filter-btn" type="button" data-alert-filter="volume">Volume Spike</button>
+            <button class="filter-btn" type="button" data-alert-filter="watch">Watch</button>
         </div>
 
-        <section class="alerts-dual-grid" id="alerts-dual-grid">
-
-            <section class="panel" id="crypto-alerts-panel">
-                <div class="panel-header">
-                    <div class="panel-header-row">
-                        <h2 class="panel-title">Crypto Live Alerts</h2>
-                        <span class="alert-count-badge" id="crypto-alert-count">0 active</span>
-                    </div>
-                    <p class="panel-subtitle"><span class="live-pulse-dot"></span>Refreshes every 60s — threshold events from live feed</p>
+        <section class="panel">
+            <div class="panel-header">
+                <div class="panel-header-row">
+                    <h2 class="panel-title">Alert Feed</h2>
+                    <span class="alert-count-badge" id="unified-alert-count">Loading...</span>
                 </div>
-                <div class="table-scroll">
-                <table>
+                <p class="panel-subtitle"><span class="live-pulse-dot"></span>Crypto alerts refresh every 60s · Stock alerts update from plan records</p>
+            </div>
+            <div class="table-scroll">
+                <table class="compact-table">
                     <thead>
                         <tr>
-                            <th>Event Type</th>
-                            <th>Coin</th>
-                            <th>Trigger State</th>
-                            <th class="num">Threshold Value</th>
+                            <th>Severity</th>
+                            <th>Asset</th>
+                            <th>Market</th>
+                            <th>Trigger</th>
+                            <th class="num">Movement</th>
                             <th class="num">Price</th>
-                            <th class="alert-note-cell">Rule</th>
+                            <th class="alert-rule-cell">Rule</th>
+                            <th>Review</th>
                         </tr>
                     </thead>
-                    <tbody id="alerts-body">
-                        <tr><td colspan="6" class="loading-cell">Loading live alerts...</td></tr>
+                    <tbody id="unified-alerts-body">
+                        <tr><td colspan="8" class="loading-cell">Loading alerts...</td></tr>
                     </tbody>
                 </table>
-                </div>
-            </section>
-
-            <section class="panel" id="options-alerts-panel">
-                <div class="panel-header">
-                    <div class="panel-header-row">
-                        <h2 class="panel-title">Stocks Alerts</h2>
-                        <span class="alert-count-badge" id="options-alert-count">0 active</span>
-                    </div>
-                    <p class="panel-subtitle"><span class="badge wait" style="font-size:11px;padding:2px 7px;vertical-align:middle;">Manual Review</span>&ensp;Plan-state alerts — no live price feed</p>
-                </div>
-                <div class="table-scroll">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Event Type</th>
-                            <th>Ticker</th>
-                            <th>Signal State</th>
-                            <th class="num">Entry Ref</th>
-                            <th class="alert-note-cell">Why Now</th>
-                            <th class="alert-note-cell">Invalidation</th>
-                        </tr>
-                    </thead>
-                    <tbody id="options-alerts-body">
-                        <tr><td colspan="6" class="loading-cell">Loading stocks alerts...</td></tr>
-                    </tbody>
-                </table>
-                </div>
-            </section>
-
+            </div>
         </section>
 
         <section class="panel">
@@ -129,8 +122,8 @@
                     <div>
                         <div class="rules-section-label">Crypto</div>
                         <div class="rules-grid rules-grid-2">
-                            <div class="rule-card strong"><strong>Breakout Event</strong><span>24hr above 5% with positive 1hr</span></div>
-                            <div class="rule-card watch"><strong>Watch Event</strong><span>24hr above 2%</span></div>
+                            <div class="rule-card strong"><strong>Breakout</strong><span>24hr above 5% with positive 1hr confirmation</span></div>
+                            <div class="rule-card watch"><strong>Watch</strong><span>24hr above 2%</span></div>
                             <div class="rule-card risk"><strong>Sell Risk</strong><span>24hr below -3%</span></div>
                             <div class="rule-card volume"><strong>Volume Spike</strong><span>Top live AUD volume band</span></div>
                         </div>
@@ -138,9 +131,9 @@
                     <div>
                         <div class="rules-section-label">Stocks</div>
                         <div class="rules-grid rules-grid-2">
-                            <div class="rule-card strong"><strong>Breakout Plan</strong><span>Plan filed with Breakout signal state</span></div>
-                            <div class="rule-card watch"><strong>Watch Plan</strong><span>Plan filed with Watch signal state</span></div>
-                            <div class="rule-card risk"><strong>Sell Risk Plan</strong><span>Plan filed with Sell Risk signal state</span></div>
+                            <div class="rule-card strong"><strong>Breakout</strong><span>Plan filed with Breakout signal state</span></div>
+                            <div class="rule-card watch"><strong>Watch</strong><span>Plan filed with Watch signal state</span></div>
+                            <div class="rule-card risk"><strong>Sell Risk</strong><span>Plan filed with Sell Risk signal state</span></div>
                             <div class="rule-card volume"><strong>Position Review</strong><span>Reference price outside entry band ±3%</span></div>
                         </div>
                     </div>
@@ -150,7 +143,7 @@
 
     </main>
 
-    <script src="app.js?v=alerts-20260526"></script>
-<script>if(typeof lucide!=="undefined")lucide.createIcons();</script>
+    <script src="app.js?v=alerts-20260527"></script>
+    <script>if(typeof lucide!=="undefined")lucide.createIcons();</script>
 </body>
 </html>

@@ -2529,90 +2529,110 @@ function buildOptionsAlertEvents() {
 }
 
 function renderAlerts(model) {
-    // --- Crypto panel ---
-    const alertsBody = document.getElementById("alerts-body");
-    const cryptoBadge = document.getElementById("crypto-alert-count");
-    if (alertsBody) {
-        const events = model.alertEvents.slice(0, 18);
-        const newIds = new Set(events.map(({ item }) => item.coin.id));
-        const rows = events.map(({ item, event }) => {
-            const isNew = !previousCryptoAlertIds.has(item.coin.id);
-            const isRisk = event.klass === "risk";
-            const rowClass = [isNew ? "alert-row-new" : "", isRisk ? "alert-row-risk" : ""].filter(Boolean).join(" ");
-            return `<tr class="${rowClass}">
-                <td><span class="badge ${event.klass}">${event.type}</span></td>
-                <td>${coinCell(item.coin)}</td>
-                <td><span class="state-token">${event.triggerState}</span></td>
-                <td class="num">${event.type === "Volume Spike" ? formatBig(event.value) : formatPercent(event.value)}</td>
-                <td class="num">${formatPrice(item.coin.current_price)}</td>
-                <td>${event.rule}</td>
+    const TRIGGER_LABELS = {
+        breakout_event:        "Breakout threshold",
+        risk_threshold_breach: "Risk threshold breach",
+        volume_spike:          "Volume spike",
+        trend_positive:        "Watch condition",
+        profit_zone:           "Profit zone",
+        invalidation_breach:   "Invalidation breach",
+    };
+    function friendlyTrigger(t) { return TRIGGER_LABELS[t] || t; }
+    function friendlyBadge(type) { return type.replace(" Event", "").replace(" Plan", ""); }
+
+    // --- Build unified rows ---
+    const newCryptoIds = new Set(model.alertEvents.map(({ item }) => item.coin.id));
+    const cryptoRows = model.alertEvents.slice(0, 18).map(({ item, event }) => ({
+        klass:     event.klass,
+        market:    "crypto",
+        assetHtml: coinCell(item.coin),
+        badge:     friendlyBadge(event.type),
+        trigger:   friendlyTrigger(event.triggerState),
+        movement:  event.type === "Volume Spike" ? formatBig(event.value) : formatPercent(event.value),
+        price:     formatPrice(item.coin.current_price),
+        rule:      event.rule,
+        isNew:     !previousCryptoAlertIds.has(item.coin.id),
+        isRisk:    event.klass === "risk",
+    }));
+    previousCryptoAlertIds = newCryptoIds;
+
+    const optEvents = buildOptionsAlertEvents();
+    const stockRows = optEvents.map(ev => ({
+        klass:     ev.klass,
+        market:    "stock",
+        assetHtml: `<strong>${escapeHtml(ev.symbol)}</strong> <span class="muted">${escapeHtml(ev.name)}</span>`,
+        badge:     friendlyBadge(ev.type),
+        trigger:   friendlyTrigger(ev.triggerState),
+        movement:  ev.entryRef ? formatPrice(ev.entryRef) : "—",
+        price:     ev.entryRef ? formatPrice(ev.entryRef) : "—",
+        rule:      ev.rule,
+        isNew:     false,
+        isRisk:    ev.klass === "risk",
+    }));
+
+    const KLASS_ORDER = { risk: 0, strong: 1, volume: 2, watch: 3 };
+    const allRows = [...cryptoRows, ...stockRows].sort(
+        (a, b) => (KLASS_ORDER[a.klass] ?? 9) - (KLASS_ORDER[b.klass] ?? 9)
+    );
+
+    // --- Render unified feed ---
+    const unifiedBody = document.getElementById("unified-alerts-body");
+    if (unifiedBody) {
+        const html = allRows.map(r => {
+            const cls = [r.isNew ? "alert-row-new" : "", r.isRisk ? "alert-row-risk" : ""].filter(Boolean).join(" ");
+            const workspace = r.market === "crypto" ? "index.html" : "stocks.html";
+            return `<tr class="${cls}" data-market="${r.market}" data-klass="${r.klass}">
+                <td><span class="badge ${r.klass}">${escapeHtml(r.badge)}</span></td>
+                <td>${r.assetHtml}</td>
+                <td><span class="asset-class-badge ${r.market}">${r.market === "crypto" ? "Crypto" : "Stock"}</span></td>
+                <td>${escapeHtml(r.trigger)}</td>
+                <td class="num">${r.movement}</td>
+                <td class="num">${r.price}</td>
+                <td class="alert-rule-cell">${escapeHtml(r.rule)}</td>
+                <td><a href="${workspace}" class="table-action">Review</a></td>
             </tr>`;
         }).join("");
-        alertsBody.innerHTML = rows || `<tr><td colspan="6" class="loading-cell">No threshold events in the current market state.</td></tr>`;
-        previousCryptoAlertIds = newIds;
-        if (cryptoBadge) {
-            const count = events.length;
-            const hasRisk = events.some(({ event }) => event.klass === "risk");
-            cryptoBadge.textContent = `${count} active`;
-            cryptoBadge.className = `alert-count-badge${hasRisk ? " has-risk" : count > 0 ? " has-alerts" : ""}`;
-        }
+        unifiedBody.innerHTML = html ||
+            `<tr><td colspan="8" class="loading-cell">No threshold events in the current market state.</td></tr>`;
     }
 
-    // --- Options panel ---
-    const optionsBody = document.getElementById("options-alerts-body");
-    const optionsBadge = document.getElementById("options-alert-count");
-    if (optionsBody) {
-        const optEvents = buildOptionsAlertEvents();
-        const rows = optEvents.map(ev => {
-            const isRisk = ev.klass === "risk";
-            return `<tr class="${isRisk ? "alert-row-risk" : ""}">
-                <td><span class="badge ${ev.klass}">${ev.type}</span></td>
-                <td><strong>${escapeHtml(ev.symbol)}</strong> <span class="muted">${escapeHtml(ev.name)}</span></td>
-                <td><span class="state-token">${escapeHtml(ev.triggerState)}</span></td>
-                <td class="num">${ev.entryRef ? formatPrice(ev.entryRef) : "—"}</td>
-                <td>${escapeHtml(ev.whyNow)}</td>
-                <td>${escapeHtml(ev.invalidation)}</td>
-            </tr>`;
-        }).join("");
-        optionsBody.innerHTML = rows || `<tr><td colspan="6" class="loading-cell">No stocks alerts. File a stock plan to generate alerts.</td></tr>`;
-        if (optionsBadge) {
-            const count = optEvents.length;
-            const hasRisk = optEvents.some(ev => ev.klass === "risk");
-            optionsBadge.textContent = `${count} active`;
-            optionsBadge.className = `alert-count-badge${hasRisk ? " has-risk" : count > 0 ? " has-alerts" : ""}`;
-        }
+    // --- Count badge ---
+    const countBadge = document.getElementById("unified-alert-count");
+    if (countBadge) {
+        const total = allRows.length;
+        const hasRisk = allRows.some(r => r.isRisk);
+        countBadge.textContent = `${total} alert${total !== 1 ? "s" : ""}`;
+        countBadge.className = `alert-count-badge${hasRisk ? " has-risk" : total > 0 ? " has-alerts" : ""}`;
     }
 
-    // --- Hotbar ---
-    const hotbarPills = document.getElementById("hotbar-pills");
-    if (hotbarPills) {
-        const cryptoPills = model.alertEvents.slice(0, 5).map(({ item, event }) =>
-            `<span class="hotbar-pill ${event.klass}"><span class="hotbar-cls">C</span>${escapeHtml((item.coin.symbol || item.coin.name || "").toUpperCase())} · ${event.type}</span>`
-        );
-        const optionsPills = buildOptionsAlertEvents().slice(0, 3).map(ev =>
-            `<span class="hotbar-pill ${ev.klass}"><span class="hotbar-cls">S</span>${escapeHtml(ev.symbol)} · ${ev.type}</span>`
-        );
-        const all = [...cryptoPills, ...optionsPills];
-        hotbarPills.innerHTML = all.length
-            ? all.join("")
-            : `<span class="hotbar-pill wait">No active alerts across either asset class</span>`;
-    }
+    // --- Summary cards ---
+    const setCard = (id, n) => { const el = document.getElementById(id); if (el) el.textContent = n; };
+    setCard("alert-sum-total",    allRows.length);
+    setCard("alert-sum-risk",     allRows.filter(r => r.klass === "risk").length);
+    setCard("alert-sum-breakout", allRows.filter(r => r.klass === "strong").length);
+    setCard("alert-sum-volume",   allRows.filter(r => r.klass === "volume").length);
+    setCard("alert-sum-watch",    allRows.filter(r => r.klass === "watch").length);
 
-    // --- Tab filter (wire once) ---
+    // --- Wire filter bar (once) ---
     if (!alertTabsWired) {
         alertTabsWired = true;
-        const tabBar = document.getElementById("alert-tab-bar");
-        const cryptoPanel = document.getElementById("crypto-alerts-panel");
-        const optionsPanel = document.getElementById("options-alerts-panel");
-        if (tabBar && cryptoPanel && optionsPanel) {
-            tabBar.addEventListener("click", e => {
-                const btn = e.target.closest(".alert-tab-btn");
+        const filterBar = document.getElementById("alert-filter-bar");
+        if (filterBar) {
+            filterBar.addEventListener("click", e => {
+                const btn = e.target.closest("[data-alert-filter]");
                 if (!btn) return;
-                tabBar.querySelectorAll(".alert-tab-btn").forEach(b => b.classList.remove("active"));
+                filterBar.querySelectorAll("[data-alert-filter]").forEach(b => b.classList.remove("active"));
                 btn.classList.add("active");
-                const tab = btn.dataset.alertTab;
-                cryptoPanel.style.display = tab === "options" ? "none" : "";
-                optionsPanel.style.display = tab === "crypto" ? "none" : "";
+                const filter = btn.dataset.alertFilter;
+                const body = document.getElementById("unified-alerts-body");
+                if (!body) return;
+                body.querySelectorAll("tr[data-market]").forEach(row => {
+                    let show = true;
+                    if (filter === "crypto")  show = row.dataset.market === "crypto";
+                    else if (filter === "stock") show = row.dataset.market === "stock";
+                    else if (filter !== "all")   show = row.dataset.klass === filter;
+                    row.style.display = show ? "" : "none";
+                });
             });
         }
     }
