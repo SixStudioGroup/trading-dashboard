@@ -2059,3 +2059,64 @@ tr:last-child td { border-bottom: none; }
     margin-right: 4px;
     flex-shrink: 0;
 }
+
+/* === Guide Prose (Package 5) === */
+.guide-prose {
+    max-width: 760px;
+}
+
+.guide-section {
+    padding-bottom: 24px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--line);
+}
+
+.guide-section:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 0;
+}
+
+.guide-section-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0 0 10px;
+}
+
+.guide-section > p {
+    color: #475569;
+    line-height: 1.6;
+    margin: 0 0 8px;
+}
+
+.guide-section > p:last-child { margin-bottom: 0; }
+
+.guide-section code {
+    font-size: 11px;
+    background: var(--panel-raised);
+    padding: 2px 5px;
+    border-radius: var(--radius);
+    font-family: Consolas, "Courier New", monospace;
+}
+
+.guide-callout {
+    background: rgba(30, 58, 138, 0.04);
+    border: 1px solid rgba(30, 58, 138, 0.15);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    margin: 10px 0;
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.5;
+}
+
+.guide-callout.amber {
+    background: rgba(217, 119, 6, 0.05);
+    border-color: rgba(217, 119, 6, 0.22);
+}
+
+.guide-compare td {
+    white-space: normal;
+    vertical-align: top;
+}

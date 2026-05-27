@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Guide — ZenCloud Trading OS</title>
-    <link rel="stylesheet" href="styles.css?v=ui-20260526">
+    <link rel="stylesheet" href="styles.css?v=ui-20260527">
     <script src="https://unpkg.com/lucide@0.441.0/dist/umd/lucide.min.js"></script>
 </head>
 <body data-page="guide">
@@ -30,438 +30,210 @@
 
         <section class="welcome">
             <div>
-                <h1>Shared User Guide</h1>
-                <p>ZenCloud is a manual multi-asset trading operating portal. Crypto and stocks are separate workspaces, while journal, reports, privacy mode, and value hiding are shared.</p>
+                <h1>Operator Guide</h1>
+                <p>ZenCloud is a manual multi-asset trading operating portal. Use it to plan, record, and review. It does not execute trades, connect to brokers, or provide financial advice.</p>
             </div>
         </section>
 
-        <section class="panel rule-banner">
+        <section class="panel rule-banner" style="margin-bottom: 16px;">
             <strong>If the idea did not start in ZenCloud, do not execute it in the broker.</strong>
             <span>ZenCloud decides. The execution venue executes. ZenCloud records and reviews.</span>
         </section>
 
-        <section class="guide-grid">
+        <div class="guide-prose">
 
-            <!-- ── GETTING STARTED ─────────────────────────────── -->
+            <section class="guide-section">
+                <h2 class="guide-section-title">1. Start Here</h2>
+                <p>Open the workspace for the session. Use <strong>Crypto Workspace</strong> for crypto assets and <strong>Stocks Workspace</strong> for stocks. The two workspaces are separate — they do not share queues, holdings, or positions.</p>
+                <p>Check the data status bar at the top of the workspace before anything else. If it shows <strong>Fallback</strong> or <strong>Demo</strong>, use the portal for review and planning only. Do not make live-signal decisions until the status shows <strong>Live</strong> or <strong>Snapshot</strong>.</p>
+                <p>Start every session at the Opportunity Queue or Stock Queue. Do not start from market news, external alerts, or the Logs page.</p>
+            </section>
 
-            <div class="panel-header flat-header" style="grid-column: 1 / -1; margin-top: 4px;">
-                <h3 class="panel-title">Getting Started</h3>
-                <p class="panel-subtitle">What this portal is and how to run a session</p>
-            </div>
+            <section class="guide-section">
+                <h2 class="guide-section-title">2. Core Rule</h2>
+                <div class="guide-callout">If the idea did not start in ZenCloud, do not execute it in the broker. ZenCloud decides. The execution venue executes. ZenCloud records and reviews.</div>
+                <p>Every trade starts inside ZenCloud: scan, analyse, plan. The external broker or exchange is for execution only — after the plan is complete and saved.</p>
+                <p>If you cannot articulate the trade in ZenCloud's plan fields — signal state, reason, entry trigger, invalidation level, intended size — it is not ready for external execution.</p>
+                <p>ZenCloud does not guess broker URLs, pre-fill order forms, or open broker interfaces automatically. The execution boundary is always manual.</p>
+            </section>
 
-            <article class="panel guide-card">
-                <div class="panel-header">
-                    <h2 class="panel-title">What ZenCloud Is</h2>
-                    <p class="panel-subtitle">Decision support, not automation</p>
-                </div>
-                <div class="panel-body">
-                    <p>ZenCloud is a manual multi-asset trading operating portal. It turns workspace data, manual positions, and journal records into a compact operating system. Every component is read-only or manually updated — it is not an exchange, not a broker, not an auto-trader, and not a prediction engine.</p>
-                    <p>The Crypto Workspace uses the existing public crypto feed for market scan and planning. The Stocks Workspace is separate and may use static or demo stock data until a safe source is added. Journal entries, watchlist, positions, and session state are stored locally in your browser when Private Local Mode is active.</p>
-                </div>
-            </article>
+            <section class="guide-section">
+                <h2 class="guide-section-title">3. Quick Start Workflow</h2>
+                <p>Run this sequence every session. Do not skip steps.</p>
+                <ol class="guide-rules" style="padding-left: 20px; margin-top: 8px;">
+                    <li>Choose the workspace: Crypto or Stocks.</li>
+                    <li>Check the data status bar. Confirm Live or Snapshot before acting on signals.</li>
+                    <li>Scan the Opportunity Queue or Stock Queue.</li>
+                    <li>Select one asset and load it into Asset Analysis.</li>
+                    <li>Review Agent Consensus and work through the checklist.</li>
+                    <li>Create a trade plan: signal state, reason, invalidation level, intended size, notes.</li>
+                    <li>Execute externally only after the plan is saved. Crypto: open CoinSpot manually. Stocks: open your broker manually.</li>
+                    <li>Update Holdings or Positions immediately after the external trade confirms.</li>
+                    <li>Journal the trade: asset class, entry, exit (when known), behaviour review, notes.</li>
+                    <li>Review Reports, Logs, and Alerts at end of session.</li>
+                </ol>
+            </section>
 
-            <article class="panel guide-card">
-                <div class="panel-header">
-                    <h2 class="panel-title">Workspace Architecture</h2>
-                    <p class="panel-subtitle">Crypto and stocks stay separated</p>
+            <section class="guide-section">
+                <h2 class="guide-section-title">4. Crypto vs Stocks</h2>
+                <p>The two workspaces use the same planning and journaling model but different data sources, queues, and execution paths.</p>
+                <div class="table-scroll" style="margin: 10px 0;">
+                    <table class="compact-table guide-compare">
+                        <thead>
+                            <tr>
+                                <th style="width:150px;">Feature</th>
+                                <th>Crypto Workspace</th>
+                                <th>Stocks Workspace</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Data source</strong></td>
+                                <td>Public market feed — no API key</td>
+                                <td>Stooq snapshot via GitHub Actions</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Fallback</strong></td>
+                                <td>Built-in static snapshot</td>
+                                <td>Demo dataset (41 symbols)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Queue</strong></td>
+                                <td>Opportunity Queue</td>
+                                <td>Stock Queue</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Signal inputs</strong></td>
+                                <td>Price movement, volume, market cap</td>
+                                <td>1D change, 5D change, relative volume</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Region filter</strong></td>
+                                <td>—</td>
+                                <td>All / Australia / U.S. Tech / U.S. Large Cap / Global ADRs</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Agent consensus</strong></td>
+                                <td>Momentum, Liquidity, Risk, Portfolio</td>
+                                <td>Sector, Regime, Risk, Momentum</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Execution path</strong></td>
+                                <td>CoinSpot — manual, after 5-check gate</td>
+                                <td>External broker — manual, no connection</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Holdings storage</strong></td>
+                                <td>Crypto holdings (localStorage)</td>
+                                <td>Stock positions (localStorage)</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
-                <div class="panel-body">
-                    <p><strong>Crypto Workspace:</strong> uses existing crypto market data for market scan and planning. CoinSpot is execution only and remains behind the existing analysis and checklist handoff rules.</p>
-                    <p><strong>Stocks Workspace:</strong> uses ticker, position, broker, Best Setup, Risk Panel, and Agent Consensus terminology for stock scan and planning. It does not appear inside the crypto Opportunity Queue and broker execution is a placeholder only.</p>
-                    <p><strong>Shared Journal and Shared Reports:</strong> records carry an <code style="font-size: 11px; background: #f0f4f7; padding: 2px 5px; border-radius: 2px;">assetClass</code> value of <code style="font-size: 11px; background: #f0f4f7; padding: 2px 5px; border-radius: 2px;">crypto</code> or <code style="font-size: 11px; background: #f0f4f7; padding: 2px 5px; border-radius: 2px;">stock</code>.</p>
-                </div>
-            </article>
+                <p>Journal and Reports are shared across both asset classes. Each record carries <code>assetClass: crypto</code> or <code>assetClass: stock</code>. Use the filter bar on Journal and Reports to view by asset class.</p>
+            </section>
 
-            <article class="panel guide-card">
-                <div class="panel-header">
-                    <h2 class="panel-title">Core Operating Rule</h2>
-                    <p class="panel-subtitle">Keep execution separate</p>
+            <section class="guide-section">
+                <h2 class="guide-section-title">5. Crypto Workspace</h2>
+                <p><strong>Opportunity Queue</strong> ranks assets by signal state and momentum. Open it first, every session. Click <strong>Analyse</strong> to load an asset into Asset Analysis.</p>
+                <p><strong>Signal states</strong> are workflow labels derived from market data — not trade instructions:</p>
+                <div class="state-row" style="margin: 6px 0 10px;">
+                    <span class="badge strong">Breakout</span>
+                    <span class="badge watch">Watch</span>
+                    <span class="badge sell">Sell Risk</span>
+                    <span class="badge volume">Volume Spike</span>
+                    <span class="badge wait">No Action</span>
                 </div>
-                <div class="panel-body">
-                    <p>Use ZenCloud to decide, plan, record, and review. Use CoinSpot only for crypto execution after analysis. For stocks, the Broker Handoff panel is a placeholder only and does not connect to, open, or pre-fill any broker.</p>
-                    <p>ZenCloud never creates guessed execution links, pre-fills order forms, or connects to exchange or broker APIs. The execution boundary is always manual.</p>
-                </div>
-            </article>
+                <p><strong>Best Swing Mover</strong> surfaces one candidate with $100M+ volume, positive momentum, and no Sell Risk state. Use it as a starting point — click Analyse before acting on it.</p>
+                <p><strong>Market Regime</strong> summarises broad liquidity, volatility, dominance, and rotation context. Read it for situational awareness. It does not override the queue, a trade plan, or a Sell Risk state.</p>
+                <p><strong>Market Attention</strong> (Trending, Top Gainers, Top Losers, Most Visited, Recently Added) is for asset discovery only. Route anything found here through the Opportunity Queue and Asset Analysis before planning.</p>
+                <p><strong>Asset Analysis</strong> is sticky on desktop — it stays visible while scrolling. Work through it top-to-bottom: signal → Agent Consensus → plan → position size → checklist → handoff. The checklist requires five manual confirmations. The CoinSpot handoff button stays locked until all five complete.</p>
+                <p><strong>Agent Consensus</strong> runs four deterministic checks: <em>Momentum</em> (trend and 1hr/24hr direction), <em>Liquidity</em> ($100M+ suitable, $25M–$100M caution, below $25M avoid), <em>Risk</em> (move magnitude vs risk bands), <em>Portfolio</em> (asset held or not). Each returns Support, Watch, Reject, or Insufficient Data.</p>
+                <p>Update <strong>Holdings</strong> immediately after the external trade confirms in CoinSpot. Holdings are stored in this browser only (Private Local Mode).</p>
+            </section>
 
-            <article class="panel guide-card workflow-card">
-                <div class="panel-header">
-                    <h2 class="panel-title">Daily Trading Workflow</h2>
-                    <p class="panel-subtitle">Run the same sequence every session — do not skip steps</p>
-                </div>
-                <div class="panel-body">
-                    <p><strong>Scan → Analyse → Plan → Execute externally → Update Position → Journal → Review</strong></p>
-                    <ol class="workflow-list">
-                        <li>Choose the workspace: Crypto Workspace for crypto, Stocks Workspace for stocks.</li>
-                        <li>Scan the relevant Opportunity Queue. Crypto and stocks are ranked separately.</li>
-                        <li>Select one asset or ticker and complete Asset Analysis before planning.</li>
-                        <li>Create or confirm a trade plan with signal state, reason, entry trigger, invalidation, intended size, and notes.</li>
-                        <li>Execute externally only after the ZenCloud plan exists. CoinSpot is for crypto execution. Stock broker execution is not connected.</li>
-                        <li>Update Holdings or Positions immediately after the external trade confirms.</li>
-                        <li>Journal the trade with asset class, reason, invalidation, result, behaviour review, and notes.</li>
-                        <li>Review Reports, Market Logs, and Alerts at the end of the session.</li>
-                    </ol>
-                </div>
-            </article>
+            <section class="guide-section">
+                <h2 class="guide-section-title">6. Stocks Workspace</h2>
+                <p><strong>Stock Queue</strong> ranks 41 symbols by signal state. The same signal states apply — Breakout, Watch, Sell Risk, Volume Spike, No Action — derived from 1D price change, 5D change, and relative volume.</p>
+                <p>Use the <strong>region filter</strong> to narrow the queue: All, Australia, U.S. Tech, U.S. Large Cap, Global ADRs.</p>
+                <p>The <strong>source badge</strong> in the status bar shows where queue data comes from: <strong>Snapshot</strong> (live Stooq data) or <strong>Demo</strong> (built-in fallback). A <strong>staleness warning</strong> appears if the snapshot is more than 24 hours old. See Section 9 for how the snapshot works.</p>
+                <p><strong>Stock Agent Consensus</strong> evaluates four dimensions: sector context, market regime, risk state, and momentum. The result is informational — unlike the Crypto Workspace there is no execution checklist gate for stocks.</p>
+                <p><strong>Stock Risk Panel</strong> shows sector, market regime, and risk state for the selected symbol. Use it alongside the trade plan, not instead of it.</p>
+                <p>After completing the trade plan in ZenCloud, execute in your own broker manually. ZenCloud does not connect to any broker, does not generate broker links, and does not pre-fill order forms.</p>
+                <p>Update <strong>Stock Positions</strong> immediately after the external trade confirms. Positions are stored in this browser only (Private Local Mode).</p>
+            </section>
 
-            <!-- ── SCANNING ────────────────────────────────────── -->
+            <section class="guide-section">
+                <h2 class="guide-section-title">7. Shared Tools</h2>
+                <p><strong>Trade Journal</strong> records both crypto and stock trades. Each entry has <code>assetClass</code> set to <code>crypto</code> or <code>stock</code>. Fields include: symbol, entry date/time, entry price, position size, signal state at entry, agent consensus, reason, invalidation level, exit date/time, exit price, exit reason, whether the plan was followed, mistake type, lesson learned, and notes. Use the filter bar (All / Crypto / Stocks) to view records by class.</p>
+                <p><strong>Reports</strong> pull from Journal records only — no live market data. Tabs: Daily, Weekly, Trades, Positions, Behaviour, Consensus Outcomes. Use the asset class filter to isolate crypto or stock performance. Reports are only as accurate as the journal — missing or incomplete entries produce gaps in output.</p>
+                <p><strong>Watch Queue</strong> stores candidates added from Asset Analysis. Each entry records reason watched, signal at watch time, and current signal state. Return to Asset Analysis when signal state improves.</p>
+                <p>Journal data is stored locally in the current browser when Private Local Mode is active. It does not sync across browsers, devices, or users.</p>
+            </section>
 
-            <div class="panel-header flat-header" style="grid-column: 1 / -1; margin-top: 8px;">
-                <h3 class="panel-title">Scanning</h3>
-                <p class="panel-subtitle">Entry point for every session — start here, not with market news</p>
-            </div>
+            <section class="guide-section">
+                <h2 class="guide-section-title">8. Logs and Alerts</h2>
+                <p>Both pages have <strong>Crypto</strong> and <strong>Stocks</strong> tab filters. Select the relevant tab for the asset class being reviewed.</p>
+                <p><strong>Logs</strong> show timestamped system observations: what data was fetched, what signals were scored, what state transitions occurred. Use logs to verify what the system observed during a session. The Logs page is a verification surface — not an execution or signal surface.</p>
+                <p><strong>Alerts</strong> surface threshold events — Breakout, Watch, Sell Risk, Volume Spike — as they occur. Treat each alert as a prompt to return to the relevant workspace, open the queue, and load the flagged asset into analysis. Do not act on an alert without running the full analysis workflow first.</p>
+            </section>
 
-            <article class="panel guide-card">
-                <div class="panel-header">
-                    <h2 class="panel-title">Opportunity Queue</h2>
-                    <p class="panel-subtitle">Primary scan surface</p>
-                </div>
-                <div class="panel-body">
-                    <p>The Opportunity Queue ranks assets from the scoring engine by signal state and momentum. It is the fastest answer to what currently matters. Open it first, every session.</p>
-                    <p>Click <strong>Analyse</strong> on any row to load that asset into the Asset Analysis panel.</p>
-                    <div class="state-row" aria-label="Signal states">
-                        <span class="badge strong">Breakout</span>
-                        <span class="badge watch">Watch</span>
-                        <span class="badge sell">Sell Risk</span>
-                        <span class="badge volume">Volume Spike</span>
-                        <span class="badge wait">No Action</span>
-                    </div>
-                    <p style="margin-top:10px; color: var(--muted); font-size: 12px;">Crypto uses existing crypto movement and liquidity labels. Stocks use stock-specific inputs: 1D movement, 5D movement, relative volume, sector, market regime, and risk state. No Action means neutral or insufficient data.</p>
-                </div>
-            </article>
+            <section class="guide-section">
+                <h2 class="guide-section-title">9. Data Sources and Fallback</h2>
+                <p><strong>Crypto</strong> — the Crypto Workspace fetches from a public/free market API. No paid API key required. If the fetch fails (rate limit, CORS, network issue), the portal switches to a built-in static snapshot and the status bar shows <strong>Fallback</strong>.</p>
+                <p><strong>Stocks — Stooq Snapshot</strong> — the Stocks Workspace reads from <code>data/stocks-snapshot.json</code>, a file generated by a GitHub Actions workflow. The workflow runs hourly, fetches 41 symbols from the Stooq CSV API (free, no key required), derives signal states from 1D change, 5D change, and relative volume, then writes the snapshot file. The Stocks Workspace fetches this file at page load and uses it to populate the queue.</p>
+                <p><strong>Demo fallback</strong> — if the snapshot file is empty (seed state before the first workflow run), contains no assets, or the fetch fails, the Stocks Workspace switches to a built-in demo dataset. The source badge shows <strong>Demo</strong>. No real prices are shown in demo mode.</p>
+                <div class="guide-callout amber">When Fallback or Demo is active: use ZenCloud for review and planning only. Do not make live-signal execution decisions until the status shows Live or Snapshot.</div>
+                <p>No API keys are stored in GitHub Pages, frontend JavaScript, localStorage, or the repository. The Stooq fetch runs in GitHub Actions only.</p>
+            </section>
 
-            <article class="panel guide-card">
-                <div class="panel-header">
-                    <h2 class="panel-title">Best Swing Mover</h2>
-                    <p class="panel-subtitle">One short-to-medium-term candidate</p>
-                </div>
-                <div class="panel-body">
-                    <p>This box highlights one liquid, non-high-risk candidate when current state supports further analysis. Criteria: $100M+ volume, not in Sell Risk state, positive momentum.</p>
-                    <p>It never opens CoinSpot directly. Treat it as a starting point — not a recommendation. Click Analyse to load it into Asset Analysis before acting.</p>
-                </div>
-            </article>
+            <section class="guide-section">
+                <h2 class="guide-section-title">10. Privacy and Public Sharing</h2>
+                <p><strong>Public Demo Mode</strong> — shows demo market data, demo trades, and demo positions only. It does not read private local records. Safe to share or screen-record.</p>
+                <p><strong>Private Local Mode</strong> — reads and writes data in the current browser via localStorage only. Crypto holdings, stock positions, journal records, watchlists, and settings do not sync across users, browsers, or devices. Clearing browser storage resets all local records.</p>
+                <p><strong>Hide Values</strong> — masks holdings, positions, entry prices, trade amounts, unrealised P/L, and report values across both workspaces. Toggle in Settings or the topbar privacy control. Use this when sharing a screen without sharing financial detail.</p>
+                <p><strong>GitHub Gist sharing</strong> — save a GitHub Personal Access Token (gist scope only) in Settings to share selected journal trades as a secret GitHub Gist. The token is stored in localStorage only and is never committed to the repo.</p>
+                <div class="guide-callout amber">GitHub Pages is public. Do not commit private balances, API keys, strategy notes, or account values to the repository.</div>
+            </section>
 
-            <article class="panel guide-card">
-                <div class="panel-header">
-                    <h2 class="panel-title">Market Regime</h2>
-                    <p class="panel-subtitle">Context, not an override</p>
-                </div>
-                <div class="panel-body">
-                    <p>Market Regime summarises broad liquidity, volatility, dominance, and rotation context where available. Read it for situational awareness.</p>
-                    <p>It does not override the Opportunity Queue, trade plan, or risk controls. A constructive regime does not override a Sell Risk state.</p>
-                </div>
-            </article>
+            <section class="guide-section">
+                <h2 class="guide-section-title">11. Execution Boundaries</h2>
+                <div class="guide-callout">ZenCloud does not execute trades, connect to exchange or broker APIs, pre-fill order forms, or generate broker links. These are design boundaries, not technical limitations.</div>
+                <ul class="guide-rules" style="margin-top: 10px;">
+                    <li><strong>Crypto execution</strong> — open CoinSpot manually after the 5-check execution gate unlocks in Asset Analysis.</li>
+                    <li><strong>Stock execution</strong> — after completing the stock trade plan, open your own broker manually. The Broker Handoff panel is a placeholder only.</li>
+                    <li><strong>Holdings and positions</strong> — update manually in ZenCloud after the external trade confirms.</li>
+                    <li><strong>No API keys in the portal</strong> — never paste exchange keys, broker keys, or provider keys into frontend JavaScript, HTML, localStorage, or the repository.</li>
+                </ul>
+            </section>
 
-            <article class="panel guide-card">
-                <div class="panel-header">
-                    <h2 class="panel-title">Market Attention</h2>
-                    <p class="panel-subtitle">Secondary discovery only</p>
-                </div>
-                <div class="panel-body">
-                    <p>Market Attention groups Trending, Top Gainers, Top Losers, Most Visited, and Recently Added assets. Use these lists to discover assets, not to trade them directly.</p>
-                    <p>Assets not supported by CoinSpot remain Watch only regardless of signal state. Always route discovery findings through the Opportunity Queue and Asset Analysis before planning a trade.</p>
-                </div>
-            </article>
+            <section class="guide-section">
+                <h2 class="guide-section-title">12. Troubleshooting</h2>
+                <ul class="guide-rules">
+                    <li><strong>Inline edits lost on refresh</strong> — the dashboard rebuilds every 60 seconds. Save balance or note edits before the refresh cycle.</li>
+                    <li><strong>Records missing after browser change</strong> — localStorage is per-browser. Clearing browser data or switching browsers resets all private records. Export critical data externally.</li>
+                    <li><strong>Stocks showing Demo</strong> — the Stooq snapshot has not been populated yet. The GitHub Actions workflow runs hourly. Trigger it manually via workflow_dispatch in the GitHub Actions tab if you need it immediately.</li>
+                    <li><strong>Staleness warning on Stocks</strong> — snapshot is more than 24 hours old. Check the workflow run history in GitHub Actions for failures.</li>
+                    <li><strong>Crypto status shows Fallback</strong> — the public market feed could not be reached. Use ZenCloud for review and planning only until the feed recovers.</li>
+                    <li><strong>Icons not rendering</strong> — Lucide icons require the CDN script to load. Check network connectivity if icons appear blank.</li>
+                </ul>
+            </section>
 
-            <!-- ── ANALYSIS & PLANNING ─────────────────────────── -->
+            <section class="guide-section">
+                <h2 class="guide-section-title">13. Disclaimer</h2>
+                <p>Signal states (Breakout, Watch, Sell Risk, Volume Spike, No Action) are outputs of deterministic rules applied to available market data. They are workflow labels — not instructions to trade, not price predictions, and not financial advice.</p>
+                <p>ZenCloud is a personal workflow and planning aid. All trade decisions, position sizing, risk management, and compliance obligations remain the user's sole responsibility. Past signal states do not predict future price movement.</p>
+                <p>This portal does not connect to financial markets, does not hold funds, does not place orders, and does not provide regulated financial services.</p>
+            </section>
 
-            <div class="panel-header flat-header" style="grid-column: 1 / -1; margin-top: 8px;">
-                <h3 class="panel-title">Analysis &amp; Planning</h3>
-                <p class="panel-subtitle">Work one asset at a time — complete each step before moving to execution</p>
-            </div>
-
-            <article class="panel guide-card">
-                <div class="panel-header">
-                    <h2 class="panel-title">Asset Analysis</h2>
-                    <p class="panel-subtitle">Inspect before acting</p>
-                </div>
-                <div class="panel-body">
-                    <p>Asset Analysis isolates one asset with signal state, market movement, volume context, invalidation level, position sizing, and the execution handoff gate.</p>
-                    <p>On desktop, the panel is sticky — it stays visible while you scroll the rest of the dashboard. On smaller screens it falls inline. Work through it top to bottom: signal → agents → plan → size → checklist → handoff.</p>
-                </div>
-            </article>
-
-            <article class="panel guide-card">
-                <div class="panel-header">
-                    <h2 class="panel-title">Agent Consensus</h2>
-                    <p class="panel-subtitle">Four deterministic rule checks</p>
-                </div>
-                <div class="panel-body">
-                    <p>Four agents evaluate the selected asset independently:</p>
-                    <ul class="guide-rules" style="margin-top: 8px;">
-                        <li><strong>Momentum</strong> — trend direction and 1hr/24hr momentum.</li>
-                        <li><strong>Liquidity</strong> — 24hr volume against suitability thresholds ($100M+ suitable, $25M–$100M caution, below $25M avoid).</li>
-                        <li><strong>Risk</strong> — 24hr and 1hr move magnitude against risk bands.</li>
-                        <li><strong>Portfolio</strong> — whether the asset is already held.</li>
-                    </ul>
-                    <p style="margin-top: 10px;">Each returns <strong>Support</strong>, <strong>Watch</strong>, <strong>Reject</strong>, or <strong>Insufficient Data</strong>. Consensus informs but does not unlock execution by itself — the checklist gate controls that.</p>
-                </div>
-            </article>
-
-            <article class="panel guide-card">
-                <div class="panel-header">
-                    <h2 class="panel-title">Execution Checklist Gate</h2>
-                    <p class="panel-subtitle">Five checks must complete before handoff unlocks</p>
-                </div>
-                <div class="panel-body">
-                    <p>The CoinSpot handoff button stays locked until you manually confirm five checklist items in Asset Analysis. This is intentional — it forces review before execution.</p>
-                    <p>The checklist items cover: signal validity, agent consensus review, invalidation level set, position size calculated, and trade plan saved. Progress is shown as <strong>X / 5 checks</strong> above the handoff button.</p>
-                    <p>If you do not complete the checklist, the handoff button does not activate. There is no way to bypass this gate within ZenCloud.</p>
-                </div>
-            </article>
-
-            <article class="panel guide-card">
-                <div class="panel-header">
-                    <h2 class="panel-title">Watch Queue</h2>
-                    <p class="panel-subtitle">Assets saved from analysis for monitoring</p>
-                </div>
-                <div class="panel-body">
-                    <p>Watch Queue stores assets added from Asset Analysis. Each entry records: reason watched, signal at watch time, current signal, watch timestamp, and whether signal state has improved, weakened, or stayed neutral since being added.</p>
-                    <p>Use it to track assets that are close to a Breakout but not yet ready. Return to Asset Analysis when signal state improves.</p>
-                </div>
-            </article>
-
-            <article class="panel guide-card">
-                <div class="panel-header">
-                    <h2 class="panel-title">Trade Plan</h2>
-                    <p class="panel-subtitle">Required before handoff</p>
-                </div>
-                <div class="panel-body">
-                    <p>Create a plan with: asset, signal state, reason, entry trigger, invalidation level, review time, intended size, and notes. A saved plan can be added directly to the Trade Journal.</p>
-                    <p>Do not proceed to the external venue without a completed plan. If the idea cannot be articulated in the plan fields, it is not ready for external execution.</p>
-                </div>
-            </article>
-
-            <article class="panel guide-card">
-                <div class="panel-header">
-                    <h2 class="panel-title">Risk Per Trade</h2>
-                    <p class="panel-subtitle">Define max loss before handoff</p>
-                </div>
-                <div class="panel-body">
-                    <p>Input: account value, risk percentage, entry price, and invalidation price. Output: max risk amount in AUD, implied position size, and estimated units.</p>
-                    <p>Define risk before sizing. The sizing helper depends on invalidation being set first — a trade plan without an invalidation level cannot produce a valid risk calculation.</p>
-                </div>
-            </article>
-
-            <article class="panel guide-card">
-                <div class="panel-header">
-                    <h2 class="panel-title">Position Size Helper</h2>
-                    <p class="panel-subtitle">Sizing context, not an order</p>
-                </div>
-                <div class="panel-body">
-                    <p>The helper estimates intended allocation, risk amount, units, and portfolio weight after the trade. It is informational only — it does not send orders, does not pre-fill CoinSpot, and does not connect to any exchange.</p>
-                </div>
-            </article>
-
-            <article class="panel guide-card">
-                <div class="panel-header">
-                    <h2 class="panel-title">CoinSpot Execution Handoff</h2>
-                    <p class="panel-subtitle">External execution only — after checklist completes</p>
-                </div>
-                <div class="panel-body">
-                    <p>The handoff button activates only when all five checklist items are confirmed. It opens CoinSpot so you can place the actual trade manually.</p>
-                    <p>CoinSpot is used for: placing the trade, checking real account balance, and confirming completed transactions. ZenCloud never creates guessed CoinSpot links or pre-configured order URLs.</p>
-                </div>
-            </article>
-
-            <article class="panel guide-card">
-                <div class="panel-header">
-                    <h2 class="panel-title">Broker Handoff Placeholder</h2>
-                    <p class="panel-subtitle">Stocks remain manually planned and externally executed</p>
-                </div>
-                <div class="panel-body">
-                    <p>The Stocks Workspace records ticker analysis, stock agent consensus, risk panel values, and a stock trade plan. Broker execution is not connected.</p>
-                    <p>ZenCloud does not add broker links, does not guess broker URLs, does not open broker order forms, and does not pre-fill stock orders. The placeholder exists to preserve the workflow boundary: ZenCloud decides, the external broker executes, ZenCloud records and reviews.</p>
-                </div>
-            </article>
-
-            <!-- ── TRACK & REVIEW ──────────────────────────────── -->
-
-            <div class="panel-header flat-header" style="grid-column: 1 / -1; margin-top: 8px;">
-                <h3 class="panel-title">Track &amp; Review</h3>
-                <p class="panel-subtitle">Update holdings immediately after execution — journal every trade</p>
-            </div>
-
-            <article class="panel guide-card">
-                <div class="panel-header">
-                    <h2 class="panel-title">Manage Holdings</h2>
-                    <p class="panel-subtitle">Manual portfolio tracking — local storage only</p>
-                </div>
-                <div class="panel-body">
-                    <p>Update crypto holdings or stock positions after external trades confirm. Crypto holdings and stock positions are separate records and are stored only in the current browser when Private Local Mode is active.</p>
-                    <p><strong>Important:</strong> Private Local records exist on this device and browser only. Clearing browser storage, switching browsers, or using a different device will reset all local records. Export or note positions externally as a backup.</p>
-                    <p style="margin-top: 8px;"><strong>Save inline edits promptly.</strong> The dashboard refreshes every 60 seconds and rebuilds the DOM. Unsaved changes in inline balance or note fields may be lost on refresh. Click save before the timer resets.</p>
-                </div>
-            </article>
-
-            <article class="panel guide-card">
-                <div class="panel-header">
-                    <h2 class="panel-title">Trade Journal</h2>
-                    <p class="panel-subtitle">Manual record of every planned and closed trade</p>
-                </div>
-                <div class="panel-body">
-                    <p>Journal entries track: asset class, symbol or ticker, entry price, position size, signal state at entry, agent consensus, reason, invalidation level, exit price, result, behaviour review, lesson learned, and notes.</p>
-                    <p>Journal data is stored locally in your browser in Private Local Mode. Reports pull from this data — incomplete journal entries produce incomplete reports.</p>
-                </div>
-            </article>
-
-            <article class="panel guide-card">
-                <div class="panel-header">
-                    <h2 class="panel-title">Highest Exit Risk</h2>
-                    <p class="panel-subtitle">Held assets only — priority review flag</p>
-                </div>
-                <div class="panel-body">
-                    <p>This box compares current holdings against live signal state and flags the held asset most worth reviewing right now. It surfaces assets that have moved to Sell Risk or experienced high 1hr drawdown since entry.</p>
-                    <p>It only evaluates assets you hold. It does not evaluate or flag assets in the Opportunity Queue.</p>
-                </div>
-            </article>
-
-            <article class="panel guide-card">
-                <div class="panel-header">
-                    <h2 class="panel-title">Reports</h2>
-                    <p class="panel-subtitle">Session, weekly, and trade review</p>
-                </div>
-                <div class="panel-body">
-                    <p>Reports summarise daily activity, weekly performance, closed trade reviews, current positions, and behavioural patterns. All data comes from local Trade Journal and Holdings records.</p>
-                    <p>Reports are only as good as the journal. Missing journal entries, unclosed trades, or partially filled fields will produce gaps in report output.</p>
-                </div>
-            </article>
-
-            <article class="panel guide-card">
-                <div class="panel-header">
-                    <h2 class="panel-title">Alerts</h2>
-                    <p class="panel-subtitle">Threshold events — prompts to return to Dashboard</p>
-                </div>
-                <div class="panel-body">
-                    <p>Alerts surface Breakout, Watch, Sell Risk, and Volume Spike events as they occur during a session. Treat every alert as a prompt: return to Dashboard, scan the Opportunity Queue, and analyse the flagged asset before acting.</p>
-                    <p>Do not execute from an alert directly. Run the full analysis workflow first.</p>
-                </div>
-            </article>
-
-            <article class="panel guide-card">
-                <div class="panel-header">
-                    <h2 class="panel-title">Market Logs</h2>
-                    <p class="panel-subtitle">System telemetry — verification only</p>
-                </div>
-                <div class="panel-body">
-                    <p>Market Logs show timestamped observations from the decision pipeline: what data was fetched, what signals were scored, and what state transitions occurred.</p>
-                    <p>Use logs to verify what the system observed during a session. Do not use the logs page as an alternative execution surface or signal source.</p>
-                </div>
-            </article>
-
-            <!-- ── SYSTEM & DATA ───────────────────────────────── -->
-
-            <div class="panel-header flat-header" style="grid-column: 1 / -1; margin-top: 8px;">
-                <h3 class="panel-title">System &amp; Data</h3>
-                <p class="panel-subtitle">Data sources, known limitations, and planned improvements</p>
-            </div>
-
-            <article class="panel guide-card">
-                <div class="panel-header">
-                    <h2 class="panel-title">Data Confidence and Fallback Snapshot</h2>
-                    <p class="panel-subtitle">Check the status bar at the start of every session</p>
-                </div>
-                <div class="panel-body">
-                    <p><strong>Crypto Feed</strong> — the Crypto Workspace uses a public/free market feed with no paid API key. Data refreshes when the browser can fetch it.</p>
-                    <p><strong>Fallback Snapshot</strong> — if a public feed is unavailable, rate-limited, or blocked by CORS, the portal keeps working from a built-in snapshot and shows fallback status.</p>
-                    <p><strong>Stock Data Direction</strong> — stock data may remain static or demo until a safe source is added. Stooq is the initial no-paid-API/static data direction. Finnhub and FMP may be evaluated later only through a secure proxy or static snapshot path, never as frontend keys.</p>
-                    <p style="margin-top: 8px;"><strong>When Fallback is active:</strong> use ZenCloud for review and planning only. Execution handoff is de-emphasised and live-signal decisions should wait for live data.</p>
-                </div>
-            </article>
-
-            <article class="panel guide-card">
-                <div class="panel-header">
-                    <h2 class="panel-title">Privacy Modes</h2>
-                    <p class="panel-subtitle">Public demo is shareable; private local stays in the browser</p>
-                </div>
-                <div class="panel-body">
-                    <p><strong>Public Demo Mode</strong> is safe to share. It shows demo market data, fake demo trades, and fake demo positions only. It does not read private local records.</p>
-                    <p><strong>Private Local Mode</strong> reads and writes data in the current browser only. Crypto holdings, stock positions, trade records, watchlists, and settings do not sync across users or devices.</p>
-                    <p><strong>GitHub Pages is public.</strong> Anything committed to the repo or deployed to GitHub Pages can be viewed by others. Do not commit private balances, trade deals, private signals, account values, API keys, or strategy notes.</p>
-                </div>
-            </article>
-
-            <article class="panel guide-card">
-                <div class="panel-header">
-                    <h2 class="panel-title">Known Limitations</h2>
-                    <p class="panel-subtitle">Understand the boundaries before relying on this portal</p>
-                </div>
-                <div class="panel-body">
-                    <ul class="guide-rules">
-                        <li><strong>60-second DOM refresh</strong> — the dashboard rebuilds every 60 seconds. Unsaved inline edits to holdings may be overwritten. Save before the next refresh cycle.</li>
-                        <li><strong>localStorage only</strong> — all holdings, journal, watchlist, and checklist data lives in your current browser. No cross-device sync, no cloud backup. Clearing browser data resets everything.</li>
-                        <li><strong>No paid API required now</strong> — crypto uses public/free data, and stocks may remain static or demo until a safe source is added.</li>
-                        <li><strong>Stock source direction</strong> — Stooq is the initial no-paid-API/static direction. Finnhub and FMP are future secure proxy options only.</li>
-                        <li><strong>No API keys in the portal</strong> — never paste provider keys or exchange keys into frontend JavaScript, GitHub Pages, localStorage, or repo files.</li>
-                        <li><strong>Fallback is review only</strong> — fallback keeps Dashboard, Logs, Alerts, Holdings, Journal, Reports, and Guide usable, but it is not live execution context.</li>
-                        <li><strong>Responsive tables</strong> — compact tables scroll horizontally on small screens to preserve data density.</li>
-                    </ul>
-                </div>
-            </article>
-
-            <article class="panel guide-card">
-                <div class="panel-header">
-                    <h2 class="panel-title">Static Snapshot Mode</h2>
-                    <p class="panel-subtitle">Future reliability path without exposed keys</p>
-                </div>
-                <div class="panel-body">
-                    <p>ZenCloud can later read static JSON market snapshots generated outside the browser. A scheduled GitHub Action or lightweight backend can refresh those files and keep credentials out of GitHub Pages.</p>
-                    <p>This keeps the portal static, avoids paid frontend API dependencies, supports the Stooq no-paid-API direction for stocks, and improves resilience when direct browser fetches are blocked.</p>
-                </div>
-            </article>
-
-            <article class="panel guide-card">
-                <div class="panel-header">
-                    <h2 class="panel-title">CoinSpot API Readiness</h2>
-                    <p class="panel-subtitle">Execution boundary remains manual by design</p>
-                </div>
-                <div class="panel-body">
-                    <p>ZenCloud does not use CoinSpot private APIs, exchange keys, or automated order placement. This is a design decision, not a technical limitation.</p>
-                    <p>CoinSpot remains the external venue for manual execution and transaction confirmation. ZenCloud should not store CoinSpot API keys or place orders.</p>
-                </div>
-            </article>
-
-            <article class="panel guide-card workflow-card">
-                <div class="panel-header">
-                    <h2 class="panel-title">Future Backend Requirements</h2>
-                    <p class="panel-subtitle">Required before any key-dependent data source can be activated</p>
-                </div>
-                <div class="panel-body">
-                    <ul class="workflow-list">
-                        <li>Secure key storage outside browser-visible files, repositories, GitHub Pages, and localStorage.</li>
-                        <li>CORS-safe static snapshot or proxy endpoint that the portal can call without exposing keys.</li>
-                        <li>Response caching to reduce usage and stay within rate limits.</li>
-                        <li>Rate-limit handling with automatic provider failover.</li>
-                        <li>No private keys in frontend JavaScript, HTML files, GitHub Pages deployments, or localStorage.</li>
-                    </ul>
-                </div>
-            </article>
-
-            <!-- ── SAFETY & DISCLAIMER ─────────────────────────── -->
-
-            <article class="panel guide-card disclaimer-card">
-                <div class="panel-header">
-                    <h2 class="panel-title">Safety Rules and Disclaimer</h2>
-                    <p class="panel-subtitle">Decision support only — all trading decisions remain the user's responsibility</p>
-                </div>
-                <div class="panel-body">
-                    <ul class="guide-rules">
-                        <li>ZenCloud is for scanning opportunities, analysing assets, creating trade plans, checking position size, monitoring exit risk, updating holdings, journaling trades, and reviewing performance.</li>
-                        <li>CoinSpot is for crypto execution and transaction confirmation after ZenCloud planning.</li>
-                        <li>The stock broker surface is a placeholder only. ZenCloud does not connect to a broker or provide broker execution links.</li>
-                        <li>ZenCloud does not execute trades, automate orders, or handle exchange API keys.</li>
-                        <li>Signal states (Breakout, Watch, Sell Risk, Volume Spike, No Action) are outputs of deterministic rules applied to available market data. They are workflow states, not instructions to trade.</li>
-                        <li>All external trade decisions, risk management, and compliance obligations remain at the user's discretion and responsibility.</li>
-                        <li>This tool is an educational and personal workflow aid. Past signal states do not predict future price movement.</li>
-                    </ul>
-                </div>
-            </article>
-
-        </section>
+        </div>
     </main>
+
     <footer class="master-rule-footer">
         <strong>If the idea did not start in ZenCloud, do not execute it in the broker.</strong>
         <span>ZenCloud decides. The execution venue executes. ZenCloud records and reviews.</span>
     </footer>
-<script>if(typeof lucide!=="undefined")lucide.createIcons();</script>
+
+    <script>if(typeof lucide!=="undefined")lucide.createIcons();</script>
 </body>
 </html>
