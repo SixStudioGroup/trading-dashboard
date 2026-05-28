@@ -19,6 +19,28 @@
     --red-bg: rgba(220, 38, 38, 0.08);
     --cyan-bg: rgba(14, 165, 233, 0.10);
     --radius: 4px;
+
+    /* VAF master design system tokens */
+    --vaf-bg:             var(--page);
+    --vaf-surface:        var(--panel);
+    --vaf-surface-raised: var(--panel-raised);
+    --vaf-border:         var(--line);
+    --vaf-text:           var(--text);
+    --vaf-text-2:         var(--muted);
+    --vaf-accent:         #E8630A;
+    --vaf-accent-hover:   #CC5508;
+    --vaf-accent-subtle:  #FFF7ED;
+    --vaf-accent-border:  #FED7AA;
+    --vaf-navy:           #1E3A5F;
+    --vaf-navy-dark:      #162D4A;
+    --vaf-font-heading:   'Playfair Display', Georgia, serif;
+    --vaf-font-body:      system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+    --vaf-font-mono:      'DM Mono', ui-monospace, monospace;
+    --vaf-radius-sm:      var(--radius);
+    --vaf-radius-md:      var(--radius);
+    --vaf-radius-lg:      8px;
+    --vaf-shadow:         0 1px 4px rgba(15,23,42,0.07);
+    --vaf-transition:     200ms ease;
 }
 
 * { box-sizing: border-box; }
