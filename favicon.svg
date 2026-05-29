@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="ZenCloud Trading OS">
+  <rect width="64" height="64" rx="14" fill="#0F172A"/>
+  <path d="M14 42l10-12 8 6 13-18 5 8" fill="none" stroke="#22C55E" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M14 48h36" stroke="#E8630A" stroke-width="4" stroke-linecap="round"/>
+  <text x="32" y="59" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" font-weight="700" fill="#F8FAFC">ZTO</text>
+</svg>
