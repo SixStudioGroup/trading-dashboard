@@ -1,26 +1,25 @@
-# ZenCloud Trading Dashboard
+# SixSignal Terminal
 
-ZenCloud Trading Dashboard is a manual crypto trading decision terminal. It is designed to help a trader scan opportunities, analyse one asset at a time, make a controlled decision, execute externally, record the action, and review the result.
+SixSignal Terminal is a manual trading decision cockpit by StudioSix. It is designed to help a trader scan opportunities, analyse one asset at a time, make a controlled decision, execute externally, record the action, and review the result.
 
-The product does not execute trades. It does not provide financial advice. It does not connect to CoinSpot or any exchange for order placement. Its operating model is deliberately manual: ZenCloud decides, CoinSpot executes, ZenCloud records and reviews.
+The product does not execute trades. It does not provide financial advice. It does not connect to CoinSpot or any exchange for order placement. Its operating model is deliberately manual: SixSignal decides, the trader executes externally, SixSignal records and reviews.
 
 ## Product intent
 
-The dashboard exists to reduce impulsive trading and improve repeatable decision quality. The core user is a manual crypto trader who needs signal discipline, portfolio visibility, and a decision trail without turning the tool into a broker or automated trading system.
+The terminal exists to reduce impulsive trading and improve repeatable decision quality. The core user is a manual crypto or equities trader who needs signal discipline, portfolio visibility, and a decision trail without turning the tool into a broker or automated trading system.
 
-The product should remain focused on the decision loop:
-
-Scan opportunities.
-Analyse a selected asset.
-Confirm the trade thesis.
-Check risk and invalidation.
-Execute externally if the decision is valid.
-Record the trade or decision.
-Review the session later.
+| Workflow Stage | Product Behaviour | Trader Outcome |
+|---|---|---|
+| Scan | Rank opportunities and surface focused candidates | Attention is directed without forcing execution |
+| Analyse | Review a selected asset in the Decision Cockpit | The trader evaluates thesis, risk, and invalidation |
+| Decide | Confirm whether the trade is valid, watch-only, or rejected | Action is deliberate rather than impulsive |
+| Execute | Keep trade placement external to the terminal | SixSignal remains decision support, not a broker |
+| Record | Update holdings, journal, and notes | Decisions become auditable |
+| Review | Evaluate session and signal quality | Trading behaviour becomes repeatable |
 
 ## Current product status
 
-The current release is a pre-1.0 product candidate. The live dashboard has working surfaces for opportunity scanning, asset analysis, manual holdings, market context, alerts, fallback state, and review. The next release should focus on reducing interaction noise, tightening execution gating, and formalising the trader operating model before additional features are added.
+The current release is a pre-1.0 product candidate. The live terminal has working surfaces for opportunity scanning, asset analysis, manual holdings, market context, alerts, fallback state, and review. The current design direction is to reduce interaction load, strengthen the Decision Cockpit, simplify feed-state presentation, and preserve manual execution discipline.
 
 ## Live site
 
@@ -28,15 +27,17 @@ https://zencloudau.github.io/trading-dashboard/
 
 ## Documentation map
 
-Product direction is maintained in the `docs` folder:
-
-- `docs/PRODUCT-MAP.md` defines the product areas and release direction.
-- `docs/RELEASE-PLAN.md` defines the launch path and acceptance criteria.
-- `docs/UX-REVIEW.md` captures the lead designer and trader review.
-- `docs/TRADER-OPERATING-MODEL.md` defines how the dashboard should be used.
-- `docs/USER-GUIDE.md` explains the user workflow.
-- `docs/KNOWN-LIMITATIONS.md` documents current constraints and boundaries.
-- `docs/CHANGELOG.md` records release progress.
+| Document | Purpose |
+|---|---|
+| `docs/PRODUCT-MAP.md` | Defines the product areas and release direction |
+| `docs/RELEASE-PLAN.md` | Defines launch path and acceptance criteria |
+| `docs/UX-REVIEW.md` | Captures lead designer and trader review |
+| `docs/TRADER-OPERATING-MODEL.md` | Defines the manual trading operating model |
+| `docs/USER-GUIDE.md` | Explains the user workflow |
+| `docs/KNOWN-LIMITATIONS.md` | Documents product constraints and boundaries |
+| `docs/CHANGELOG.md` | Records release progress |
+| `docs/DESIGN-SYSTEM.md` | Defines colour, brand, and workflow design rules |
+| `docs/RESPONSE-MATRIX-STANDARD.md` | Defines the matrix and product table format for future product reviews |
 
 ## Release principle
 
