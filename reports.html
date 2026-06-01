@@ -3,168 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reports — ZenCloud Trading OS</title>
+    <title>SixSignal Review Centre</title>
     <link rel="stylesheet" href="styles.css?v=ui-20260526">
+    <link rel="stylesheet" href="sixsignal.css?v=release-1">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230B1120'/%3E%3Crect x='16' y='38' width='5' height='10' rx='2' fill='%2338BDF8'/%3E%3Crect x='24' y='32' width='5' height='16' rx='2' fill='%2338BDF8'/%3E%3Crect x='32' y='24' width='5' height='24' rx='2' fill='%23F59E0B'/%3E%3Crect x='40' y='16' width='5' height='32' rx='2' fill='%2338BDF8'/%3E%3C/svg%3E">
     <script src="https://unpkg.com/lucide@0.441.0/dist/umd/lucide.min.js"></script>
 </head>
 <body data-page="reports">
-    <header class="topbar">
-        <a class="brand" href="index.html" aria-label="ZenCloud Trading OS">
-            <span class="brand-mark">Z</span>
-            <span>ZenCloud Trading OS</span>
+    <header class="topbar six-topbar">
+        <a class="brand six-brand" href="index.html" aria-label="SixSignal Terminal">
+            <span class="brand-mark six-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
+            <span><strong>SixSignal</strong><small>by StudioSix</small></span>
         </a>
         <nav class="navlinks" aria-label="Main navigation">
-            <a class="nav-workspace-btn" href="index.html"><i data-lucide="trending-up"></i> Crypto</a>
-            <a class="nav-workspace-btn" href="stocks.html"><i data-lucide="bar-chart"></i> Stocks</a>
-            <span class="nav-divider" aria-hidden="true"></span>
-            <a href="logs.html"><i data-lucide="file-text"></i> Logs</a>
-            <a href="alerts.html"><i data-lucide="bell"></i> Alerts</a>
+            <a href="index.html"><i data-lucide="activity"></i> Crypto</a>
+            <a href="stocks.html"><i data-lucide="bar-chart"></i> Stocks</a>
             <a href="journal.html"><i data-lucide="book-open"></i> Journal</a>
-            <a class="active" href="reports.html"><i data-lucide="pie-chart"></i> Reports</a>
+            <a class="active" href="reports.html"><i data-lucide="pie-chart"></i> Review</a>
             <a href="guide.html"><i data-lucide="help-circle"></i> Guide</a>
             <a href="settings.html"><i data-lucide="settings"></i> Settings</a>
         </nav>
     </header>
 
-    <main class="shell command-shell reports-shell">
-        <section class="welcome">
-            <div>
-                <h1>Shared Reports</h1>
-                <p>Executive review from manual Journal and Positions records. No private exchange or broker data is fetched.</p>
+    <main class="shell command-shell reports-shell six-shell">
+        <section class="six-command-bar">
+            <div class="six-title-block">
+                <span class="six-kicker">Review Centre</span>
+                <h1>Review decisions, not just results.</h1>
+                <p>SixSignal reports are calculated from manual journal and position records. No exchange or broker data is fetched.</p>
             </div>
-            <div class="status-card">
-                <span class="status-dot"></span>
-                <span id="market-status">Loading live data...</span>
+            <div class="six-trust-strip">
+                <div class="status-card compact-status six-feed-state"><span class="status-dot"></span><span id="market-status">Loading live data...</span></div>
+                <div class="six-metric"><span>Source</span><strong>Journal records</strong></div>
+                <div class="six-metric"><span>Scope</span><strong>Crypto + Stocks</strong></div>
+                <div class="six-metric"><span>Mode</span><strong>Review only</strong></div>
             </div>
-            <div class="data-source-card">
-                <span>Provider: <strong data-confidence-field="provider">Current Feed</strong></span>
-                <span>Planned: <strong data-confidence-field="plannedProvider">Static Snapshot Ready</strong></span>
-                <span>Status: <strong data-confidence-field="mode">Live Data</strong></span>
-                <span>Last live: <strong data-confidence-field="lastSuccessfulLiveFetch">Not recorded</strong></span>
-                <span>Attempted: <strong data-confidence-field="lastAttemptedFetch">Not recorded</strong></span>
-                <span>Failure: <strong data-confidence-field="failureReason">None</strong></span>
-                <span>Live/fallback: <strong data-confidence-field="dataKind">Live</strong></span>
-                <span>Retry: <strong data-confidence-field="retryCount">0</strong></span>
-            </div>
+            <details class="six-feed-details">
+                <summary>Data feed diagnostics</summary>
+                <div class="data-source-card">
+                    <span>Provider: <strong data-confidence-field="provider">Current Feed</strong></span>
+                    <span>Planned: <strong data-confidence-field="plannedProvider">Static Snapshot Ready</strong></span>
+                    <span>Status: <strong data-confidence-field="mode">Live Data</strong></span>
+                    <span>Last live: <strong data-confidence-field="lastSuccessfulLiveFetch">Not recorded</strong></span>
+                    <span>Attempted: <strong data-confidence-field="lastAttemptedFetch">Not recorded</strong></span>
+                    <span>Failure: <strong data-confidence-field="failureReason">None</strong></span>
+                    <span>Live/fallback: <strong data-confidence-field="dataKind">Live</strong></span>
+                    <span>Retry: <strong data-confidence-field="retryCount">0</strong></span>
+                </div>
+            </details>
         </section>
 
-        <section class="panel secondary-tabs reports-tabs" id="reports-tabs">
-            <div class="tab-bar" role="tablist" aria-label="Reports">
-                <button class="tab-button" type="button" data-report-target="daily-report-tab">Daily</button>
+        <section class="six-portfolio-strip panel">
+            <div class="six-strip-item"><span>Review question</span><strong>Did I follow the plan?</strong></div>
+            <div class="six-strip-item"><span>Behaviour signal</span><strong>Rules before profit</strong></div>
+            <div class="six-strip-item"><span>Evidence source</span><strong>Manual journal only</strong></div>
+        </section>
+
+        <section class="panel secondary-tabs reports-tabs six-secondary-tabs" id="reports-tabs">
+            <div class="tab-bar" role="tablist" aria-label="Review Centre">
                 <button class="tab-button active" type="button" data-report-target="weekly-report-tab">Weekly</button>
+                <button class="tab-button" type="button" data-report-target="behaviour-report-tab">Behaviour</button>
                 <button class="tab-button" type="button" data-report-target="trade-review-tab">Trades</button>
                 <button class="tab-button" type="button" data-report-target="position-report-tab">Positions</button>
-                <button class="tab-button" type="button" data-report-target="behaviour-report-tab">Behaviour</button>
-                <button class="tab-button" type="button" data-report-target="consensus-report-tab">Consensus outcomes</button>
+                <button class="tab-button" type="button" data-report-target="consensus-report-tab">Consensus</button>
+                <button class="tab-button" type="button" data-report-target="daily-report-tab">Daily</button>
             </div>
             <div class="report-filter-bar">
-                <label class="report-date-control"><span>Asset class</span><select id="report-asset-filter">
-                    <option value="all">All assets</option>
-                    <option value="crypto">Crypto only</option>
-                    <option value="stock">Stocks only</option>
-                </select></label>
+                <label class="report-date-control"><span>Asset class</span><select id="report-asset-filter"><option value="all">All assets</option><option value="crypto">Crypto only</option><option value="stock">Stocks only</option></select></label>
             </div>
 
             <section class="tab-panel" id="daily-report-tab">
-                <div class="report-panel-header">
-                    <div>
-                        <h2 class="panel-title">Daily Trading Report</h2>
-                        <p class="panel-subtitle">Manual activity for the selected day</p>
-                    </div>
-                    <label class="report-date-control"><span>Date</span><input id="report-date" type="date"></label>
-                </div>
-                <div class="performance-grid" id="daily-report-summary"></div>
-                <p class="report-note" id="daily-report-note"></p>
+                <div class="report-panel-header"><div><h2 class="panel-title">Daily Review</h2><p class="panel-subtitle">Manual activity for the selected day.</p></div><label class="report-date-control"><span>Date</span><input id="report-date" type="date"></label></div>
+                <div class="performance-grid" id="daily-report-summary"></div><p class="report-note" id="daily-report-note"></p>
             </section>
 
             <section class="tab-panel active" id="weekly-report-tab">
-                <div class="report-panel-header">
-                    <div>
-                        <h2 class="panel-title">Weekly Performance Report</h2>
-                        <p class="panel-subtitle">Calculated only from manually entered journal data</p>
-                    </div>
-                </div>
+                <div class="report-panel-header"><div><h2 class="panel-title">Weekly Decision Review</h2><p class="panel-subtitle">Use this first. Results matter, but rule quality matters more.</p></div></div>
                 <div class="performance-grid" id="weekly-report-summary"></div>
             </section>
 
             <section class="tab-panel" id="trade-review-tab">
-                <div class="report-panel-header">
-                    <div>
-                        <h2 class="panel-title">Trade Review Report</h2>
-                        <p class="panel-subtitle">Closed trades with review fields stored in the Trade Journal</p>
-                    </div>
-                </div>
-                <table class="compact-table report-table">
-                    <thead>
-                        <tr>
-                            <th>Class</th>
-                            <th>Asset</th>
-                            <th>Entry reason</th>
-                            <th>Signal</th>
-                            <th>Consensus</th>
-                            <th>Invalidation</th>
-                            <th>Exit reason</th>
-                            <th class="num">Result AUD</th>
-                            <th class="num">Result %</th>
-                            <th>Rule followed</th>
-                            <th>Review</th>
-                        </tr>
-                    </thead>
-                    <tbody id="trade-review-body">
-                        <tr><td colspan="11" class="loading-cell">Loading trade review...</td></tr>
-                    </tbody>
-                </table>
+                <div class="report-panel-header"><div><h2 class="panel-title">Trade Review Matrix</h2><p class="panel-subtitle">Closed trades with reason, invalidation, result, and behavioural review.</p></div></div>
+                <table class="compact-table report-table"><thead><tr><th>Class</th><th>Asset</th><th>Entry reason</th><th>Signal</th><th>Consensus</th><th>Invalidation</th><th>Exit reason</th><th class="num">Result AUD</th><th class="num">Result %</th><th>Rule followed</th><th>Review</th></tr></thead><tbody id="trade-review-body"><tr><td colspan="11" class="loading-cell">Loading trade review...</td></tr></tbody></table>
             </section>
 
             <section class="tab-panel" id="position-report-tab">
-                <div class="report-panel-header">
-                    <div>
-                        <h2 class="panel-title">Position Report</h2>
-                        <p class="panel-subtitle">Current positions with crypto live context and stock reference context where available</p>
-                    </div>
-                </div>
-                <table class="compact-table report-table">
-                    <thead>
-                        <tr>
-                            <th>Class</th>
-                            <th>Asset</th>
-                            <th class="num">Balance</th>
-                            <th class="num">Average entry</th>
-                            <th class="num">Current live price</th>
-                            <th class="num">Unrealised P/L AUD</th>
-                            <th class="num">Unrealised P/L %</th>
-                            <th>Holding duration</th>
-                            <th>Current signal</th>
-                            <th>Exit risk state</th>
-                        </tr>
-                    </thead>
-                    <tbody id="position-report-body">
-                        <tr><td colspan="10" class="loading-cell">Loading positions...</td></tr>
-                    </tbody>
-                </table>
+                <div class="report-panel-header"><div><h2 class="panel-title">Open Exposure Review</h2><p class="panel-subtitle">Current positions with live or reference context where available.</p></div></div>
+                <table class="compact-table report-table"><thead><tr><th>Class</th><th>Asset</th><th class="num">Balance</th><th class="num">Average entry</th><th class="num">Current live price</th><th class="num">Unrealised P/L AUD</th><th class="num">Unrealised P/L %</th><th>Holding duration</th><th>Current signal</th><th>Exit risk state</th></tr></thead><tbody id="position-report-body"><tr><td colspan="10" class="loading-cell">Loading positions...</td></tr></tbody></table>
             </section>
 
             <section class="tab-panel" id="behaviour-report-tab">
-                <div class="report-panel-header">
-                    <div>
-                        <h2 class="panel-title">Behaviour Report</h2>
-                        <p class="panel-subtitle">Neutral review of journal patterns</p>
-                    </div>
-                </div>
+                <div class="report-panel-header"><div><h2 class="panel-title">Behaviour Review</h2><p class="panel-subtitle">Review discipline, rule-following, and repeated mistake patterns.</p></div></div>
                 <div class="performance-grid" id="behaviour-report-summary"></div>
             </section>
 
             <section class="tab-panel" id="consensus-report-tab">
-                <div class="report-panel-header">
-                    <div>
-                        <h2 class="panel-title">Consensus Outcomes</h2>
-                        <p class="panel-subtitle">Closed-trade outcomes grouped by agent consensus at entry</p>
-                    </div>
-                </div>
-                <table class="compact-table report-table">
-                    <thead><tr><th>Consensus</th><th class="num">Trades</th><th class="num">Wins</th><th class="num">Losses</th><th class="num">Net result</th><th>Most common asset class</th></tr></thead>
-                    <tbody id="consensus-outcomes-body"><tr><td colspan="6" class="loading-cell">No consensus outcomes yet.</td></tr></tbody>
-                </table>
+                <div class="report-panel-header"><div><h2 class="panel-title">Consensus Outcomes</h2><p class="panel-subtitle">Closed-trade outcomes grouped by consensus at entry.</p></div></div>
+                <table class="compact-table report-table"><thead><tr><th>Consensus</th><th class="num">Trades</th><th class="num">Wins</th><th class="num">Losses</th><th class="num">Net result</th><th>Most common asset class</th></tr></thead><tbody id="consensus-outcomes-body"><tr><td colspan="6" class="loading-cell">No consensus outcomes yet.</td></tr></tbody></table>
             </section>
         </section>
     </main>
