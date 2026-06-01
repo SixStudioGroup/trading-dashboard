@@ -1,6 +1,12 @@
 body {
     background: linear-gradient(180deg, #0F172A 0px, #111827 220px, #F3F6FB 220px);
     color: #111827;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+}
+
+a {
+    transition: color 160ms ease, border-color 160ms ease, background 160ms ease, transform 160ms ease;
 }
 
 .six-topbar {
@@ -55,12 +61,14 @@ body {
 
 .navlinks a {
     color: #CBD5E1;
+    border-radius: 8px 8px 0 0;
 }
 
 .navlinks a.active,
 .navlinks a:hover {
     color: #F8FAFC;
     border-bottom-color: #38BDF8;
+    background: rgba(56, 189, 248, 0.08);
 }
 
 .six-shell {
@@ -88,14 +96,15 @@ body {
 
 .six-title-block h1 {
     margin: 6px 0 8px;
-    font-size: 34px;
+    font-size: clamp(28px, 4vw, 38px);
     line-height: 1;
-    letter-spacing: -0.04em;
+    letter-spacing: -0.045em;
 }
 
 .six-title-block p {
     margin: 0;
     color: #94A3B8;
+    max-width: 760px;
 }
 
 .six-trust-strip {
@@ -106,21 +115,35 @@ body {
 
 .six-feed-state,
 .six-metric,
-.six-portfolio-strip {
+.six-portfolio-strip,
+.six-theme-link {
     background: rgba(255,255,255,0.92);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(15, 23, 42, 0.08);
     border-radius: 12px;
 }
 
-.six-metric {
+.six-metric,
+.six-theme-link {
     padding: 10px 14px;
     display: grid;
     gap: 3px;
+    text-decoration: none;
+}
+
+.six-theme-link:hover {
+    transform: translateY(-1px);
+    border-color: rgba(56, 189, 248, 0.45);
+}
+
+.six-theme-link.active {
+    border-color: rgba(56, 189, 248, 0.55);
+    box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.20);
 }
 
 .six-metric span,
-.six-strip-item span {
+.six-strip-item span,
+.six-theme-link span {
     color: #64748B;
     text-transform: uppercase;
     font-size: 10px;
@@ -129,7 +152,8 @@ body {
 }
 
 .six-metric strong,
-.six-strip-item strong {
+.six-strip-item strong,
+.six-theme-link strong {
     color: #0F172A;
     font-size: 14px;
 }
@@ -172,6 +196,12 @@ body {
     align-items: start;
 }
 
+.panel,
+.six-primary-panel,
+.six-cockpit-panel {
+    transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
 .six-primary-panel,
 .six-cockpit-panel {
     border-radius: 16px;
@@ -196,7 +226,7 @@ body {
 }
 
 .panel-title {
-    letter-spacing: -0.02em;
+    letter-spacing: -0.025em;
 }
 
 .panel-subtitle {
@@ -207,6 +237,25 @@ body {
 .six-focus-table td {
     padding-top: 12px;
     padding-bottom: 12px;
+}
+
+.compact-table,
+.watchlist-table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.compact-table th,
+.watchlist-table th {
+    background: #F8FAFC;
+    font-size: 11px;
+    letter-spacing: 0.035em;
+    text-transform: uppercase;
+}
+
+.compact-table td,
+.watchlist-table td {
+    vertical-align: top;
 }
 
 .trade-guide-panel {
@@ -233,23 +282,31 @@ body {
 .tab-bar {
     background: #F8FAFC;
     padding: 0 8px;
+    overflow-x: auto;
 }
 
 .tab-button {
     padding: 14px 12px 11px;
     font-weight: 600;
+    transition: color 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.tab-button:hover {
+    background: rgba(56, 189, 248, 0.08);
 }
 
 .market-attention-grid section:nth-child(n+4) {
     display: none;
 }
 
-.compact-table th {
-    background: #F8FAFC;
-}
-
 .selected-row td {
     background: rgba(56, 189, 248, 0.08);
+}
+
+.button-primary,
+.table-action,
+.filter-btn {
+    transition: background 160ms ease, border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
 }
 
 .button-primary {
@@ -258,6 +315,7 @@ body {
 
 .button-primary:hover {
     background: #111827;
+    transform: translateY(-1px);
 }
 
 .table-action {
@@ -266,18 +324,107 @@ body {
     background: #F8FAFC;
 }
 
-.table-action:hover {
+.table-action:hover,
+.filter-btn:hover {
     background: #EEF2F7;
+    transform: translateY(-1px);
+}
+
+.six-settings-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+
+.six-settings-input {
+    flex: 1;
+    min-width: 220px;
+    padding: 8px 10px;
+    border: 1px solid #D7DEE8;
+    border-radius: 8px;
+    font-size: 13px;
+}
+
+.loading-cell,
+.compact-empty {
+    color: #64748B;
 }
 
 @media (max-width: 1180px) {
     .six-trust-strip,
     .six-portfolio-strip,
-    .six-decision-grid {
+    .six-decision-grid,
+    .alerts-dual-grid,
+    .tab-grid.two-column,
+    .portfolio-compact {
         grid-template-columns: 1fr;
     }
 
     .six-cockpit-panel {
         position: static;
+    }
+
+    .navlinks {
+        max-width: calc(100vw - 220px);
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+}
+
+@media (max-width: 760px) {
+    .topbar {
+        min-height: auto;
+        height: auto;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 10px 12px;
+    }
+
+    .six-brand small {
+        display: none;
+    }
+
+    .navlinks {
+        width: 100%;
+        max-width: 100%;
+        padding-bottom: 4px;
+    }
+
+    .six-shell {
+        padding: 18px 10px 32px;
+    }
+
+    .six-title-block h1 {
+        font-size: 28px;
+    }
+
+    .six-strip-item {
+        border-right: none;
+        border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+    }
+
+    .six-strip-item:last-child {
+        border-bottom: none;
+    }
+
+    .panel-header,
+    .panel-body {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    .table-scroll,
+    .compact-table,
+    .watchlist-table {
+        overflow-x: auto;
+        display: block;
+    }
+
+    .journal-form,
+    .holdings-form,
+    .stock-plan-form {
+        grid-template-columns: 1fr;
     }
 }
