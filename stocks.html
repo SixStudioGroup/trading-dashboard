@@ -3,90 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stocks Workspace — ZenCloud Trading OS</title>
+    <title>SixSignal Stocks</title>
     <link rel="stylesheet" href="styles.css?v=ui-20260526">
+    <link rel="stylesheet" href="sixsignal.css?v=release-1">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230B1120'/%3E%3Crect x='16' y='38' width='5' height='10' rx='2' fill='%2338BDF8'/%3E%3Crect x='24' y='32' width='5' height='16' rx='2' fill='%2338BDF8'/%3E%3Crect x='32' y='24' width='5' height='24' rx='2' fill='%23F59E0B'/%3E%3Crect x='40' y='16' width='5' height='32' rx='2' fill='%2338BDF8'/%3E%3C/svg%3E">
     <script src="https://unpkg.com/lucide@0.441.0/dist/umd/lucide.min.js"></script>
 </head>
 <body data-page="stocks">
-    <header class="topbar">
-        <a class="brand" href="index.html" aria-label="ZenCloud Trading OS">
-            <span class="brand-mark">Z</span>
-            <span>ZenCloud Trading OS</span>
+    <header class="topbar six-topbar">
+        <a class="brand six-brand" href="index.html" aria-label="SixSignal Terminal">
+            <span class="brand-mark six-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
+            <span><strong>SixSignal</strong><small>by StudioSix</small></span>
         </a>
         <nav class="navlinks" aria-label="Main navigation">
-            <a class="nav-workspace-btn" href="index.html"><i data-lucide="trending-up"></i> Crypto</a>
-            <a class="nav-workspace-btn active" href="stocks.html"><i data-lucide="bar-chart"></i> Stocks</a>
-            <span class="nav-divider" aria-hidden="true"></span>
-            <a href="logs.html"><i data-lucide="file-text"></i> Logs</a>
-            <a href="alerts.html"><i data-lucide="bell"></i> Alerts</a>
+            <a href="index.html"><i data-lucide="activity"></i> Crypto</a>
+            <a class="active" href="stocks.html"><i data-lucide="bar-chart"></i> Stocks</a>
             <a href="journal.html"><i data-lucide="book-open"></i> Journal</a>
-            <a href="reports.html"><i data-lucide="pie-chart"></i> Reports</a>
+            <a href="reports.html"><i data-lucide="pie-chart"></i> Review</a>
             <a href="guide.html"><i data-lucide="help-circle"></i> Guide</a>
             <a href="settings.html"><i data-lucide="settings"></i> Settings</a>
         </nav>
     </header>
 
-    <main class="shell command-shell stocks-shell">
-        <section class="command-status stocks-status">
-            <div class="command-title">
-                <h1>Stocks</h1>
-                <span>Manual workspace</span>
+    <main class="shell command-shell six-shell stocks-shell">
+        <section class="six-command-bar">
+            <div class="six-title-block">
+                <span class="six-kicker">Equities Decision Workspace</span>
+                <h1>Stocks. Plan before broker.</h1>
+                <p>Stock ideas must start inside SixSignal before external broker execution.</p>
             </div>
-            <div class="status-card compact-status">
-                <span class="status-dot"></span>
-                <span>Placeholder stock universe</span>
-            </div>
-            <div class="status-metric">
-                <span>Broker handoff</span>
-                <strong>External broker placeholder</strong>
-            </div>
-            <div class="status-metric">
-                <span>Source</span>
-                <strong id="stock-source-badge">Loading...</strong>
-            </div>
-            <div class="status-metric">
-                <span>Mode</span>
-                <strong data-portal-mode-label>Public Demo</strong>
-            </div>
-            <div class="status-metric">
-                <span>Workspace Rule</span>
-                <strong>ZenCloud-origin only</strong>
+            <div class="six-trust-strip">
+                <div class="status-card compact-status six-feed-state"><span class="status-dot"></span><span>Snapshot stock universe</span></div>
+                <div class="six-metric"><span>Source</span><strong id="stock-source-badge">Loading...</strong></div>
+                <div class="six-metric"><span>Mode</span><strong data-portal-mode-label>Public Demo</strong></div>
+                <div class="six-metric"><span>Execution</span><strong>External broker only</strong></div>
             </div>
         </section>
 
         <div id="stock-staleness-warning" class="privacy-status-line" hidden>
-            <span><strong>Snapshot data may be stale</strong> — last updated more than 24 hours ago. Data may not reflect current market conditions.</span>
+            <span><strong>Snapshot data may be stale</strong> — last updated more than 24 hours ago. Use for review only.</span>
         </div>
 
-        <section class="panel market-regime-panel stock-workspace-summary">
-            <div class="regime-header">
-                <span>Market Regime</span>
-                <strong>Manual Review</strong>
-            </div>
+        <section class="six-portfolio-strip panel">
+            <div class="six-strip-item"><span>Best setup</span><strong id="stock-best-setup">Loading...</strong></div>
+            <div class="six-strip-item"><span>Risk posture</span><strong>No broker connection</strong></div>
+            <div class="six-strip-item"><span>Operating rule</span><strong>SixSignal-origin only</strong></div>
+        </section>
+
+        <section class="panel market-regime-panel six-quiet-panel stock-workspace-summary">
+            <div class="regime-header"><span>Market Regime</span><strong>Manual Review</strong></div>
             <div class="regime-grid">
-                <span><small>Best Setup</small><strong id="stock-best-setup">Loading...</strong></span>
-                <span><small>Risk Panel</small><strong>No live stock feed</strong></span>
-                <span><small>Agent Consensus</small><strong>Workspace review only</strong></span>
-                <span><small>Broker handoff</small><strong>Placeholder only</strong></span>
+                <span><small>Universe</small><strong>Stocks snapshot</strong></span>
+                <span><small>Risk Panel</small><strong>Planning only</strong></span>
+                <span><small>Consensus</small><strong>Workspace review</strong></span>
+                <span><small>Broker handoff</small><strong>External only</strong></span>
             </div>
         </section>
 
-        <section class="panel stock-rule-panel">
-            <div class="panel-body stock-rule-copy">
-                <strong>If the idea did not start in ZenCloud, do not proceed to broker handoff.</strong>
-                <span>ZenCloud decides. Broker handoff is a placeholder. ZenCloud records and reviews.</span>
-                <span>No broker API, no order placement, no broker links.</span>
-            </div>
-        </section>
-
-        <section class="decision-grid command-grid stocks-grid">
-            <section class="panel opportunity-panel">
+        <section class="decision-grid command-grid stocks-grid six-decision-grid">
+            <section class="panel opportunity-panel six-primary-panel">
                 <div class="panel-header">
-                    <h2 class="panel-title">Stocks Opportunity Queue</h2>
-                    <p class="panel-subtitle" id="stock-queue-subtitle">Demo-only ranked review list. No live feed or paid API.</p>
+                    <h2 class="panel-title">Stocks Queue</h2>
+                    <p class="panel-subtitle" id="stock-queue-subtitle">Filter, select one ticker, then build the plan.</p>
                 </div>
                 <div id="stock-region-filters" class="journal-filter-bar"></div>
-                <table class="watchlist-table">
+                <table class="watchlist-table six-focus-table">
                     <thead>
                         <tr>
                             <th class="num">Rank</th>
@@ -94,47 +75,33 @@
                             <th>Company</th>
                             <th>Sector</th>
                             <th class="num">Price</th>
-                            <th class="num">1D Change</th>
-                            <th class="num">5D Change</th>
-                            <th class="num">Relative Volume</th>
-                            <th>Signal State</th>
-                            <th>Risk State</th>
-                            <th>Action</th>
+                            <th class="num">5D</th>
+                            <th class="num">Rel Vol</th>
+                            <th>State</th>
+                            <th>Risk</th>
+                            <th>Analyse</th>
                         </tr>
                     </thead>
-                    <tbody id="stock-opportunities-body">
-                        <tr><td colspan="11" class="loading-cell">Loading stock workspace...</td></tr>
-                    </tbody>
+                    <tbody id="stock-opportunities-body"><tr><td colspan="11" class="loading-cell">Loading stock workspace...</td></tr></tbody>
                 </table>
             </section>
 
-            <section class="panel analysis-panel">
+            <section class="panel analysis-panel six-cockpit-panel">
                 <div class="panel-header">
-                    <h2 class="panel-title">Stock Analysis</h2>
-                    <p class="panel-subtitle">Select a ticker before broker review</p>
+                    <h2 class="panel-title">Stock Decision Cockpit</h2>
+                    <p class="panel-subtitle">Select a ticker before broker review.</p>
                 </div>
-                <div class="panel-body" id="stock-analysis-panel">
-                    <div class="loading-cell">Select a ticker from the queue.</div>
-                </div>
+                <div class="panel-body" id="stock-analysis-panel"><div class="loading-cell">Select one ticker from the queue.</div></div>
             </section>
         </section>
 
-        <section class="panel stock-plan-panel">
-            <div class="panel-header">
-                <h2 class="panel-title">Stocks Trade Plan</h2>
-                <p class="panel-subtitle">Local record only. The broker remains external.</p>
-            </div>
+        <details class="panel stock-plan-panel six-disclosure">
+            <summary class="panel-header"><span><h2 class="panel-title">Stock Trade Plan</h2><p class="panel-subtitle">Open after the ticker has passed cockpit review.</p></span></summary>
             <form class="journal-form stock-plan-form" id="stock-plan-form">
                 <label><span>Ticker</span><input id="stock-plan-symbol" name="symbol" required placeholder="BHP"></label>
                 <label><span>Company</span><input id="stock-plan-name" name="name" required placeholder="BHP Group"></label>
                 <label><span>Market</span><input id="stock-plan-market" name="market" required placeholder="ASX"></label>
-                <label><span>Review state</span><select id="stock-plan-state" name="state">
-                    <option>Breakout</option>
-                    <option>Watch</option>
-                    <option>Sell Risk</option>
-                    <option>Volume Spike</option>
-                    <option>No Action</option>
-                </select></label>
+                <label><span>Review state</span><select id="stock-plan-state" name="state"><option>Breakout</option><option>Watch</option><option>Sell Risk</option><option>Volume Spike</option><option>No Action</option></select></label>
                 <label><span>Why now</span><input id="stock-plan-why-now" name="whyNow" required placeholder="Why this setup matters now"></label>
                 <label><span>Entry trigger</span><input id="stock-plan-entry-trigger" name="entryTrigger" required placeholder="Manual trigger to watch"></label>
                 <label><span>Invalidation rule or price</span><input id="stock-plan-invalidation" name="invalidation" required placeholder="What cancels the plan"></label>
@@ -142,48 +109,21 @@
                 <label><span>Expected holding window</span><input id="stock-plan-holding-window" name="holdingWindow" required placeholder="Example: 2-10 trading days"></label>
                 <label><span>Intended position size</span><input id="stock-plan-position-size" name="positionSize" type="number" min="0" step="any" placeholder="Optional AUD"></label>
                 <label><span>Notes</span><input id="stock-plan-notes" name="notes" placeholder="Optional"></label>
-                <div class="stock-risk-panel">
-                    <div class="mini-title">Risk Panel</div>
-                    <label><span>Account value</span><input id="stock-risk-account" name="accountValue" type="number" min="0" step="any" value="50000"></label>
-                    <label><span>Risk per trade %</span><input id="stock-risk-percent" name="riskPercent" type="number" min="0" step="any" value="1"></label>
-                    <label><span>Entry price</span><input id="stock-risk-entry" name="entryPrice" type="number" min="0" step="any" required></label>
-                    <label><span>Invalidation price</span><input id="stock-risk-invalidation-price" name="invalidationPrice" type="number" min="0" step="any"></label>
-                    <div class="risk-output" id="stock-risk-output">Enter account, risk, entry, and invalidation values.</div>
-                </div>
-                <div class="form-actions">
-                    <button class="button-primary" type="submit">Save Stock Plan</button>
-                    <button class="table-action" id="stock-plan-clear" type="button">Clear Form</button>
-                </div>
+                <div class="stock-risk-panel"><div class="mini-title">Risk Panel</div><label><span>Account value</span><input id="stock-risk-account" name="accountValue" type="number" min="0" step="any" value="50000"></label><label><span>Risk per trade %</span><input id="stock-risk-percent" name="riskPercent" type="number" min="0" step="any" value="1"></label><label><span>Entry price</span><input id="stock-risk-entry" name="entryPrice" type="number" min="0" step="any" required></label><label><span>Invalidation price</span><input id="stock-risk-invalidation-price" name="invalidationPrice" type="number" min="0" step="any"></label><div class="risk-output" id="stock-risk-output">Enter account, risk, entry, and invalidation values.</div></div>
+                <div class="form-actions"><button class="button-primary" type="submit">Save Stock Plan</button><button class="table-action" id="stock-plan-clear" type="button">Clear Form</button></div>
                 <p class="form-message" id="stock-plan-message" aria-live="polite"></p>
             </form>
-        </section>
+        </details>
 
-        <section class="panel secondary-tabs">
+        <section class="panel secondary-tabs six-secondary-tabs">
             <div class="tab-bar" role="tablist" aria-label="Stocks workspace views">
                 <button class="tab-button active" type="button" data-stock-tab-target="stock-journal-tab">Stocks Journal</button>
-                <button class="tab-button" type="button" data-stock-tab-target="stock-holdings-tab">Stock Positions</button>
+                <button class="tab-button" type="button" data-stock-tab-target="stock-holdings-tab">Positions</button>
                 <button class="tab-button" type="button" data-stock-tab-target="stock-review-tab">Broker Handoff</button>
             </div>
-
-            <section class="tab-panel active" id="stock-journal-tab">
-                <table class="compact-table">
-                    <thead><tr><th>Recorded</th><th>Ticker</th><th>State</th><th class="num">Entry</th><th class="num">Position</th><th>Why now</th><th>Entry trigger</th><th>Invalidation</th><th>Broker handoff</th><th>Actions</th></tr></thead>
-                    <tbody id="stock-journal-body"><tr><td colspan="10" class="loading-cell">No stock plans recorded.</td></tr></tbody>
-                </table>
-            </section>
-
-            <section class="tab-panel" id="stock-holdings-tab">
-                <table class="compact-table">
-                    <thead><tr><th>Ticker</th><th>Market</th><th class="num">Units</th><th class="num">Avg Entry</th><th class="num">Reference</th><th class="num">Unrealised</th><th>Note</th></tr></thead>
-                    <tbody id="stock-holdings-body"><tr><td colspan="7" class="loading-cell">No stock positions recorded.</td></tr></tbody>
-                </table>
-            </section>
-
-            <section class="tab-panel" id="stock-review-tab">
-                <div class="panel-body broker-review" id="stock-broker-review">
-                    <p class="compact-empty">Broker execution not connected.</p>
-                </div>
-            </section>
+            <section class="tab-panel active" id="stock-journal-tab"><table class="compact-table"><thead><tr><th>Recorded</th><th>Ticker</th><th>State</th><th class="num">Entry</th><th class="num">Position</th><th>Why now</th><th>Entry trigger</th><th>Invalidation</th><th>Broker handoff</th><th>Actions</th></tr></thead><tbody id="stock-journal-body"><tr><td colspan="10" class="loading-cell">No stock plans recorded.</td></tr></tbody></table></section>
+            <section class="tab-panel" id="stock-holdings-tab"><table class="compact-table"><thead><tr><th>Ticker</th><th>Market</th><th class="num">Units</th><th class="num">Avg Entry</th><th class="num">Reference</th><th class="num">Unrealised</th><th>Note</th></tr></thead><tbody id="stock-holdings-body"><tr><td colspan="7" class="loading-cell">No stock positions recorded.</td></tr></tbody></table></section>
+            <section class="tab-panel" id="stock-review-tab"><div class="panel-body broker-review" id="stock-broker-review"><p class="compact-empty">Broker execution is not connected. Save the plan here, then execute manually outside SixSignal.</p></div></section>
         </section>
     </main>
 
