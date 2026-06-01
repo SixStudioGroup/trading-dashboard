@@ -3,79 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crypto Workspace — ZenCloud Trading OS</title>
+    <title>SixSignal Terminal</title>
     <link rel="stylesheet" href="styles.css?v=ui-20260526">
+    <link rel="stylesheet" href="sixsignal.css?v=release-1">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230B1120'/%3E%3Crect x='16' y='38' width='5' height='10' rx='2' fill='%2338BDF8'/%3E%3Crect x='24' y='32' width='5' height='16' rx='2' fill='%2338BDF8'/%3E%3Crect x='32' y='24' width='5' height='24' rx='2' fill='%23F59E0B'/%3E%3Crect x='40' y='16' width='5' height='32' rx='2' fill='%2338BDF8'/%3E%3C/svg%3E">
     <meta property="og:url" content="https://zencloudau.github.io/trading-dashboard/">
-    <meta property="og:title" content="Crypto Workspace — ZenCloud Trading OS">
-    <meta property="og:description" content="ZenCloud Trading OS — crypto decision terminal with live market data, opportunity scoring, portfolio tracking, and trade guidance.">
+    <meta property="og:title" content="SixSignal Terminal">
+    <meta property="og:description" content="SixSignal Terminal by StudioSix — a calmer manual trading decision cockpit for scanning, analysing, deciding, recording, and reviewing.">
     <script src="https://unpkg.com/lucide@0.441.0/dist/umd/lucide.min.js"></script>
 </head>
 <body data-page="dashboard">
-    <header class="topbar">
-        <a class="brand" href="index.html" aria-label="ZenCloud Trading OS">
-            <span class="brand-mark">Z</span>
-            <span>ZenCloud Trading OS</span>
+    <header class="topbar six-topbar">
+        <a class="brand six-brand" href="index.html" aria-label="SixSignal Terminal">
+            <span class="brand-mark six-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
+            <span><strong>SixSignal</strong><small>by StudioSix</small></span>
         </a>
         <nav class="navlinks" aria-label="Main navigation">
-            <a class="nav-workspace-btn active" href="index.html"><i data-lucide="trending-up"></i> Crypto</a>
-            <a class="nav-workspace-btn" href="stocks.html"><i data-lucide="bar-chart"></i> Stocks</a>
-            <span class="nav-divider" aria-hidden="true"></span>
-            <a href="logs.html"><i data-lucide="file-text"></i> Logs</a>
-            <a href="alerts.html"><i data-lucide="bell"></i> Alerts</a>
+            <a class="nav-workspace-btn active" href="index.html"><i data-lucide="activity"></i> Terminal</a>
             <a href="journal.html"><i data-lucide="book-open"></i> Journal</a>
-            <a href="reports.html"><i data-lucide="pie-chart"></i> Reports</a>
-            <a href="guide.html"><i data-lucide="help-circle"></i> Guide</a>
+            <a href="alerts.html"><i data-lucide="bell"></i> Alerts</a>
+            <a href="reports.html"><i data-lucide="pie-chart"></i> Review</a>
             <a href="settings.html"><i data-lucide="settings"></i> Settings</a>
         </nav>
     </header>
 
-    <main class="shell command-shell">
-        <section class="command-status">
-            <div class="command-title">
-                <h1>ZenCloud</h1>
-                <span>Decision terminal</span>
+    <main class="shell command-shell six-shell">
+        <section class="six-command-bar">
+            <div class="six-title-block">
+                <span class="six-kicker">Manual Trading Decision Terminal</span>
+                <h1>Scan. Analyse. Decide.</h1>
+                <p>No execution without a SixSignal decision.</p>
             </div>
-            <div class="status-card compact-status">
-                <span class="status-dot"></span>
-                <span id="market-status">Loading live data...</span>
+            <div class="six-trust-strip">
+                <div class="status-card compact-status six-feed-state">
+                    <span class="status-dot"></span>
+                    <span id="market-status">Loading live data...</span>
+                </div>
+                <div class="six-metric"><span>Updated</span><strong id="last-updated">Pending</strong></div>
+                <div class="six-metric"><span>Portfolio</span><strong id="status-portfolio-value">$0.00</strong></div>
+                <div class="six-metric"><span>Mode</span><strong id="session-mode">Scanning</strong></div>
             </div>
-            <div class="data-source-card" aria-label="Data Source Status">
-                <span>Source: <strong data-confidence-field="provider">Current Feed</strong></span>
-                <span>State: <strong data-confidence-field="mode">Live Data</strong></span>
-                <span>Updated: <strong data-confidence-field="lastStatusUpdate">Pending</strong></span>
-                <span>Fallback reason: <strong data-confidence-field="failureReason">None</strong></span>
-                <span>Last live: <strong data-confidence-field="lastSuccessfulLiveFetch">Not recorded</strong></span>
-                <span>Live/fallback: <strong data-confidence-field="dataKind">Live</strong></span>
-                <span>Attempted: <strong data-confidence-field="lastAttemptedFetch">Not recorded</strong></span>
-                <span>Retry: <strong data-confidence-field="retryCount">0</strong> · Next <strong data-confidence-field="nextRetryTime">next refresh</strong></span>
-            </div>
-            <div class="status-metric">
-                <span>Updated</span>
-                <strong id="last-updated">Pending</strong>
-            </div>
-            <div class="status-metric">
-                <span>Portfolio</span>
-                <strong id="status-portfolio-value">$0.00</strong>
-            </div>
-            <div class="status-metric status-holding">
-                <span>Holding</span>
-                <strong id="status-holding-summary">No active holdings</strong>
-            </div>
-            <div class="status-metric">
-                <span>Mode</span>
-                <strong id="session-mode">Scanning</strong>
-            </div>
+            <details class="six-feed-details">
+                <summary>Data feed diagnostics</summary>
+                <div class="data-source-card" aria-label="Data Source Status">
+                    <span>Source: <strong data-confidence-field="provider">Current Feed</strong></span>
+                    <span>State: <strong data-confidence-field="mode">Live Data</strong></span>
+                    <span>Updated: <strong data-confidence-field="lastStatusUpdate">Pending</strong></span>
+                    <span>Fallback reason: <strong data-confidence-field="failureReason">None</strong></span>
+                    <span>Last live: <strong data-confidence-field="lastSuccessfulLiveFetch">Not recorded</strong></span>
+                    <span>Live/fallback: <strong data-confidence-field="dataKind">Live</strong></span>
+                    <span>Attempted: <strong data-confidence-field="lastAttemptedFetch">Not recorded</strong></span>
+                    <span>Retry: <strong data-confidence-field="retryCount">0</strong> · Next <strong data-confidence-field="nextRetryTime">next refresh</strong></span>
+                </div>
+            </details>
         </section>
 
-        <section class="panel market-regime-panel" id="market-regime-panel">
+        <section class="six-portfolio-strip panel">
+            <div class="six-strip-item"><span>Holding focus</span><strong id="status-holding-summary">No active holdings</strong></div>
+            <div class="six-strip-item"><span>Market regime</span><strong id="six-regime-summary">See regime panel below</strong></div>
+            <div class="six-strip-item"><span>Operating rule</span><strong>External execution only</strong></div>
+        </section>
+
+        <section class="panel market-regime-panel six-quiet-panel" id="market-regime-panel">
             <div class="loading-cell">Market regime unavailable.</div>
         </section>
 
-        <section class="decision-grid command-grid">
-            <section class="panel opportunity-panel">
+        <section class="decision-grid command-grid six-decision-grid">
+            <section class="panel opportunity-panel six-primary-panel">
                 <div class="panel-header">
                     <h2 class="panel-title">Opportunity Queue</h2>
-                    <p class="panel-subtitle">Ranked by the scoring engine</p>
+                    <p class="panel-subtitle">Pick one asset. Do not trade from the queue.</p>
                 </div>
                 <div class="swing-mover" id="best-swing-mover">
                     <div class="loading-cell">Loading swing candidate...</div>
@@ -83,14 +80,13 @@
                 <div class="swing-mover exit-risk" id="highest-exit-risk">
                     <div class="loading-cell">Loading held-asset risk...</div>
                 </div>
-                <table class="watchlist-table">
+                <table class="watchlist-table six-focus-table">
                     <thead>
                         <tr>
                             <th>Coin</th>
                             <th>Signal</th>
                             <th class="num">Score</th>
                             <th class="num">Price</th>
-                            <th class="num">1hr</th>
                             <th class="num">24hr</th>
                             <th>Analyse</th>
                         </tr>
@@ -101,22 +97,24 @@
                 </table>
             </section>
 
-            <section class="panel analysis-panel">
+            <section class="panel analysis-panel six-cockpit-panel">
                 <div class="panel-header">
-                    <h2 class="panel-title">Asset Analysis</h2>
-                    <p class="panel-subtitle">Select an opportunity to unlock execution</p>
+                    <h2 class="panel-title">Decision Cockpit</h2>
+                    <p class="panel-subtitle">Execution unlocks only after analysis.</p>
                 </div>
                 <div class="panel-body" id="analysis-panel">
-                    <div class="loading-cell">Select an asset from the queue.</div>
+                    <div class="loading-cell">Select one asset from the queue.</div>
                 </div>
             </section>
         </section>
 
-        <section class="panel trade-guide-panel">
-            <div class="trade-guide-header">
-                <h2 class="panel-title">Top 10 Trade Guide</h2>
-                <p class="panel-subtitle">Decision-support checklist for ranked assets</p>
-            </div>
+        <details class="panel trade-guide-panel six-disclosure">
+            <summary class="trade-guide-header">
+                <span>
+                    <h2 class="panel-title">Decision Checklist</h2>
+                    <p class="panel-subtitle">Open only when validating ranked assets.</p>
+                </span>
+            </summary>
             <table class="compact-table trade-guide-table">
                 <thead>
                     <tr>
@@ -136,210 +134,63 @@
                     <tr><td colspan="10" class="loading-cell">Loading trade guide...</td></tr>
                 </tbody>
             </table>
-        </section>
+        </details>
 
-        <section class="panel secondary-tabs" id="secondary-tabs">
+        <section class="panel secondary-tabs six-secondary-tabs" id="secondary-tabs">
             <div class="tab-bar" role="tablist" aria-label="Secondary dashboard views">
-                <button class="tab-button" type="button" data-tab-target="watchlist-tab">Watchlist</button>
                 <button class="tab-button active" type="button" data-tab-target="portfolio-tab">Portfolio</button>
-                <button class="tab-button" type="button" data-tab-target="movers-tab">Movers</button>
-                <button class="tab-button" type="button" data-tab-target="attention-tab">Market Attention</button>
-                <button class="tab-button" type="button" data-tab-target="new-coins-tab">New Coins</button>
-                <button class="tab-button" type="button" data-tab-target="manage-holdings-tab">Manage Holdings</button>
+                <button class="tab-button" type="button" data-tab-target="watchlist-tab">Watchlist</button>
                 <button class="tab-button" type="button" data-tab-target="review-tab">Review</button>
+                <button class="tab-button" type="button" data-tab-target="manage-holdings-tab">Holdings</button>
+                <button class="tab-button" type="button" data-tab-target="movers-tab">Movers</button>
+                <button class="tab-button" type="button" data-tab-target="attention-tab">Market Context</button>
+                <button class="tab-button" type="button" data-tab-target="new-coins-tab">New Coins</button>
             </div>
 
             <div class="tab-panel" id="watchlist-tab">
                 <table class="watchlist-table">
-                    <thead>
-                        <tr>
-                            <th>Coin</th>
-                            <th>Signal</th>
-                            <th class="num">Score</th>
-                            <th class="num">Price</th>
-                            <th class="num">Sell Est.</th>
-                            <th class="num">24hr</th>
-                        </tr>
-                    </thead>
-                    <tbody id="watchlist-body">
-                        <tr><td colspan="6" class="loading-cell">Loading watchlist...</td></tr>
-                    </tbody>
+                    <thead><tr><th>Coin</th><th>Signal</th><th class="num">Score</th><th class="num">Price</th><th class="num">Sell Est.</th><th class="num">24hr</th></tr></thead>
+                    <tbody id="watchlist-body"><tr><td colspan="6" class="loading-cell">Loading watchlist...</td></tr></tbody>
                 </table>
-                <div class="panel-header flat-header">
-                    <h2 class="panel-title">Watch Queue</h2>
-                    <p class="panel-subtitle">Assets added from Asset Analysis</p>
-                </div>
+                <div class="panel-header flat-header"><h2 class="panel-title">Watch Queue</h2><p class="panel-subtitle">Assets added from Asset Analysis</p></div>
                 <table class="compact-table">
                     <thead><tr><th>Asset</th><th>Reason</th><th>Watched Signal</th><th>Current Signal</th><th>Change</th><th>Actions</th></tr></thead>
-                    <tbody id="analysis-watchlist-body">
-                        <tr><td colspan="6" class="loading-cell">No watched assets yet.</td></tr>
-                    </tbody>
+                    <tbody id="analysis-watchlist-body"><tr><td colspan="6" class="loading-cell">No watched assets yet.</td></tr></tbody>
                 </table>
             </div>
 
             <div class="tab-panel active" id="portfolio-tab">
                 <div class="portfolio-compact">
-                    <div class="portfolio-summary-card">
-                        <span>My Portfolio</span>
-                        <strong id="portfolio-value">$0.00</strong>
-                        <small>Manual holdings valued from live AUD prices</small>
-                    </div>
-                    <div class="holdings-split compact-holdings">
-                        <div class="pie" id="holdings-pie">0%</div>
-                        <table>
-                            <tbody id="holdings-body">
-                                <tr><td colspan="3" class="loading-cell">Loading holdings...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
+                    <div class="portfolio-summary-card"><span>My Portfolio</span><strong id="portfolio-value">$0.00</strong><small>Manual holdings valued from live AUD prices</small></div>
+                    <div class="holdings-split compact-holdings"><div class="pie" id="holdings-pie">0%</div><table><tbody id="holdings-body"><tr><td colspan="3" class="loading-cell">Loading holdings...</td></tr></tbody></table></div>
                 </div>
-                <table class="compact-table">
-                    <thead><tr><th>Coin</th><th class="num">Balance</th><th class="num">Live Price</th><th class="num">Entry</th><th class="num">Unrealised</th><th>Held</th></tr></thead>
-                    <tbody id="wallets-body">
-                        <tr><td colspan="6" class="loading-cell">Loading wallet values...</td></tr>
-                    </tbody>
-                </table>
-                <div class="panel-header flat-header">
-                    <h2 class="panel-title">Open Position Monitor</h2>
-                    <p class="panel-subtitle">Held assets only</p>
-                </div>
-                <table class="compact-table">
-                    <thead><tr><th>Asset</th><th class="num">Balance</th><th class="num">Entry</th><th class="num">Current</th><th class="num">P/L AUD</th><th class="num">P/L %</th><th>Signal</th><th>Exit risk</th><th>Held</th><th>Status</th></tr></thead>
-                    <tbody id="position-monitor-body"><tr><td colspan="10" class="loading-cell">No active holdings.</td></tr></tbody>
-                </table>
+                <table class="compact-table"><thead><tr><th>Coin</th><th class="num">Balance</th><th class="num">Live Price</th><th class="num">Entry</th><th class="num">Unrealised</th><th>Held</th></tr></thead><tbody id="wallets-body"><tr><td colspan="6" class="loading-cell">Loading wallet values...</td></tr></tbody></table>
+                <div class="panel-header flat-header"><h2 class="panel-title">Open Position Monitor</h2><p class="panel-subtitle">Held assets only</p></div>
+                <table class="compact-table"><thead><tr><th>Asset</th><th class="num">Balance</th><th class="num">Entry</th><th class="num">Current</th><th class="num">P/L AUD</th><th class="num">P/L %</th><th>Signal</th><th>Exit risk</th><th>Held</th><th>Status</th></tr></thead><tbody id="position-monitor-body"><tr><td colspan="10" class="loading-cell">No active holdings.</td></tr></tbody></table>
             </div>
 
             <div class="tab-panel" id="movers-tab">
                 <div class="tab-grid two-column">
-                    <section>
-                        <div class="panel-header flat-header">
-                            <h2 class="panel-title">1hr Movers</h2>
-                            <p class="panel-subtitle">Largest short-term movement</p>
-                        </div>
-                        <table class="compact-table">
-                            <thead><tr><th>Coin</th><th class="num">Price</th><th class="num">1hr</th></tr></thead>
-                            <tbody id="recent-movers-body">
-                                <tr><td colspan="3" class="loading-cell">Loading movers...</td></tr>
-                            </tbody>
-                        </table>
-                    </section>
-                    <section>
-                        <div class="panel-header flat-header">
-                            <h2 class="panel-title">24hr Movers</h2>
-                            <p class="panel-subtitle">Top live gainers and decliners</p>
-                        </div>
-                        <div class="two-tables">
-                            <table class="compact-table">
-                                <thead><tr><th>Coin</th><th class="num">Price</th><th class="num">24hr</th></tr></thead>
-                                <tbody id="today-up-body"></tbody>
-                            </table>
-                            <table class="compact-table">
-                                <thead><tr><th>Coin</th><th class="num">Price</th><th class="num">24hr</th></tr></thead>
-                                <tbody id="today-down-body"></tbody>
-                            </table>
-                        </div>
-                    </section>
+                    <section><div class="panel-header flat-header"><h2 class="panel-title">1hr Movers</h2><p class="panel-subtitle">Largest short-term movement</p></div><table class="compact-table"><thead><tr><th>Coin</th><th class="num">Price</th><th class="num">1hr</th></tr></thead><tbody id="recent-movers-body"><tr><td colspan="3" class="loading-cell">Loading movers...</td></tr></tbody></table></section>
+                    <section><div class="panel-header flat-header"><h2 class="panel-title">24hr Movers</h2><p class="panel-subtitle">Top live gainers and decliners</p></div><div class="two-tables"><table class="compact-table"><thead><tr><th>Coin</th><th class="num">Price</th><th class="num">24hr</th></tr></thead><tbody id="today-up-body"></tbody></table><table class="compact-table"><thead><tr><th>Coin</th><th class="num">Price</th><th class="num">24hr</th></tr></thead><tbody id="today-down-body"></tbody></table></div></section>
                 </div>
             </div>
 
             <div class="tab-panel" id="attention-tab">
-                <div class="panel-header flat-header">
-                    <h2 class="panel-title">Market Attention</h2>
-                    <p class="panel-subtitle">Secondary market context only</p>
-                </div>
-                <div class="market-attention-grid">
-                    <section><h3>Trending</h3><table class="compact-table"><tbody id="attention-trending"></tbody></table></section>
-                    <section><h3>Top Gainers</h3><table class="compact-table"><tbody id="attention-gainers"></tbody></table></section>
-                    <section><h3>Top Losers</h3><table class="compact-table"><tbody id="attention-losers"></tbody></table></section>
-                    <section><h3>Most Visited</h3><table class="compact-table"><tbody id="attention-visited"></tbody></table></section>
-                    <section><h3>Recently Added</h3><table class="compact-table"><tbody id="attention-recent"></tbody></table></section>
-                </div>
+                <div class="panel-header flat-header"><h2 class="panel-title">Market Context</h2><p class="panel-subtitle">Secondary context only</p></div>
+                <div class="market-attention-grid"><section><h3>Trending</h3><table class="compact-table"><tbody id="attention-trending"></tbody></table></section><section><h3>Top Gainers</h3><table class="compact-table"><tbody id="attention-gainers"></tbody></table></section><section><h3>Top Losers</h3><table class="compact-table"><tbody id="attention-losers"></tbody></table></section><section><h3>Most Visited</h3><table class="compact-table"><tbody id="attention-visited"></tbody></table></section><section><h3>Recently Added</h3><table class="compact-table"><tbody id="attention-recent"></tbody></table></section></div>
             </div>
 
-            <div class="tab-panel" id="new-coins-tab">
-                <table class="compact-table">
-                    <thead><tr><th>Coin</th><th class="num">Price</th><th class="num">Volume</th><th class="num">24hr</th></tr></thead>
-                    <tbody id="new-coins-body">
-                        <tr><td colspan="4" class="loading-cell">Loading scan candidates...</td></tr>
-                    </tbody>
-                </table>
-            </div>
+            <div class="tab-panel" id="new-coins-tab"><table class="compact-table"><thead><tr><th>Coin</th><th class="num">Price</th><th class="num">Volume</th><th class="num">24hr</th></tr></thead><tbody id="new-coins-body"><tr><td colspan="4" class="loading-cell">Loading scan candidates...</td></tr></tbody></table></div>
 
             <div class="tab-panel" id="manage-holdings-tab">
-                <form class="holdings-form" id="holdings-form">
-                    <label>
-                        <span>Symbol</span>
-                        <input id="holding-symbol" name="symbol" type="text" autocomplete="off" placeholder="FET" required>
-                    </label>
-                    <label>
-                        <span>Coin Name</span>
-                        <input id="holding-name" name="name" type="text" autocomplete="off" placeholder="Artificial Superintelligence Alliance" required>
-                    </label>
-                    <label>
-                        <span>Balance</span>
-                        <input id="holding-balance" name="balance" type="number" min="0" step="any" placeholder="0.00" required>
-                    </label>
-                    <label>
-                        <span>Avg Entry</span>
-                        <input id="holding-entry" name="avgEntryPrice" type="number" min="0" step="any" placeholder="Optional">
-                    </label>
-                    <label>
-                        <span>Note</span>
-                        <input id="holding-note" name="note" type="text" autocomplete="off" placeholder="Optional">
-                    </label>
-                    <div class="form-actions">
-                        <button class="button-primary" type="submit">Add Holding</button>
-                        <button class="table-action" id="reset-holdings" type="button">Reset Defaults</button>
-                    </div>
-                    <p class="form-message" id="holdings-message" aria-live="polite"></p>
-                </form>
-                <table class="compact-table holdings-table">
-                    <thead>
-                        <tr>
-                            <th>Coin</th>
-                            <th class="num">Balance</th>
-                            <th class="num">Entry</th>
-                            <th class="num">Live Price</th>
-                            <th class="num">Unrealised</th>
-                            <th>Note</th>
-                            <th>Held</th>
-                            <th>Updated</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="manage-holdings-body">
-                        <tr><td colspan="8" class="loading-cell">Loading managed holdings...</td></tr>
-                    </tbody>
-                </table>
+                <form class="holdings-form" id="holdings-form"><label><span>Symbol</span><input id="holding-symbol" name="symbol" type="text" autocomplete="off" placeholder="FET" required></label><label><span>Coin Name</span><input id="holding-name" name="name" type="text" autocomplete="off" placeholder="Artificial Superintelligence Alliance" required></label><label><span>Balance</span><input id="holding-balance" name="balance" type="number" min="0" step="any" placeholder="0.00" required></label><label><span>Avg Entry</span><input id="holding-entry" name="avgEntryPrice" type="number" min="0" step="any" placeholder="Optional"></label><label><span>Note</span><input id="holding-note" name="note" type="text" autocomplete="off" placeholder="Optional"></label><div class="form-actions"><button class="button-primary" type="submit">Add Holding</button><button class="table-action" id="reset-holdings" type="button">Reset Defaults</button></div><p class="form-message" id="holdings-message" aria-live="polite"></p></form>
+                <table class="compact-table holdings-table"><thead><tr><th>Coin</th><th class="num">Balance</th><th class="num">Entry</th><th class="num">Live Price</th><th class="num">Unrealised</th><th>Note</th><th>Held</th><th>Updated</th><th>Actions</th></tr></thead><tbody id="manage-holdings-body"><tr><td colspan="9" class="loading-cell">Loading managed holdings...</td></tr></tbody></table>
             </div>
 
             <div class="tab-panel" id="review-tab">
-                <div class="tab-grid two-column">
-                    <section>
-                        <div class="panel-header flat-header">
-                            <h2 class="panel-title">Session Checklist</h2>
-                            <p class="panel-subtitle">Manual operating loop</p>
-                        </div>
-                        <div class="panel-body checklist" id="session-checklist"></div>
-                    </section>
-                    <section>
-                        <div class="panel-header flat-header">
-                            <h2 class="panel-title">Signal Change History</h2>
-                            <p class="panel-subtitle">Recent locally observed transitions</p>
-                        </div>
-                        <table class="compact-table">
-                            <thead><tr><th>Asset</th><th>Transition</th><th class="num">Score</th><th>Time</th></tr></thead>
-                            <tbody id="signal-history-body">
-                                <tr><td colspan="4" class="loading-cell">No signal transitions recorded yet.</td></tr>
-                            </tbody>
-                        </table>
-                    </section>
-                </div>
-                <div class="panel-header flat-header">
-                    <h2 class="panel-title">Performance Summary</h2>
-                    <p class="panel-subtitle">Calculated from manual Trade Journal entries</p>
-                </div>
-                <div class="performance-grid" id="dashboard-performance-summary"></div>
+                <div class="tab-grid two-column"><section><div class="panel-header flat-header"><h2 class="panel-title">Session Checklist</h2><p class="panel-subtitle">Manual operating loop</p></div><div class="panel-body checklist" id="session-checklist"></div></section><section><div class="panel-header flat-header"><h2 class="panel-title">Signal Change History</h2><p class="panel-subtitle">Recent locally observed transitions</p></div><table class="compact-table"><thead><tr><th>Asset</th><th>Transition</th><th class="num">Score</th><th>Time</th></tr></thead><tbody id="signal-history-body"><tr><td colspan="4" class="loading-cell">No signal transitions recorded yet.</td></tr></tbody></table></section></div>
+                <div class="panel-header flat-header"><h2 class="panel-title">Performance Summary</h2><p class="panel-subtitle">Calculated from manual Trade Journal entries</p></div><div class="performance-grid" id="dashboard-performance-summary"></div>
             </div>
         </section>
     </main>
