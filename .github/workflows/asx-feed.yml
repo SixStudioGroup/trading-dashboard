@@ -1,0 +1,30 @@
+name: Generate ASX delayed feed
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '15 7 * * 1-5'
+
+permissions:
+  contents: write
+
+jobs:
+  generate-asx-feed:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Generate provider-backed ASX feed
+        run: node tools/generate-asx-feed.mjs
+
+      - name: Commit ASX feed snapshot
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: 'data: refresh ASX delayed feed'
+          file_pattern: data/asx-feed.json
