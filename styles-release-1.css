@@ -1,0 +1,227 @@
+:root {
+    --brand-blue: #1E3A8A;
+    --brand-blue-dark: #172554;
+    --brand-navy: #0F172A;
+    --page: #F6F8FB;
+    --panel: #FFFFFF;
+    --panel-soft: #F8FAFC;
+    --panel-raised: #EEF2F7;
+    --line: #D7DEE8;
+    --text: #111827;
+    --muted: #667085;
+    --cyan: #0E7490;
+    --green: #15803D;
+    --red: #B91C1C;
+    --amber: #B45309;
+    --amber-bg: rgba(180, 83, 9, 0.10);
+    --green-bg: rgba(21, 128, 61, 0.09);
+    --red-bg: rgba(185, 28, 28, 0.09);
+    --cyan-bg: rgba(14, 116, 144, 0.10);
+    --radius: 6px;
+}
+
+body {
+    background:
+        linear-gradient(180deg, rgba(15, 23, 42, 0.025), rgba(15, 23, 42, 0) 220px),
+        var(--page);
+}
+
+.topbar {
+    height: 58px;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(10px);
+}
+
+.brand {
+    color: var(--brand-navy);
+}
+
+.brand-mark {
+    background: linear-gradient(135deg, var(--brand-navy), var(--brand-blue));
+}
+
+.navlinks {
+    gap: 18px;
+}
+
+.navlinks a {
+    color: var(--muted);
+}
+
+.navlinks a.active,
+.navlinks a:hover {
+    color: var(--brand-blue);
+    border-bottom-color: var(--brand-blue);
+}
+
+.command-shell {
+    max-width: 1360px;
+    padding-top: 16px;
+}
+
+.command-status {
+    grid-template-columns: minmax(150px, 0.8fr) minmax(220px, 1fr) minmax(250px, 1.1fr) repeat(4, minmax(110px, auto));
+    border-color: rgba(15, 23, 42, 0.10);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.045);
+}
+
+.command-title h1 {
+    color: var(--brand-navy);
+    letter-spacing: -0.02em;
+}
+
+.data-source-card {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    background: #F8FAFC;
+}
+
+.data-source-card span:nth-child(4),
+.data-source-card span:nth-child(5),
+.data-source-card span:nth-child(7),
+.data-source-card span:nth-child(8) {
+    display: none;
+}
+
+.status-dot {
+    background: var(--cyan);
+    box-shadow: 0 0 0 3px rgba(14, 116, 144, 0.16);
+}
+
+.market-regime-panel {
+    border-style: dashed;
+    background: rgba(255, 255, 255, 0.72);
+}
+
+.command-grid {
+    grid-template-columns: minmax(0, 1.35fr) minmax(380px, 0.65fr);
+    gap: 14px;
+}
+
+.panel {
+    border-color: rgba(15, 23, 42, 0.10);
+    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.045);
+}
+
+.panel-header,
+.trade-guide-header {
+    background: linear-gradient(180deg, #FFFFFF, #F8FAFC);
+}
+
+.opportunity-panel {
+    border-top: 3px solid var(--brand-blue);
+}
+
+.analysis-panel {
+    border-top: 3px solid var(--amber);
+    top: 72px;
+}
+
+.analysis-panel .panel-header {
+    background: linear-gradient(180deg, rgba(180, 83, 9, 0.08), #FFFFFF);
+}
+
+.trade-guide-panel {
+    border-top: 3px solid var(--cyan);
+}
+
+.secondary-tabs {
+    opacity: 0.92;
+    box-shadow: none;
+}
+
+.secondary-tabs:hover,
+.secondary-tabs:focus-within {
+    opacity: 1;
+}
+
+.tab-bar {
+    background: #F8FAFC;
+}
+
+.tab-button {
+    color: var(--muted);
+    padding: 9px 11px 7px;
+}
+
+.tab-button.active {
+    color: var(--brand-blue);
+    border-bottom-color: var(--brand-blue);
+}
+
+.market-attention-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.market-attention-grid section:nth-child(n+4) {
+    display: none;
+}
+
+.table-action {
+    border-color: rgba(30, 58, 138, 0.22);
+    background: rgba(30, 58, 138, 0.06);
+    color: var(--brand-blue);
+}
+
+.table-action:hover {
+    background: rgba(30, 58, 138, 0.10);
+}
+
+.button-primary,
+.filter-btn.active {
+    background: var(--brand-blue);
+    border-color: var(--brand-blue);
+}
+
+.button-primary:hover {
+    background: var(--brand-blue-dark);
+}
+
+.selected-row td {
+    background: rgba(30, 58, 138, 0.065);
+}
+
+.pie {
+    background: conic-gradient(var(--brand-blue) 0 100%);
+}
+
+.positive {
+    color: var(--green);
+}
+
+.negative {
+    color: var(--red);
+}
+
+.exit-risk,
+.invalidation-box {
+    background: var(--amber-bg);
+    border-color: rgba(180, 83, 9, 0.24);
+}
+
+.trade-guide-table th,
+.trade-guide-table td {
+    font-size: 10.5px;
+}
+
+@media (max-width: 1180px) {
+    .shell {
+        min-width: 0;
+    }
+
+    .command-status,
+    .command-grid,
+    .portfolio-compact,
+    .two-column,
+    .market-attention-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .analysis-panel {
+        position: static;
+    }
+
+    .navlinks {
+        overflow-x: auto;
+        max-width: 70vw;
+    }
+}
