@@ -30,7 +30,7 @@ let detailedFetchErrorLogged = false;
 // Static GitHub Pages build: keep market data keyless in the browser.
 // A future GitHub Action or lightweight backend can publish a static JSON
 // snapshot for this file to read without exposing provider credentials.
-const MARKET_DATA_PROXY_URL = "";
+const MARKET_DATA_PROXY_URL = "data/crypto-snapshot.json";
 const REFRESH_INTERVAL_MS = 60000;
 const PORTAL_MODE_STORAGE_KEY = "zencloud.portalMode.v1";
 const PRIVACY_STORAGE_KEY = "zencloud.hideValues.v1";
@@ -917,7 +917,8 @@ function normalizeCoinMarketCapProxyAsset(asset = {}, index = 0) {
         change7d: asset.change7d ?? quote.percent_change_7d,
         rank: asset.cmc_rank || asset.rank,
         lastUpdated: asset.last_updated || asset.lastUpdated,
-        image: asset.image || ""
+        image: asset.image || "",
+        sparkline_in_7d: asset.sparkline_in_7d
     }, index, MARKET_PROVIDERS.coinMarketCapProxy);
 }
 

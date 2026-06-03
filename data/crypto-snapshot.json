@@ -1,0 +1,17 @@
+{
+  "schema": "sixsignal.crypto.snapshot.v1",
+  "source": "Bootstrap seed — will be replaced by GitHub Actions within 15 minutes",
+  "lastUpdated": "2026-06-03T00:00:00.000Z",
+  "count": 9,
+  "data": [
+    { "id": "bitcoin", "symbol": "btc", "name": "Bitcoin", "priceAud": 110537.56, "marketCapAud": 2200000000000, "volume24hAud": 38100000000, "change1h": 0.16, "change24h": -0.08, "rank": 1, "image": "", "sparkline_in_7d": { "price": [] } },
+    { "id": "ethereum", "symbol": "eth", "name": "Ethereum", "priceAud": 3068.5, "marketCapAud": 363100000000, "volume24hAud": 17100000000, "change1h": 0.11, "change24h": -0.41, "rank": 2, "image": "", "sparkline_in_7d": { "price": [] } },
+    { "id": "binancecoin", "symbol": "bnb", "name": "BNB", "priceAud": 941.81, "marketCapAud": 123700000000, "volume24hAud": 1600000000, "change1h": 0.23, "change24h": 1.1, "rank": 4, "image": "", "sparkline_in_7d": { "price": [] } },
+    { "id": "dogecoin", "symbol": "doge", "name": "Dogecoin", "priceAud": 0.151801, "marketCapAud": 25200000000, "volume24hAud": 1000000000, "change1h": 0.38, "change24h": 1.2, "rank": 9, "image": "", "sparkline_in_7d": { "price": [] } },
+    { "id": "cardano", "symbol": "ada", "name": "Cardano", "priceAud": 0.358968, "marketCapAud": 12800000000, "volume24hAud": 514000000, "change1h": -0.08, "change24h": -0.41, "rank": 10, "image": "", "sparkline_in_7d": { "price": [] } },
+    { "id": "stellar", "symbol": "xlm", "name": "Stellar", "priceAud": 0.208954, "marketCapAud": 6900000000, "volume24hAud": 151100000, "change1h": 0.32, "change24h": 1.24, "rank": 18, "image": "", "sparkline_in_7d": { "price": [] } },
+    { "id": "litecoin", "symbol": "ltc", "name": "Litecoin", "priceAud": 77.95, "marketCapAud": 5900000000, "volume24hAud": 346700000, "change1h": -0.04, "change24h": -0.44, "rank": 20, "image": "", "sparkline_in_7d": { "price": [] } },
+    { "id": "polkadot", "symbol": "dot", "name": "Polkadot", "priceAud": 1.83, "marketCapAud": 3000000000, "volume24hAud": 137400000, "change1h": 0.51, "change24h": 1.96, "rank": 22, "image": "", "sparkline_in_7d": { "price": [] } },
+    { "id": "theta-token", "symbol": "theta", "name": "Theta", "priceAud": 0.294, "marketCapAud": 289600000, "volume24hAud": 13000000, "change1h": 0.62, "change24h": 2.12, "rank": 65, "image": "", "sparkline_in_7d": { "price": [] } }
+  ]
+}

@@ -2,7 +2,13 @@ name: Update Stock Snapshot
 
 on:
   schedule:
-    - cron: '0 * * * *'
+    # Stooq provides daily-close data. AEST = UTC+10.
+    # 21:30 UTC = 07:30 AEST: morning — overnight US close available
+    # 07:30 UTC = 17:30 AEST: evening — today's ASX close available
+    # 11:30 UTC = 21:30 AEST: night wrap
+    - cron: '30 21 * * 1-5'
+    - cron: '30 7 * * 1-5'
+    - cron: '30 11 * * 1-5'
   workflow_dispatch:
 
 permissions:

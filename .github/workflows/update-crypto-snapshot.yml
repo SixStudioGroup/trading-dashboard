@@ -1,0 +1,42 @@
+name: Update Crypto Snapshot
+
+on:
+  schedule:
+    # AEST = UTC+10 (AEDT = UTC+11 in summer — shifts 1hr)
+    - cron: '30 21 * * *'  # 07:30 AEST: morning session
+    - cron: '0 3 * * *'    # 13:00 AEST: afternoon session
+    - cron: '30 9 * * *'   # 19:30 AEST: evening session
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: crypto-snapshot
+  cancel-in-progress: false
+
+jobs:
+  update-snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Generate crypto snapshot
+        id: generate
+        run: node tools/generate-crypto-snapshot.mjs
+        env:
+          COINGECKO_API_KEY: ${{ secrets.COINGECKO_API_KEY }}
+        continue-on-error: true
+
+      - name: Commit snapshot if changed
+        if: steps.generate.outcome == 'success'
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: 'data: refresh crypto snapshot'
+          file_pattern: data/crypto-snapshot.json
