@@ -27,9 +27,9 @@ const FALLBACK_STATUS = "Fallback Snapshot - review/planning only.";
 let fallbackWarningShown = false;
 let detailedFetchErrorLogged = false;
 
-// Static GitHub Pages build: keep market data keyless in the browser.
-// A future GitHub Action or lightweight backend can publish a static JSON
-// snapshot for this file to read without exposing provider credentials.
+// Crypto market data served from a GitHub Actions snapshot committed to the repo.
+// GitHub Action (update-crypto-snapshot.yml) fetches CoinGecko server-side using
+// a key stored in GitHub Secrets and commits data/crypto-snapshot.json 3× daily.
 const MARKET_DATA_PROXY_URL = "data/crypto-snapshot.json";
 const REFRESH_INTERVAL_MS = 60000;
 const PORTAL_MODE_STORAGE_KEY = "zencloud.portalMode.v1";
@@ -41,13 +41,12 @@ const PUBLIC_PRIVACY_WARNING = "Do not enter group trade deals, private signals,
 const PUBLIC_SITE_RULE = "Shared GitHub Pages deployment is public. Use Public Demo Mode when sharing the portal.";
 const MARKET_PROVIDERS = {
     currentPublicFeed: "Live Public Feed",
-    coinMarketCapProxy: "Static Snapshot Ready",
+    coinMarketCapProxy: "CoinGecko Snapshot",
     fallbackSnapshot: "Fallback Snapshot"
 };
 const dataConfidence = {
     mode: "Live Data",
     provider: MARKET_PROVIDERS.currentPublicFeed,
-    plannedProvider: "Static Snapshot Ready",
     lastSuccessfulLiveFetch: "",
     lastAttemptedFetch: "",
     lastStatusUpdate: "",
@@ -988,7 +987,6 @@ function renderDataConfidence() {
         const field = el.dataset.confidenceField;
         const valueMap = {
             provider: dataConfidence.provider,
-            plannedProvider: dataConfidence.plannedProvider,
             mode: dataConfidence.mode,
             lastStatusUpdate: dataConfidence.lastStatusUpdate ? formatTimestamp(dataConfidence.lastStatusUpdate) : "Pending",
             lastSuccessfulLiveFetch: dataConfidence.lastSuccessfulLiveFetch ? formatTimestamp(dataConfidence.lastSuccessfulLiveFetch) : "Not recorded",

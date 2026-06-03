@@ -14,7 +14,7 @@
 | Guide / Operator Manual | Guide rebuilt as matrix-led SixSignal Operator Manual | None | Controlled UAT review | Complete |
 | Settings | Settings migrated to SixSignal shell and governance model | None | Controlled UAT review | Complete |
 | Design System | SixSignal CSS layer created; shared shell used across pages | CSS consolidation deferred until after UAT | Post-UAT design-system cleanup | Stable |
-| Data Feeds | Diagnostics collapsed on key pages; trust surfaces simplified | Feed trust language varies slightly by page | Standardise after UAT feedback | Stable |
+| Data Feeds | Crypto snapshot pipeline live via GitHub Actions (CoinGecko, 3× daily); ASX intraday (Yahoo Finance, 3× weekday); Stocks snapshot (Stooq, 3× weekday); all schedules AEST-aligned | None | Expand universe or increase frequency if needed | Active |
 | Release Governance | README, product map, release plan, design system, UAT plan, response standard, and progress matrix created | None | Release 1.0 acceptance review | Complete |
 
 ## Release Readiness Matrix
@@ -47,6 +47,7 @@
 | 2026-06-02 | Completed route remediation and UX alignment review | Multiple HTML pages and docs | 3584022699a0fa35884fb868b244090ed2cf97cc |
 | 2026-06-02 | Added Release 1.0 UAT Plan | docs/UAT-PLAN.md | 54bddfc41b1980f69a67e6dbdcdad50626cb5166 |
 | 2026-06-02 | Completed Phase 5 and Release 1.0 readiness tracking | docs/PRODUCT-PROGRESS-MATRIX.md | Current commit |
+| 2026-06-03 | Restored live crypto data via GitHub Actions CoinGecko snapshot; rationalised all 3 data workflow schedules to AEST morning/afternoon/evening windows; opted CI into Node.js 24 | app.js; tools/generate-crypto-snapshot.mjs; data/crypto-snapshot.json; .github/workflows/update-crypto-snapshot.yml; .github/workflows/asx-feed.yml; .github/workflows/update-stock-snapshot.yml; reports.html; docs/CHANGELOG.md | 84b14ad |
 
 ## Route Integrity Matrix
 
