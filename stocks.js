@@ -298,13 +298,15 @@ async function loadSnapshotData() {
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const data = await resp.json();
         if (data && Array.isArray(data.assets) && data.assets.length > 0) {
-            snapshotData = data;
-            snapshotSource = "snapshot";
+            if (!snapshotData || snapshotSource !== "snapshot") {
+                snapshotData = data;
+                snapshotSource = "snapshot";
+            }
         } else {
-            snapshotSource = "demo";
+            if (!snapshotData) snapshotSource = "demo";
         }
     } catch (_e) {
-        snapshotSource = "demo";
+        if (!snapshotData) snapshotSource = "demo";
     }
     renderAll();
 }
@@ -718,13 +720,14 @@ function renderStockJournal() {
             <td>${escapeHtml(plan.state)}</td>
             <td class="num">${formatMoney(plan.referencePrice)}</td>
             <td class="num">${plan.positionSize ? formatMoney(plan.positionSize) : "Not set"}</td>
+            <td>—</td>
             <td>${escapeHtml(plan.whyNow)}</td>
             <td>${escapeHtml(plan.entryTrigger)}</td>
             <td>${escapeHtml(plan.invalidation)}</td>
             <td>Broker execution not connected.</td>
             <td><button class="table-action danger-action" type="button" data-delete-stock-plan="${escapeHtml(plan.id)}">Delete</button></td>
         </tr>
-    `).join("") : `<tr><td colspan="10" class="loading-cell">No stock plans recorded.</td></tr>`;
+    `).join("") : `<tr><td colspan="11" class="loading-cell">No stock plans recorded.</td></tr>`;
     document.querySelectorAll("[data-delete-stock-plan]").forEach(button => {
         button.addEventListener("click", event => {
             stockJournal = saveCollection(STOCK_JOURNAL_STORAGE_KEY, stockJournal.map(normalizePlan).filter(plan => plan.id !== event.currentTarget.dataset.deleteStockPlan));
@@ -812,8 +815,17 @@ function renderSourceBadge() {
     if (!badge) return;
     const subtitle = document.getElementById("stock-queue-subtitle");
     if (snapshotSource === "snapshot" && snapshotData) {
-        badge.textContent = "Stooq Snapshot";
-        if (subtitle) subtitle.textContent = "Ranked from Stooq snapshot. Signals are derived — review only. Not buy/sell recommendations.";
+        const mode = snapshotData.displayMode || snapshotData.mode || "snapshot";
+        const label = { delayed: "ASX delayed feed", fallback: "ASX stale fallback", offline: "ASX offline", snapshot: "Stooq Snapshot" }[mode] || "Stooq Snapshot";
+        badge.textContent = label;
+        if (subtitle) {
+            const src = snapshotData.source || "snapshot";
+            const updated = snapshotData.lastUpdated ? formatTimestamp(snapshotData.lastUpdated) : "Not recorded";
+            const errors = Array.isArray(snapshotData.fetchErrors) ? snapshotData.fetchErrors.length : 0;
+            subtitle.textContent = (mode === "delayed" || mode === "fallback")
+                ? `Source: ${src} | Mode: ${mode} | Updated: ${updated} | Errors: ${errors}`
+                : "Ranked from snapshot. Signals are derived — review only. Not buy/sell recommendations.";
+        }
     } else {
         badge.textContent = "Demo fallback";
         if (subtitle) subtitle.textContent = "Demo-only ranked review list. No live feed or paid API.";
@@ -823,7 +835,15 @@ function renderSourceBadge() {
 function renderStalenessWarning() {
     const warning = document.getElementById("stock-staleness-warning");
     if (!warning) return;
-    warning.hidden = !(snapshotSource === "snapshot" && snapshotData && isSnapshotStale(snapshotData.lastUpdated));
+    const mode = snapshotData?.displayMode;
+    if (mode) {
+        warning.hidden = (mode === "delayed");
+        if (!warning.hidden) {
+            warning.innerHTML = `<span><strong>ASX feed mode: ${escapeHtml(mode)}</strong> — ${escapeHtml(mode === "offline" ? "provider feed not populated yet; run GitHub Action before production stock use." : "data may be stale; confirm price in broker before execution.")} Last updated: ${escapeHtml(snapshotData.lastUpdated ? formatTimestamp(snapshotData.lastUpdated) : "not recorded")}.</span>`;
+        }
+    } else {
+        warning.hidden = !(snapshotSource === "snapshot" && snapshotData && isSnapshotStale(snapshotData.lastUpdated));
+    }
 }
 
 function renderRegionFilters() {

@@ -7,13 +7,6 @@
   const MAX_FEED_AGE_HOURS = 36;
 
   let asxFeed = null;
-  let selectedSymbol = '';
-
-  const DEMO_ASX = [
-    { symbol: 'BHP', name: 'BHP Group', exchange: 'ASX', sector: 'Materials', price: 43.2, change1d: 1.4, change5d: 4.8, relativeVolume: 1.7, marketRegime: 'Constructive', region: 'Australia', currency: 'AUD', signalState: 'Breakout', riskState: 'Controlled' },
-    { symbol: 'CBA', name: 'Commonwealth Bank of Australia', exchange: 'ASX', sector: 'Financials', price: 128.4, change1d: 0.6, change5d: 2.1, relativeVolume: 1.2, marketRegime: 'Constructive', region: 'Australia', currency: 'AUD', signalState: 'Watch', riskState: 'Normal' },
-    { symbol: 'CSL', name: 'CSL', exchange: 'ASX', sector: 'Health Care', price: 284.1, change1d: -1.1, change5d: -3.6, relativeVolume: 1.4, marketRegime: 'Mixed', region: 'Australia', currency: 'AUD', signalState: 'Sell Risk', riskState: 'Elevated' }
-  ];
 
   function storageAvailable() {
     try {
@@ -55,13 +48,6 @@
   function signedPct(value) {
     const numeric = finiteNumber(value);
     return `${numeric > 0 ? '+' : ''}${numeric.toFixed(2)}%`;
-  }
-
-  function formatTime(value) {
-    if (!value) return 'Not populated';
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return 'Invalid timestamp';
-    return date.toLocaleString('en-AU', { dateStyle: 'medium', timeStyle: 'short' });
   }
 
   function readJson(key, fallback) {
@@ -115,45 +101,6 @@
     return asxFeed.mode || 'offline';
   }
 
-  function normaliseAsset(asset) {
-    const symbol = safeText(asset.symbol).replace(/\.AX$/i, '').toUpperCase();
-    return {
-      symbol,
-      name: safeText(asset.name, symbol),
-      exchange: safeText(asset.exchange, 'ASX'),
-      sector: safeText(asset.sector, 'Unknown'),
-      price: finiteNumber(asset.price),
-      change1d: finiteNumber(asset.change1d),
-      change5d: finiteNumber(asset.change5d),
-      relativeVolume: finiteNumber(asset.relativeVolume, 1),
-      marketRegime: safeText(asset.marketRegime, 'Mixed'),
-      region: safeText(asset.region, 'Australia'),
-      currency: safeText(asset.currency, 'AUD'),
-      signalState: safeText(asset.signalState, 'No Action'),
-      riskState: safeText(asset.riskState, 'Normal')
-    };
-  }
-
-  function assets() {
-    const feedAssets = Array.isArray(asxFeed?.assets) ? asxFeed.assets.map(normaliseAsset) : [];
-    return feedAssets.length ? feedAssets : DEMO_ASX.map(normaliseAsset);
-  }
-
-  function score(asset) {
-    const signal = { Breakout: 12, 'Volume Spike': 9, Watch: 5, 'No Action': 0, 'Sell Risk': -10 }[asset.signalState] || 0;
-    const risk = { Controlled: 6, Normal: 4, Review: 1, Elevated: -8, Low: 4 }[asset.riskState] || 0;
-    const regime = { Constructive: 6, Mixed: 2, Defensive: -4 }[asset.marketRegime] || 0;
-    return signal + risk + regime + (asset.change1d * 4) + (asset.change5d * 2) + Math.max(0, asset.relativeVolume - 1) * 10;
-  }
-
-  function rankedAssets() {
-    return assets().map(asset => ({ ...asset, rankingScore: score(asset) })).sort((a, b) => b.rankingScore - a.rankingScore);
-  }
-
-  function badgeClass(state) {
-    return { Breakout: 'strong', Watch: 'watch', 'Sell Risk': 'risk', 'Volume Spike': 'volume', 'No Action': 'wait', Controlled: 'strong', Normal: 'watch', Review: 'volume', Elevated: 'risk' }[state] || 'wait';
-  }
-
   function calculateNetOutcome(input = {}) {
     const entryPrice = Math.max(0, finiteNumber(input.entryPrice));
     const targetPrice = Math.max(0, finiteNumber(input.targetPrice));
@@ -200,66 +147,6 @@
       if (input && input.value === '') input.value = value;
       if (input && id === 'stock-fee-brokerage') input.value = value;
     });
-  }
-
-  function renderSourceState() {
-    const mode = feedMode();
-    const badge = document.getElementById('stock-source-badge');
-    const subtitle = document.getElementById('stock-queue-subtitle');
-    const warning = document.getElementById('stock-staleness-warning');
-    if (badge) badge.textContent = mode === 'delayed' ? 'ASX delayed feed' : mode === 'fallback' ? 'ASX stale fallback' : mode === 'snapshot' ? 'ASX snapshot' : 'ASX offline';
-    if (subtitle) subtitle.textContent = `Source: ${asxFeed?.source || 'Offline fallback'} | Mode: ${mode} | Last updated: ${formatTime(asxFeed?.lastUpdated)} | Errors: ${(asxFeed?.fetchErrors || []).length}`;
-    if (warning) {
-      warning.hidden = mode === 'delayed';
-      warning.innerHTML = `<span><strong>ASX feed mode: ${escapeHtml(mode)}</strong> — ${escapeHtml(mode === 'offline' ? 'provider feed not populated yet; run GitHub Action before production stock use.' : 'confirm price in broker before execution.')} Last updated: ${escapeHtml(formatTime(asxFeed?.lastUpdated))}</span>`;
-    }
-  }
-
-  function renderAsxQueue() {
-    const body = document.getElementById('stock-opportunities-body');
-    if (!body) return;
-    const rows = rankedAssets();
-    const best = rows[0];
-    const bestEl = document.getElementById('stock-best-setup');
-    if (bestEl) bestEl.textContent = best ? `${best.symbol} / ${best.signalState}` : 'No ASX data';
-    body.innerHTML = rows.map((asset, index) => `<tr><td class="num">${index + 1}</td><td><strong>${escapeHtml(asset.symbol)}</strong><br><span class="muted">${escapeHtml(asset.exchange)}</span></td><td>${escapeHtml(asset.name)}</td><td>${escapeHtml(asset.sector)}</td><td class="num">${money(asset.price)}</td><td class="num ${asset.change1d > 0 ? 'positive' : asset.change1d < 0 ? 'negative' : 'neutral'}">${signedPct(asset.change1d)}</td><td class="num ${asset.change5d > 0 ? 'positive' : asset.change5d < 0 ? 'negative' : 'neutral'}">${signedPct(asset.change5d)}</td><td class="num">${asset.relativeVolume.toFixed(2)}x</td><td><span class="badge ${badgeClass(asset.signalState)}">${escapeHtml(asset.signalState)}</span></td><td>${escapeHtml(asset.riskState)}</td><td><button class="table-action" type="button" data-r2-analyse="${escapeHtml(asset.symbol)}">Analyse</button></td></tr>`).join('');
-    document.querySelectorAll('[data-r2-analyse]').forEach(button => button.addEventListener('click', event => selectAsset(event.currentTarget.dataset.r2Analyse)));
-  }
-
-  function renderAnalysis(asset) {
-    const panel = document.getElementById('stock-analysis-panel');
-    if (!panel) return;
-    if (!asset) {
-      panel.innerHTML = '<div class="empty-analysis">Select an ASX ticker from the queue. Production stock use requires delayed feed mode and current broker confirmation.</div>';
-      return;
-    }
-    panel.innerHTML = `<div class="stock-analysis-card"><div><span class="eyebrow">ASX Decision Cockpit</span><h3>${escapeHtml(asset.symbol)} / ${escapeHtml(asset.name)}</h3><p>Provider-backed delayed/snapshot data is used for review only. Broker price, order book, fees, and execution remain external checks.</p></div><div class="rules-grid stock-rules-grid"><div class="rule-card">Exchange<span>${escapeHtml(asset.exchange)}</span></div><div class="rule-card">Currency<span>${escapeHtml(asset.currency)}</span></div><div class="rule-card">Sector<span>${escapeHtml(asset.sector)}</span></div><div class="rule-card">Price<span>${money(asset.price)}</span></div><div class="rule-card ${asset.change1d >= 0 ? 'strong' : 'risk'}">1D<span>${signedPct(asset.change1d)}</span></div><div class="rule-card ${asset.change5d >= 0 ? 'strong' : 'risk'}">5D<span>${signedPct(asset.change5d)}</span></div><div class="rule-card volume">Relative Volume<span>${asset.relativeVolume.toFixed(2)}x</span></div><div class="rule-card ${badgeClass(asset.signalState)}">Signal<span>${escapeHtml(asset.signalState)}</span></div><div class="rule-card ${badgeClass(asset.riskState)}">Risk<span>${escapeHtml(asset.riskState)}</span></div><div class="rule-card">Regime<span>${escapeHtml(asset.marketRegime)}</span></div></div><p class="helper-output">Feed mode: ${escapeHtml(feedMode())}. Last updated: ${escapeHtml(formatTime(asxFeed?.lastUpdated))}. This is not financial advice and does not unlock broker execution.</p></div>`;
-  }
-
-  function selectAsset(symbol) {
-    selectedSymbol = symbol;
-    const asset = rankedAssets().find(row => row.symbol === symbol);
-    if (!asset) return;
-    const fields = {
-      'stock-plan-symbol': asset.symbol,
-      'stock-plan-name': asset.name,
-      'stock-plan-market': asset.exchange,
-      'stock-plan-state': asset.signalState,
-      'stock-plan-why-now': `${asset.marketRegime} ASX review candidate; 1D ${signedPct(asset.change1d)}, 5D ${signedPct(asset.change5d)}, relative volume ${asset.relativeVolume.toFixed(2)}x`,
-      'stock-plan-entry-trigger': 'Manual broker confirmation of price, spread, liquidity, and order type',
-      'stock-plan-invalidation': `Review if ${asset.symbol} loses thesis support or feed/broker price diverges materially`,
-      'stock-plan-review-target': 'Set target price before saving plan',
-      'stock-plan-holding-window': '2-10 trading days',
-      'stock-risk-entry': asset.price,
-      'stock-risk-invalidation-price': Math.max(0, asset.price * 0.95).toFixed(3),
-      'stock-fee-target': Math.max(0, asset.price * 1.03).toFixed(3)
-    };
-    Object.entries(fields).forEach(([id, value]) => {
-      const input = document.getElementById(id);
-      if (input) input.value = value;
-    });
-    renderAnalysis(asset);
-    renderFeePanel();
   }
 
   function patchPlanSubmit() {
@@ -317,9 +204,13 @@
     } catch (error) {
       asxFeed = { schema: 'sixsignal.asx.feed.v2', source: 'offline fallback', mode: 'offline', lastUpdated: null, symbols: [], fetchErrors: [{ symbol: 'FEED', message: error.message }], marketRegimes: {}, assets: [] };
     }
-    renderSourceState();
-    renderAsxQueue();
-    renderAnalysis(rankedAssets().find(asset => asset.symbol === selectedSymbol));
+    // Feed ASX data into stocks.js rendering pipeline (stocks.js owns all rendering)
+    const mode = feedMode();
+    if (Array.isArray(asxFeed?.assets) && asxFeed.assets.length && mode !== 'offline') {
+      snapshotData = { ...asxFeed, displayMode: mode };
+      snapshotSource = 'snapshot';
+    }
+    if (typeof renderAll === 'function') renderAll();
   }
 
   function initRelease2Stocks() {
