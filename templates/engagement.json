@@ -1,0 +1,21 @@
+{
+  "schema_version": "0.1",
+  "engagement_id": "ENG-0001",
+  "client_id": "CLIENT-PLACEHOLDER",
+  "engagement_name": "Engagement Placeholder",
+  "repository": "archivum-client-engagement",
+  "status": "Constitutio",
+  "classification": "Internal",
+  "engagement_owner": "Owner Placeholder",
+  "client_owner": "Client Owner Placeholder",
+  "start_date": "YYYY-MM-DD",
+  "expected_close_date": "YYYY-MM-DD",
+  "retention_review_date": "YYYY-MM-DD",
+  "approved_domains": [
+    "enterprise-architecture",
+    "business-architecture",
+    "solution-architecture",
+    "delivery-and-pmo"
+  ],
+  "notes": "Placeholder only. Do not store credentials or secrets."
+}
