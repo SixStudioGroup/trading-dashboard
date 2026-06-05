@@ -1,44 +1,42 @@
-# SixSignal Terminal
+# Archivum
 
-SixSignal Terminal is a manual trading decision cockpit by StudioSix. It is designed to help a trader scan opportunities, analyse one asset at a time, make a controlled decision, execute externally, record the action, and review the result.
+Archivum is the secure engagement archive pattern for the Ordo Animi and Velocity Architecture estate.
 
-The product does not execute trades. It does not provide financial advice. It does not connect to CoinSpot or any exchange for order placement. Its operating model is deliberately manual: SixSignal decides, the trader executes externally, SixSignal records and reviews.
+It provides one private repository per client or engagement, one access boundary, one controlled artefact lifecycle, and one final handover package. Archivum is not an application runtime, ticketing system, content management system, or replacement for Jira, Confluence, SharePoint, Google Drive, or other enterprise systems. It is the default secure archive when a client does not already have an approved repository.
 
-## Product intent
+## Operating model
 
-The terminal exists to reduce impulsive trading and improve repeatable decision quality. The core user is a manual crypto or equities trader who needs signal discipline, portfolio visibility, and a decision trail without turning the tool into a broker or automated trading system.
+A new private repository is created at the start of an engagement from the Archivum template. Client artefacts are stored as portable files, primarily Markdown and JSON, with PDF-ready exports where required. At engagement close, the repository is reviewed, frozen, exported, handed over, retained for the contracted period, and then archived or deleted according to client instruction.
 
-| Workflow Stage | Product Behaviour | Trader Outcome |
-|---|---|---|
-| Scan | Rank opportunities and surface focused candidates | Attention is directed without forcing execution |
-| Analyse | Review a selected asset in the Decision Cockpit | The trader evaluates thesis, risk, and invalidation |
-| Decide | Confirm whether the trade is valid, watch-only, or rejected | Action is deliberate rather than impulsive |
-| Execute | Keep trade placement external to the terminal | SixSignal remains decision support, not a broker |
-| Record | Update holdings, journal, and notes | Decisions become auditable |
-| Review | Evaluate session and signal quality | Trading behaviour becomes repeatable |
+The security boundary is repository-level. Client folders must not be mixed inside one shared repository.
 
-## Current product status
+## Canonical lifecycle
 
-The current release is a pre-1.0 product candidate. The live terminal has working surfaces for opportunity scanning, asset analysis, manual holdings, market context, alerts, fallback state, and review. The current design direction is to reduce interaction load, strengthen the Decision Cockpit, simplify feed-state presentation, and preserve manual execution discipline.
+`Constitutio -> Operatio -> Recognitio -> Traditio -> Retentio -> Clausura`
 
-## Live site
+In plain English: establish, operate, review, hand over, retain, close.
 
-https://zencloudau.github.io/trading-dashboard/
+## Repository contents
 
-## Documentation map
-
-| Document | Purpose |
+| Path | Purpose |
 |---|---|
-| `docs/PRODUCT-MAP.md` | Defines the product areas and release direction |
-| `docs/RELEASE-PLAN.md` | Defines launch path and acceptance criteria |
-| `docs/UX-REVIEW.md` | Captures lead designer and trader review |
-| `docs/TRADER-OPERATING-MODEL.md` | Defines the manual trading operating model |
-| `docs/USER-GUIDE.md` | Explains the user workflow |
-| `docs/KNOWN-LIMITATIONS.md` | Documents product constraints and boundaries |
-| `docs/CHANGELOG.md` | Records release progress |
-| `docs/DESIGN-SYSTEM.md` | Defines colour, brand, and workflow design rules |
-| `docs/RESPONSE-MATRIX-STANDARD.md` | Defines the matrix and product table format for future product reviews |
+| `docs/` | Governance, lifecycle, security, export and operating doctrine |
+| `templates/` | Reusable engagement and artefact templates |
+| `examples/` | Placeholder-only example structures |
+| `KANBAN.md` | Release and work sequencing |
+| `AGENTS.md` | AI-agent constraints and repository boundaries |
+| `SECURITY.md` | Security posture and reporting rules |
 
-## Release principle
+## Current release
 
-The product should not add automation, broker execution, social trading, AI trade recommendations, or exchange integrations until the manual decision workflow is stable, documented, and repeatable.
+Archivum v0.1 establishes the secure doctrine, client archive structure, export standard, release plan, and operational controls. It intentionally contains no executable application code, package manager, CI workflow, external dependency, API token, or client data.
+
+## Ownership
+
+Founder / CTO: ZenCloudAU
+
+Architecture and product control: Ordo Animi
+
+Public framework and master templates: Velocity Architecture
+
+Client-specific completed artefacts: one private Archivum repository per engagement
