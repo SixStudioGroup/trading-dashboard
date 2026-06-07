@@ -1,45 +1,20 @@
-# Archivum Kanban
+# SixSignal Release Board
 
-## Status language
+| Work item | Release | Status | Production gate |
+|---|---|---:|---|
+| Crypto snapshot automation | Current | Operational | Scheduled snapshots remain current and degraded states remain visible. |
+| Crypto decision workflow | Current | Operational | Scan, analyse, decide, record and review surfaces pass browser smoke test. |
+| ASX delayed-feed generator | Release 2 | Implemented | Provider-backed run produces populated `mode=delayed` data. |
+| ASX market-cycle schedule | Release 2 | Implemented | Four weekday GitHub Action windows run without overlap or repeated failure. |
+| Stocks fee and net calculations | Release 2 | Implemented | Brokerage, spread, gross return, net return and breakeven pass browser UAT. |
+| Stocks journal persistence | Release 2 | Implemented | Private Local Mode retains plan economics after reload. |
+| Live deployment UAT | Release 2 | Required | GitHub Pages reflects current `main` and both terminal surfaces load without blocking errors. |
+| Repository identity protection | Release 2 | Completed | Root controls and repository contents remain limited to SixSignal trading work. |
 
-`Cura` = ready for definition
+## Current production decision
 
-`In Opere` = in progress
+Crypto remains the primary operational surface. Stocks is a controlled-production candidate until delayed ASX data is populated and Release 2 browser UAT is recorded.
 
-`Recognitio` = under review
+## Repository rule
 
-`Perfectum` = complete
-
-`Retentum` = deliberately held
-
-## Current board
-
-| Work item | Release | Owner | Status | Acceptance condition |
-|---|---|---|---|---|
-| Archive doctrine | v0.1 | ChatGPT | Perfectum | Purpose, boundary and lifecycle defined |
-| Security baseline | v0.1 | ChatGPT | Perfectum | Private-by-default and no-execution posture defined |
-| Agent guardrails | v0.1 | ChatGPT | Perfectum | Repository stop conditions defined |
-| Engagement lifecycle | v0.1 | ChatGPT | Perfectum | Start, operate, close, retain and delete defined |
-| Retention policy | v0.1 | ChatGPT | Perfectum | Default and contractual overrides defined |
-| Exportum standard | v0.1 | ChatGPT | Perfectum | Canonical Markdown and JSON handoff defined |
-| Integration architecture | v0.1 | ChatGPT | Perfectum | Generation, storage and adapter boundaries defined |
-| Client repository standard | v0.1 | ChatGPT | Perfectum | One-client-one-repo structure defined |
-| Operator runbook | v0.1 | ChatGPT | Perfectum | Manual operating lifecycle documented |
-| Information classification | v0.1 | ChatGPT | Perfectum | Four handling classes defined |
-| Client home template | v0.1 | ChatGPT | Perfectum | Client can browse artefacts from one landing page |
-| Artefact manifest | v0.1 | ChatGPT | Perfectum | Ownership, version, classification and source captured |
-| Engagement metadata | v0.1 | ChatGPT | Perfectum | Engagement identity and lifecycle data structured |
-| Governance record | v0.1 | ChatGPT | Perfectum | Context, outcome and actions captured |
-| Closeout template | v0.1 | ChatGPT | Perfectum | Handover, access and retention recorded |
-| Repository ignore rules | v0.1 | ChatGPT | Perfectum | Common secrets, local work and archives excluded |
-| Template consistency review | v0.2 | Codex | Cura | Links, placeholders, JSON validity and field consistency validated |
-| Repository scaffold automation | v0.3 | Claude | Retentum | Only after manual pattern is proven |
-| GitHub write integration | v0.4 | Claude and Codex | Retentum | Requires explicit security and authentication design |
-
-## Release gates
-
-Archivum v0.1 is complete. The repository is usable manually without code, dependencies, automation, or external services.
-
-Archivum v0.2 is a precision review only. It must not introduce application code or automation.
-
-Archivum v0.3 begins only after a simulated engagement validates the manual structure and the Founder / CTO approves automation.
+Work unrelated to SixSignal crypto, Australian stocks, trading workflows, market data, journal/review, deployment or product UAT belongs in another repository and must not be added here.
