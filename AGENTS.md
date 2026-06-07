@@ -1,31 +1,27 @@
-# Archivum Agent Guardrails
-
-Archivum is a secure artefact archive pattern. Agents working in this repository must preserve that boundary.
+# SixSignal Agent Guardrails
 
 ## Repository role
 
-This repo owns archive doctrine, client-repo templates, export schemas, retention rules, closure procedures, and low-risk documentation.
-
-It does not own Valour, Custos, Ordo Animi application code, Velocity Architecture public framework content, SA or EA generator code, client delivery applications, ticketing, collaboration, or cloud storage platforms.
+This repository owns the SixSignal Crypto Terminal, SixSignal Stocks Terminal, shared journal and review surfaces, market-data snapshot workflows, trading calculations, deployment configuration and product UAT evidence.
 
 ## Allowed work
 
-Agents may create or improve Markdown documentation, template files, JSON schemas, folder examples, naming conventions, release notes, security guidance, and non-executable validation checklists.
+Agents may modify trading-platform HTML, CSS, JavaScript, market-data generators, GitHub Actions, product documentation, tests and release evidence when the work directly supports SixSignal.
 
-## Prohibited work
+## Prohibited cross-repository work
 
-Agents must not add package managers, third-party dependencies, executable scripts, GitHub Actions, deployment configuration, API keys, credentials, client data, or external integrations without explicit Founder / CTO approval.
+Do not add content for client archives, Obsidian vaults, founder operating systems, unrelated product concepts, games, courses, books, publications, ecosystem governance or another repository's deployment.
 
-Agents must not mix multiple clients into one archive design. The security unit is one private repository per client or engagement.
+Do not repurpose `README.md`, `docs/`, `templates/` or GitHub Issues for work that is not part of the trading platform.
 
-## Stop conditions
+## Trading boundaries
 
-Stop and request routing when work introduces runtime code, authentication, cloud storage, automated repository writes, email delivery, Jira or Confluence APIs, public deployment, or a change that belongs in another repo.
+SixSignal remains a manual decision-support product. Do not add broker credentials, exchange credentials, order execution, custody, autonomous trading or claims that delayed data is licensed live exchange data.
 
-## Naming
-
-Use Archivum for the archive product line. Use plain English explanations with Latin lifecycle terms. Use title case for Ordo Animi, Valour, Custos, Velocity Architecture, Velocity Vibes, and Magister Automatorum.
+Secrets must remain in GitHub Secrets or approved provider configuration and must never be committed to the repository or exposed in browser code.
 
 ## Change discipline
 
-Every change must identify its release, intended outcome, exclusions, and acceptance criteria. Prefer small reviewed changes over broad rewrites.
+Inspect the repository identity before writing. Preserve the `SixSignal Terminal` suite name and the `Crypto Terminal` and `Stocks Terminal` surface names. Every release change must include its production gate, failure state and verification evidence.
+
+Stop and reroute any task whose primary subject is not crypto trading, Australian stocks, trading workflow, market-data automation, trader review or SixSignal product operation.
