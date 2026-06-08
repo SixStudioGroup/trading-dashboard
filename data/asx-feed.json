@@ -2,7 +2,7 @@
   "schema": "sixsignal.asx.feed.v2",
   "source": "Yahoo Finance chart endpoint via GitHub Action",
   "mode": "delayed",
-  "lastUpdated": "2026-06-08T01:13:30.876Z",
+  "lastUpdated": "2026-06-08T04:30:17.670Z",
   "symbols": [
     "BHP",
     "CBA",
