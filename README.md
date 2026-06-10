@@ -34,3 +34,6 @@ This repository contains only SixSignal trading-platform material. Do not add ar
 ## Current release
 
 Release 2 adds the ASX delayed-feed path and dynamic brokerage, spread, gross-return, net-return and breakeven calculations. Crypto remains the primary operational surface.
+
+---
+© 2026 ZenCloud Global Consultants. All rights reserved. Proprietary and confidential.

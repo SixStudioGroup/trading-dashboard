@@ -1,9 +1,7 @@
-# Proprietary Licence
+Copyright 2026 ZenCloud Global Consultants
 
-Copyright © 2026 ZenCloudAU. All rights reserved.
+All rights reserved.
 
-SixSignal Terminal, its source code, interface, documentation, market-data processing logic, trading workflow and associated assets are proprietary.
+This repository, including its source code, trading analysis and decision tooling, design system, documentation and associated intellectual property, is proprietary to ZenCloud Global Consultants.
 
-Unauthorised copying, modification, distribution, sublicensing, publication or commercial use is prohibited without prior written permission from the repository owner.
-
-Third-party market data, libraries and services remain subject to their respective licences and terms.
+No part of this repository may be copied, distributed, modified, sublicensed, sold, reproduced, reverse engineered or used for commercial purposes without prior written permission from ZenCloud Global Consultants.
