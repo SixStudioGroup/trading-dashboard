@@ -98,6 +98,17 @@ function isPublicDemoMode() {
     return portalMode !== PRIVATE_LOCAL_MODE;
 }
 
+function formatTimestamp(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "Not recorded";
+    return date.toLocaleString("en-AU", {
+        day: "2-digit",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit"
+    });
+}
+
 function loadPrivacyMode() {
     if (!storageAvailable()) return false;
     try {
