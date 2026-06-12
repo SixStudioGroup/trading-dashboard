@@ -13,7 +13,7 @@
 
 ## Product Manager Decision
 
-The Stocks Workspace must be treated as ASX-first from this point forward. SixSignal can proceed as a controlled UAT candidate for workflow testing, but Australian equities cannot be considered production-grade until real ASX coverage and fee-aware calculations are complete.
+The Stocks Workspace must be treated as ASX-first from this point forward. SixQuant can proceed as a controlled UAT candidate for workflow testing, but Australian equities cannot be considered production-grade until real ASX coverage and fee-aware calculations are complete.
 
 ## Feature Requirement Matrix
 

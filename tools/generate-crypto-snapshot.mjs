@@ -2,7 +2,7 @@ import { writeFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
 
 const OUTPUT_PATH = path.join(process.cwd(), 'data', 'crypto-snapshot.json');
-const USER_AGENT = 'SixSignal-Terminal-Crypto-Snapshot/1.0';
+const USER_AGENT = 'SixQuant-Terminal-Crypto-Snapshot/1.0';
 const API_KEY = process.env.COINGECKO_API_KEY || '';
 
 async function fetchMarkets() {
@@ -43,7 +43,7 @@ async function buildSnapshot() {
   }));
 
   const snapshot = {
-    schema: 'sixsignal.crypto.snapshot.v1',
+    schema: 'sixquant.crypto.snapshot.v1',
     source: 'CoinGecko via GitHub Actions',
     lastUpdated: new Date().toISOString(),
     count: assets.length,

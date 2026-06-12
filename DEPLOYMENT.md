@@ -6,7 +6,7 @@
 | Platform | GitHub Pages |
 | Source branch | `main` |
 | Site type | Static HTML, CSS and JavaScript |
-| Product | SixSignal Terminal by StudioSix |
+| Product | SixQuant Terminal by StudioSix |
 | Primary surface | Crypto Terminal |
 | Secondary surface | Stocks Terminal with delayed ASX feed |
 | Data automation | GitHub Actions generating committed JSON snapshots |

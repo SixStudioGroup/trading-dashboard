@@ -1,6 +1,8 @@
 (() => {
   const PLAN_KEY = 'zencloud.stocks.tradeJournal.v1';
-  const FEE_DEFAULTS_KEY = 'sixsignal.stocks.auBrokerDefaults.v2';
+  const FEE_DEFAULTS_KEY = 'sixquant.stocks.auBrokerDefaults.v2';
+  // Pre-rebrand key; migrated to FEE_DEFAULTS_KEY on load so saved fee defaults survive.
+  const LEGACY_FEE_DEFAULTS_KEY = 'sixsignal.stocks.auBrokerDefaults.v2';
   const PRIVATE_MODE_KEY = 'zencloud.portalMode.v1';
   const PRIVATE_MODE = 'private';
   const FEED_URL = 'data/asx-feed.json';
@@ -10,8 +12,8 @@
 
   function storageAvailable() {
     try {
-      window.localStorage.setItem('__sixsignal_r2_test__', '1');
-      window.localStorage.removeItem('__sixsignal_r2_test__');
+      window.localStorage.setItem('__sixquant_r2_test__', '1');
+      window.localStorage.removeItem('__sixquant_r2_test__');
       return true;
     } catch (_error) {
       return false;
@@ -65,7 +67,19 @@
     window.localStorage.setItem(key, JSON.stringify(value));
   }
 
+  function migrateLegacyFeeDefaults() {
+    if (!storageAvailable()) return;
+    try {
+      const legacy = window.localStorage.getItem(LEGACY_FEE_DEFAULTS_KEY);
+      if (legacy && !window.localStorage.getItem(FEE_DEFAULTS_KEY)) {
+        window.localStorage.setItem(FEE_DEFAULTS_KEY, legacy);
+      }
+      if (legacy) window.localStorage.removeItem(LEGACY_FEE_DEFAULTS_KEY);
+    } catch (_error) { /* storage unavailable mid-session */ }
+  }
+
   function brokerDefaults() {
+    migrateLegacyFeeDefaults();
     return { brokerageFee: 5, feePercent: 0, spreadPercent: 0.10, ...readJson(FEE_DEFAULTS_KEY, {}) };
   }
 
@@ -202,7 +216,7 @@
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       asxFeed = await response.json();
     } catch (error) {
-      asxFeed = { schema: 'sixsignal.asx.feed.v2', source: 'offline fallback', mode: 'offline', lastUpdated: null, symbols: [], fetchErrors: [{ symbol: 'FEED', message: error.message }], marketRegimes: {}, assets: [] };
+      asxFeed = { schema: 'sixquant.asx.feed.v2', source: 'offline fallback', mode: 'offline', lastUpdated: null, symbols: [], fetchErrors: [{ symbol: 'FEED', message: error.message }], marketRegimes: {}, assets: [] };
     }
     // Feed ASX data into stocks.js rendering pipeline (stocks.js owns all rendering)
     const mode = feedMode();

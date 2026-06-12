@@ -1,5 +1,5 @@
 {
-  "schema": "sixsignal.asx.feed.v2",
+  "schema": "sixquant.asx.feed.v2",
   "source": "Yahoo Finance chart endpoint via GitHub Action",
   "mode": "delayed",
   "lastUpdated": "2026-06-12T07:56:03.372Z",

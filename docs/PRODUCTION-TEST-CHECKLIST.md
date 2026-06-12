@@ -1,12 +1,12 @@
-# SixSignal Production Readiness Checklist
+# SixQuant Production Readiness Checklist
 
 ## Production Test Matrix
 
 | Area | Validation | Expected Result | Severity | Release 1 Status |
 |---|---|---|---|---|
-| Root route | Open live root URL | Loads SixSignal Crypto Terminal | Critical | Pass |
+| Root route | Open live root URL | Loads SixQuant Crypto Terminal | Critical | Pass |
 | Navigation | Click every top navigation link | Correct route opens without old branding | Critical | Pass |
-| Branding | Review all active screens | SixSignal and StudioSix identity consistent | Critical | Pass |
+| Branding | Review all active screens | SixQuant and StudioSix identity consistent | Critical | Pass |
 | Crypto Queue | Select crypto asset | Decision cockpit updates correctly | High | Pass |
 | Stocks Queue | Select stock asset | Stock plan workflow updates correctly using ASX MVP seed/fallback | High | Conditional |
 | ASX Live Feed | Validate stock data source | Production-grade live/delayed ASX feed available | Critical | Release 1 Exception |

@@ -1,5 +1,5 @@
 {
-  "schema": "sixsignal.crypto.snapshot.v1",
+  "schema": "sixquant.crypto.snapshot.v1",
   "source": "CoinGecko via GitHub Actions",
   "lastUpdated": "2026-06-12T22:02:37.256Z",
   "count": 250,

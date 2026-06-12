@@ -1,6 +1,50 @@
+/* ==========================================================================
+   SixQuant brand layer — loads after styles.css and overrides the base
+   design system with the SixQuant dark trading-terminal theme.
+   Surfaces: deep-navy page, panel cards, electric-blue accent,
+   market-semantic green/red, mono numerics.
+   ========================================================================== */
+
+:root {
+    --brand-blue: #2F81F7;
+    --brand-blue-dark: #1F6FEB;
+    --brand-navy: #0D1B33;
+    --page: #0A0F1C;
+    --panel: #101A2E;
+    --panel-soft: #0D1626;
+    --panel-raised: #16223A;
+    --line: rgba(148, 163, 184, 0.16);
+    --text: #E8EEF9;
+    --muted: #94A3B8;
+    --cyan: #2F81F7;
+    --green: #16C784;
+    --red: #EA3943;
+    --amber: #F0B90B;
+    --amber-bg: rgba(240, 185, 11, 0.12);
+    --green-bg: rgba(22, 199, 132, 0.12);
+    --red-bg: rgba(234, 57, 67, 0.12);
+    --cyan-bg: rgba(47, 129, 247, 0.14);
+    --radius: 6px;
+
+    --vaf-accent: #2F81F7;
+    --vaf-accent-hover: #1F6FEB;
+    --vaf-accent-subtle: rgba(47, 129, 247, 0.12);
+    --vaf-accent-border: rgba(47, 129, 247, 0.45);
+    --vaf-navy: #0D1B33;
+    --vaf-navy-dark: #091224;
+    --vaf-font-heading: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --vaf-font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --vaf-font-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', monospace;
+    --vaf-shadow: 0 1px 4px rgba(2, 6, 16, 0.5);
+
+    --sq-glow: 0 18px 40px rgba(2, 6, 16, 0.45);
+    --sq-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', monospace;
+}
+
 body {
-    background: linear-gradient(180deg, #0F172A 0px, #111827 220px, #F3F6FB 220px);
-    color: #111827;
+    background: var(--page);
+    color: var(--text);
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
 }
@@ -9,9 +53,15 @@ a {
     transition: color 160ms ease, border-color 160ms ease, background 160ms ease, transform 160ms ease;
 }
 
+/* --------------------------------------------------------------------------
+   Top bar + brand
+   -------------------------------------------------------------------------- */
+
+.topbar,
 .six-topbar {
     background: rgba(9, 14, 27, 0.94);
-    border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
     box-shadow: none;
 }
 
@@ -23,12 +73,14 @@ a {
 .six-brand strong {
     display: block;
     font-size: 16px;
+    font-weight: 800;
     letter-spacing: -0.02em;
+    color: #F8FAFC;
 }
 
 .six-brand small {
     display: block;
-    color: #94A3B8;
+    color: var(--muted);
     font-size: 11px;
     font-weight: 600;
     text-transform: uppercase;
@@ -39,8 +91,8 @@ a {
     width: 34px;
     height: 34px;
     border-radius: 10px;
-    background: linear-gradient(180deg, #111827, #0F172A);
-    border: 1px solid rgba(148, 163, 184, 0.16);
+    background: linear-gradient(180deg, #101A2E, #0A0F1C);
+    border: 1px solid var(--line);
     display: flex;
     align-items: flex-end;
     justify-content: center;
@@ -51,25 +103,29 @@ a {
 .six-mark span {
     width: 4px;
     border-radius: 4px;
-    background: #38BDF8;
+    background: var(--brand-blue);
 }
 
 .six-mark span:nth-child(1) { height: 8px; }
 .six-mark span:nth-child(2) { height: 13px; }
-.six-mark span:nth-child(3) { height: 19px; background: #F59E0B; }
-.six-mark span:nth-child(4) { height: 24px; }
+.six-mark span:nth-child(3) { height: 19px; }
+.six-mark span:nth-child(4) { height: 24px; background: var(--green); }
 
 .navlinks a {
-    color: #CBD5E1;
+    color: #B6C2D4;
     border-radius: 8px 8px 0 0;
 }
 
 .navlinks a.active,
 .navlinks a:hover {
     color: #F8FAFC;
-    border-bottom-color: #38BDF8;
-    background: rgba(56, 189, 248, 0.08);
+    border-bottom-color: var(--brand-blue);
+    background: rgba(47, 129, 247, 0.10);
 }
+
+/* --------------------------------------------------------------------------
+   Shell + command bar
+   -------------------------------------------------------------------------- */
 
 .six-shell {
     max-width: 1380px;
@@ -87,23 +143,24 @@ a {
 }
 
 .six-kicker {
-    color: #38BDF8;
+    color: var(--brand-blue);
     text-transform: uppercase;
     font-size: 11px;
     font-weight: 700;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.1em;
 }
 
 .six-title-block h1 {
     margin: 6px 0 8px;
     font-size: clamp(28px, 4vw, 38px);
     line-height: 1;
+    font-weight: 800;
     letter-spacing: -0.045em;
 }
 
 .six-title-block p {
     margin: 0;
-    color: #94A3B8;
+    color: var(--muted);
     max-width: 760px;
 }
 
@@ -117,9 +174,8 @@ a {
 .six-metric,
 .six-portfolio-strip,
 .six-theme-link {
-    background: rgba(255,255,255,0.92);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(15, 23, 42, 0.08);
+    background: var(--panel);
+    border: 1px solid var(--line);
     border-radius: 12px;
 }
 
@@ -133,18 +189,18 @@ a {
 
 .six-theme-link:hover {
     transform: translateY(-1px);
-    border-color: rgba(56, 189, 248, 0.45);
+    border-color: var(--vaf-accent-border);
 }
 
 .six-theme-link.active {
-    border-color: rgba(56, 189, 248, 0.55);
-    box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.20);
+    border-color: var(--vaf-accent-border);
+    box-shadow: inset 0 0 0 1px rgba(47, 129, 247, 0.25);
 }
 
 .six-metric span,
 .six-strip-item span,
 .six-theme-link span {
-    color: #64748B;
+    color: var(--muted);
     text-transform: uppercase;
     font-size: 10px;
     font-weight: 700;
@@ -154,12 +210,14 @@ a {
 .six-metric strong,
 .six-strip-item strong,
 .six-theme-link strong {
-    color: #0F172A;
+    color: var(--text);
     font-size: 14px;
+    font-family: var(--sq-mono);
+    font-variant-numeric: tabular-nums;
 }
 
 .six-feed-details {
-    color: #CBD5E1;
+    color: var(--muted);
 }
 
 .six-feed-details summary {
@@ -179,7 +237,7 @@ a {
     padding: 12px 16px;
     display: grid;
     gap: 4px;
-    border-right: 1px solid rgba(15, 23, 42, 0.08);
+    border-right: 1px solid var(--line);
 }
 
 .six-strip-item:last-child {
@@ -187,9 +245,13 @@ a {
 }
 
 .six-quiet-panel {
-    opacity: 0.88;
+    opacity: 0.92;
     margin-bottom: 14px;
 }
+
+/* --------------------------------------------------------------------------
+   Panels
+   -------------------------------------------------------------------------- */
 
 .six-decision-grid {
     grid-template-columns: minmax(0, 1.4fr) minmax(390px, 0.6fr);
@@ -206,32 +268,37 @@ a {
 .six-cockpit-panel {
     border-radius: 16px;
     overflow: hidden;
-    border: 1px solid rgba(15, 23, 42, 0.08);
-    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
+    border: 1px solid var(--line);
+    box-shadow: var(--sq-glow);
 }
 
 .six-primary-panel {
-    border-top: 3px solid #38BDF8;
+    border-top: 3px solid var(--brand-blue);
 }
 
 .six-cockpit-panel {
-    border-top: 3px solid #F59E0B;
+    border-top: 3px solid var(--amber);
     position: sticky;
     top: 78px;
 }
 
 .panel-header,
 .trade-guide-header {
-    background: linear-gradient(180deg, rgba(248,250,252,0.96), rgba(248,250,252,0.72));
+    background: linear-gradient(180deg, rgba(22, 34, 58, 0.85), rgba(16, 26, 46, 0.6));
 }
 
 .panel-title {
     letter-spacing: -0.025em;
+    color: var(--text);
 }
 
 .panel-subtitle {
-    color: #64748B;
+    color: var(--muted);
 }
+
+/* --------------------------------------------------------------------------
+   Tables — mono numerics, market green/red
+   -------------------------------------------------------------------------- */
 
 .six-focus-table th,
 .six-focus-table td {
@@ -247,7 +314,8 @@ a {
 
 .compact-table th,
 .watchlist-table th {
-    background: #F8FAFC;
+    background: var(--panel-soft);
+    color: var(--muted);
     font-size: 11px;
     letter-spacing: 0.035em;
     text-transform: uppercase;
@@ -256,6 +324,18 @@ a {
 .compact-table td,
 .watchlist-table td {
     vertical-align: top;
+}
+
+.compact-table td.num,
+.watchlist-table td.num,
+td.num, th.num {
+    font-family: var(--sq-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 12.5px;
+}
+
+.selected-row td {
+    background: rgba(47, 129, 247, 0.12);
 }
 
 .trade-guide-panel {
@@ -273,6 +353,10 @@ a {
     display: none;
 }
 
+/* --------------------------------------------------------------------------
+   Tabs
+   -------------------------------------------------------------------------- */
+
 .six-secondary-tabs {
     margin-top: 14px;
     border-radius: 16px;
@@ -280,7 +364,7 @@ a {
 }
 
 .tab-bar {
-    background: #F8FAFC;
+    background: var(--panel-soft);
     padding: 0 8px;
     overflow-x: auto;
 }
@@ -292,16 +376,16 @@ a {
 }
 
 .tab-button:hover {
-    background: rgba(56, 189, 248, 0.08);
+    background: rgba(47, 129, 247, 0.10);
 }
 
 .market-attention-grid section:nth-child(n+4) {
     display: none;
 }
 
-.selected-row td {
-    background: rgba(56, 189, 248, 0.08);
-}
+/* --------------------------------------------------------------------------
+   Buttons + forms
+   -------------------------------------------------------------------------- */
 
 .button-primary,
 .table-action,
@@ -310,24 +394,31 @@ a {
 }
 
 .button-primary {
-    background: #0F172A;
+    background: var(--brand-blue);
+    color: #FFFFFF;
 }
 
 .button-primary:hover {
-    background: #111827;
+    background: var(--brand-blue-dark);
     transform: translateY(-1px);
 }
 
 .table-action {
-    color: #0F172A;
-    border-color: rgba(15, 23, 42, 0.10);
-    background: #F8FAFC;
+    color: var(--text);
+    border-color: var(--line);
+    background: var(--panel-raised);
 }
 
 .table-action:hover,
 .filter-btn:hover {
-    background: #EEF2F7;
+    background: rgba(47, 129, 247, 0.14);
     transform: translateY(-1px);
+}
+
+input, select, textarea {
+    background: var(--panel-soft);
+    color: var(--text);
+    border-color: var(--line);
 }
 
 .six-settings-row {
@@ -342,15 +433,95 @@ a {
     flex: 1;
     min-width: 220px;
     padding: 8px 10px;
-    border: 1px solid #D7DEE8;
+    background: var(--panel-soft);
+    color: var(--text);
+    border: 1px solid var(--line);
     border-radius: 8px;
     font-size: 13px;
 }
 
 .loading-cell,
 .compact-empty {
-    color: #64748B;
+    color: var(--muted);
 }
+
+/* --------------------------------------------------------------------------
+   Semantic states — base theme hardcodes light-surface colours; brighten
+   them for dark surfaces so badges, pills, and rule cards stay readable.
+   -------------------------------------------------------------------------- */
+
+.badge.buy,
+.badge.strong { background: rgba(22, 199, 132, 0.12); color: #3FD68F; border-color: rgba(22, 199, 132, 0.30); }
+.badge.watch  { background: rgba(240, 185, 11, 0.12); color: #F5C84C; border-color: rgba(240, 185, 11, 0.30); }
+.badge.risk,
+.badge.sell   { background: rgba(234, 57, 67, 0.14); color: #FF7B81; border-color: rgba(234, 57, 67, 0.30); }
+.badge.volume { background: rgba(47, 129, 247, 0.14); color: #6CB2FF; border-color: rgba(47, 129, 247, 0.30); }
+
+.rule-card.strong { background: rgba(22, 199, 132, 0.08); color: #3FD68F; border-color: rgba(22, 199, 132, 0.25); }
+.rule-card.watch  { background: rgba(240, 185, 11, 0.08); color: #F5C84C; border-color: rgba(240, 185, 11, 0.25); }
+.rule-card.risk   { background: rgba(234, 57, 67, 0.10); color: #FF7B81; border-color: rgba(234, 57, 67, 0.25); }
+.rule-card.volume { background: rgba(47, 129, 247, 0.10); color: #6CB2FF; border-color: rgba(47, 129, 247, 0.25); }
+
+.hotbar-pill.strong { background: rgba(22, 199, 132, 0.12); color: #3FD68F; border-color: rgba(22, 199, 132, 0.35); }
+.hotbar-pill.watch  { background: rgba(240, 185, 11, 0.12); color: #F5C84C; border-color: rgba(240, 185, 11, 0.35); }
+.hotbar-pill.risk   { background: rgba(234, 57, 67, 0.14); color: #FF7B81; border-color: rgba(234, 57, 67, 0.35); }
+.hotbar-pill.volume { background: rgba(47, 129, 247, 0.14); color: #6CB2FF; border-color: rgba(47, 129, 247, 0.35); }
+
+.danger-action {
+    color: #FF7B81;
+    border-color: rgba(234, 57, 67, 0.35);
+    background: rgba(234, 57, 67, 0.08);
+}
+
+.danger-action:hover {
+    background: rgba(234, 57, 67, 0.16);
+}
+
+.alert-count-badge.has-risk { color: #FF7B81; }
+.share-error { color: #FF7B81; }
+
+/* Secondary prose — base theme uses slate-600, unreadable on dark */
+.helper-output,
+.check-row,
+.stock-analysis-card p,
+.broker-review-card p,
+.rule-toggle,
+.guide-card p,
+.workflow-list,
+.guide-rules,
+.execution-bar small,
+.state-token,
+.guide-section > p,
+.privacy-toggle {
+    color: var(--muted);
+}
+
+/* --------------------------------------------------------------------------
+   Scrollbars
+   -------------------------------------------------------------------------- */
+
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--page);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--panel-raised);
+    border-radius: 6px;
+    border: 2px solid var(--page);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #22304C;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive
+   -------------------------------------------------------------------------- */
 
 @media (max-width: 1180px) {
     .six-trust-strip,
@@ -402,7 +573,7 @@ a {
 
     .six-strip-item {
         border-right: none;
-        border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+        border-bottom: 1px solid var(--line);
     }
 
     .six-strip-item:last-child {

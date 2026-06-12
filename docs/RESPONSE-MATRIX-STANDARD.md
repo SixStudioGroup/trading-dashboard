@@ -2,7 +2,7 @@
 
 ## Purpose
 
-All future product, UX, design, release, and trading workflow reviews for SixSignal Terminal should use structured matrices and product tables rather than unstructured narrative.
+All future product, UX, design, release, and trading workflow reviews for SixQuant Terminal should use structured matrices and product tables rather than unstructured narrative.
 
 The objective is to:
 
@@ -62,7 +62,7 @@ The objective is to:
 
 ## Product Principle
 
-SixSignal Terminal should behave like a calm, disciplined trading cockpit.
+SixQuant Terminal should behave like a calm, disciplined trading cockpit.
 
 It should never behave like:
 

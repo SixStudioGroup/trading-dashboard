@@ -1,4 +1,4 @@
-# SixSignal Australian Stocks Trader Review
+# SixQuant Australian Stocks Trader Review
 
 ## Product Problem
 

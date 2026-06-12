@@ -2,7 +2,7 @@ import { writeFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
 
 const OUTPUT_PATH = path.join(process.cwd(), 'data', 'asx-feed.json');
-const USER_AGENT = 'SixSignal-Terminal-ASX-Feed/2.0';
+const USER_AGENT = 'SixQuant-Terminal-ASX-Feed/2.0';
 
 const ASX_UNIVERSE = [
   ['BHP', 'BHP Group', 'Materials'],
@@ -123,7 +123,7 @@ async function buildFeed() {
   }
 
   const feed = {
-    schema: 'sixsignal.asx.feed.v2',
+    schema: 'sixquant.asx.feed.v2',
     source: 'Yahoo Finance chart endpoint via GitHub Action',
     mode: assets.length ? 'delayed' : 'offline',
     lastUpdated: new Date().toISOString(),

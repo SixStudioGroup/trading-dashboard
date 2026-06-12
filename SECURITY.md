@@ -1,8 +1,8 @@
-# SixSignal Security Policy
+# SixQuant Security Policy
 
 ## Security posture
 
-SixSignal is a static GitHub Pages decision-support application. It must not contain broker credentials, exchange credentials, API secrets, private keys, passwords or personal financial records in the repository.
+SixQuant is a static GitHub Pages decision-support application. It must not contain broker credentials, exchange credentials, API secrets, private keys, passwords or personal financial records in the repository.
 
 ## Market-data controls
 
@@ -10,11 +10,11 @@ Provider credentials belong in GitHub Secrets or approved server-side configurat
 
 ## Browser storage
 
-Private Local Mode stores user-entered holdings, plans and journal records in the user's browser. This information is not encrypted by SixSignal and is not synchronised to a server. Public Demo Mode must not persist private records.
+Private Local Mode stores user-entered holdings, plans and journal records in the user's browser. This information is not encrypted by SixQuant and is not synchronised to a server. Public Demo Mode must not persist private records.
 
 ## Execution boundary
 
-SixSignal does not place orders, connect to broker accounts or custody funds. Any future broker or exchange integration requires a separate security design, explicit approval and isolated credential handling before implementation.
+SixQuant does not place orders, connect to broker accounts or custody funds. Any future broker or exchange integration requires a separate security design, explicit approval and isolated credential handling before implementation.
 
 ## GitHub Actions
 

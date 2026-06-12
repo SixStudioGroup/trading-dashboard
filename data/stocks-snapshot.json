@@ -5,7 +5,7 @@
   "symbols": ["BHP", "CBA", "CSL", "WES", "MQG", "TLS", "NAB", "ANZ", "WBC", "WOW", "COL", "FMG", "RIO", "WDS", "GMG", "TCL", "QBE", "ALL", "REA", "XRO"],
   "fetchErrors": ["Manual MVP seed. Verify live broker and market data before execution."],
   "marketRegimes": {
-    "Australia": "ASX MVP snapshot for SixSignal UAT. Review only."
+    "Australia": "ASX MVP snapshot for SixQuant UAT. Review only."
   },
   "assets": [
     {"symbol":"BHP","name":"BHP Group","exchange":"ASX","sector":"Materials","price":43.20,"change1d":1.4,"change5d":4.8,"relativeVolume":1.7,"marketRegime":"Constructive","region":"Australia","currency":"AUD","signalState":"Breakout","riskState":"Controlled"},

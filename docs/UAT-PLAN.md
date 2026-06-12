@@ -1,8 +1,8 @@
-# SixSignal Release 1.0 UAT Plan
+# SixQuant Release 1.0 UAT Plan
 
 ## UAT Objective
 
-Validate SixSignal as a coherent manual trading decision cockpit before Release 1.0 is treated as ready for controlled use.
+Validate SixQuant as a coherent manual trading decision cockpit before Release 1.0 is treated as ready for controlled use.
 
 UAT should confirm that the product supports the operating loop:
 
@@ -13,7 +13,7 @@ Scan → Analyse → Decide → Record → Review.
 | Area | Route | UAT Objective | Expected Result | Status |
 |---|---|---|---|---|
 | Crypto Decision Terminal | `index.html` | Confirm user can scan crypto opportunities and select one asset for analysis | User understands the queue and cockpit without using secondary panels first | Ready for UAT |
-| Stocks Workspace | `stocks.html` | Confirm user can filter stocks, select a ticker, and create a trade plan | Stock workflow feels connected to the broader SixSignal model | Ready for UAT |
+| Stocks Workspace | `stocks.html` | Confirm user can filter stocks, select a ticker, and create a trade plan | Stock workflow feels connected to the broader SixQuant model | Ready for UAT |
 | Trading Journal | `journal.html` | Confirm user can create, view, and review manual trade records | Journal records support audit and review | Ready for UAT |
 | Signal Transition Feed | `alerts.html` | Confirm alerts are understood as review prompts, not execution instructions | User routes alerts back to analysis | Ready for UAT |
 | Evidence Trail | `logs.html` | Confirm logs are understood as evidence/audit trail | User does not treat logs as trade signals | Ready for UAT |
@@ -25,8 +25,8 @@ Scan → Analyse → Decide → Record → Review.
 
 | Test Category | Pass Criteria | Fail Condition | Severity |
 |---|---|---|---|
-| Navigation | Every top navigation link resolves to the correct page and uses SixSignal language | Any route shows old product shell or unclear page identity | Critical |
-| Brand | User-facing pages show SixSignal as the product and StudioSix as parent brand | User sees legacy product identity on active routes | Critical |
+| Navigation | Every top navigation link resolves to the correct page and uses SixQuant language | Any route shows old product shell or unclear page identity | Critical |
+| Brand | User-facing pages show SixQuant as the product and StudioSix as parent brand | User sees legacy product identity on active routes | Critical |
 | Workflow | User can describe the core loop after using the app | User treats the app as a generic market dashboard | High |
 | Crypto Workflow | User can select one asset, inspect cockpit, and understand execution gating | User tries to trade directly from queue | High |
 | Stocks Workflow | User can filter/select a ticker and build a stock plan | User cannot find where to create a plan | High |
@@ -40,10 +40,10 @@ Scan → Analyse → Decide → Record → Review.
 
 | Step | User Action | Expected Observation |
 |---|---|---|
-| 1 | Open live site root | Lands on SixSignal Crypto Decision Terminal |
-| 2 | Click Stocks | Opens SixSignal Stocks Workspace |
+| 1 | Open live site root | Lands on SixQuant Crypto Decision Terminal |
+| 2 | Click Stocks | Opens SixQuant Stocks Workspace |
 | 3 | Return to Crypto | Crypto route loads without old Terminal wording confusion |
-| 4 | Click Journal | Journal loads with SixSignal shell and navigation |
+| 4 | Click Journal | Journal loads with SixQuant shell and navigation |
 | 5 | Click Alerts | Signal Transition Feed loads and clearly says alerts are prompts |
 | 6 | Click Evidence | Evidence Trail loads and clearly says logs are not execution instructions |
 | 7 | Click Review | Review Centre loads with behaviour and decision framing |
@@ -65,7 +65,7 @@ Scan → Analyse → Decide → Record → Review.
 | Criteria | Required State |
 |---|---|
 | Navigation | All active routes pass |
-| Branding | All active user-facing routes use SixSignal shell |
+| Branding | All active user-facing routes use SixQuant shell |
 | Workflow | User can complete Scan → Analyse → Decide → Record → Review |
 | Execution boundary | No route implies automatic broker/exchange execution |
 | Documentation | Operator Manual and UAT Plan exist |
@@ -73,4 +73,4 @@ Scan → Analyse → Decide → Record → Review.
 
 ## UAT Notes
 
-SixSignal is not financial advice and does not place trades. UAT must evaluate whether the product improves trading discipline and review quality, not whether a signal produces profit.
+SixQuant is not financial advice and does not place trades. UAT must evaluate whether the product improves trading discipline and review quality, not whether a signal produces profit.

@@ -1,4 +1,4 @@
-# SixSignal Release Board
+# SixQuant Release Board
 
 | Work item | Release | Status | Production gate |
 |---|---|---:|---|
@@ -9,7 +9,7 @@
 | Stocks fee and net calculations | Release 2 | Implemented | Brokerage, spread, gross return, net return and breakeven pass browser UAT. |
 | Stocks journal persistence | Release 2 | Implemented | Private Local Mode retains plan economics after reload. |
 | Live deployment UAT | Release 2 | Required | GitHub Pages reflects current `main` and both terminal surfaces load without blocking errors. |
-| Repository identity protection | Release 2 | Completed | Root controls and repository contents remain limited to SixSignal trading work. |
+| Repository identity protection | Release 2 | Completed | Root controls and repository contents remain limited to SixQuant trading work. |
 
 ## Current production decision
 
@@ -17,4 +17,4 @@ Crypto remains the primary operational surface. Stocks is a controlled-productio
 
 ## Repository rule
 
-Work unrelated to SixSignal crypto, Australian stocks, trading workflows, market data, journal/review, deployment or product UAT belongs in another repository and must not be added here.
+Work unrelated to SixQuant crypto, Australian stocks, trading workflows, market data, journal/review, deployment or product UAT belongs in another repository and must not be added here.
