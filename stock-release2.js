@@ -187,20 +187,36 @@
     });
   }
 
+  // Observer must be detached while this function mutates the journal rows:
+  // it observes the same subtree it rewrites, and innerHTML assignment is a
+  // childList mutation even when the markup is unchanged — observing our own
+  // writes re-fires this callback forever and freezes the renderer.
+  let journalObserver = null;
+
+  function observeJournal() {
+    const journal = document.getElementById('stock-journal-body');
+    if (journal && journalObserver) journalObserver.observe(journal, { childList: true, subtree: true });
+  }
+
   function renderJournalFees() {
     const body = document.getElementById('stock-journal-body');
     if (!body) return;
-    const plans = loadPlans();
-    body.querySelectorAll('tr').forEach(row => {
-      const symbol = row.querySelector('td:nth-child(2) strong')?.textContent?.trim()?.toUpperCase();
-      const plan = plans.find(item => safeText(item.symbol).toUpperCase() === symbol);
-      const feeCell = row.querySelector('td:nth-child(6)');
-      if (feeCell && plan?.feeModelVersion === 'release2') {
-        feeCell.innerHTML = `<strong>${signedMoney(plan.netProfit)}</strong><br><span class="muted">Costs ${money(plan.totalCosts)} / Net ${signedPct(plan.netReturnPct)}</span>`;
-      } else if (feeCell && symbol) {
-        feeCell.innerHTML = '<span class="muted">Not calculated</span>';
-      }
-    });
+    if (journalObserver) journalObserver.disconnect();
+    try {
+      const plans = loadPlans();
+      body.querySelectorAll('tr').forEach(row => {
+        const symbol = row.querySelector('td:nth-child(2) strong')?.textContent?.trim()?.toUpperCase();
+        const plan = plans.find(item => safeText(item.symbol).toUpperCase() === symbol);
+        const feeCell = row.querySelector('td:nth-child(6)');
+        if (feeCell && plan?.feeModelVersion === 'release2') {
+          feeCell.innerHTML = `<strong>${signedMoney(plan.netProfit)}</strong><br><span class="muted">Costs ${money(plan.totalCosts)} / Net ${signedPct(plan.netReturnPct)}</span>`;
+        } else if (feeCell && symbol) {
+          feeCell.innerHTML = '<span class="muted">Not calculated</span>';
+        }
+      });
+    } finally {
+      observeJournal();
+    }
   }
 
   function bindFeeInputs() {
@@ -234,9 +250,8 @@
     renderFeePanel();
     renderJournalFees();
     loadAsxFeed();
-    const observer = new MutationObserver(renderJournalFees);
-    const journal = document.getElementById('stock-journal-body');
-    if (journal) observer.observe(journal, { childList: true, subtree: true });
+    journalObserver = new MutationObserver(renderJournalFees);
+    observeJournal();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initRelease2Stocks);

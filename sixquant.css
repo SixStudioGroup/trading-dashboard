@@ -41,6 +41,11 @@
     --sq-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', monospace;
 }
 
+html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
 body {
     background: var(--page);
     color: var(--text);
@@ -60,9 +65,34 @@ a {
 .topbar,
 .six-topbar {
     background: rgba(9, 14, 27, 0.94);
+    -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--line);
     box-shadow: none;
+    flex-wrap: wrap;
+    row-gap: 6px;
+    height: auto;
+    min-height: 54px;
+    padding-left: max(26px, env(safe-area-inset-left));
+    padding-right: max(26px, env(safe-area-inset-right));
+}
+
+.six-brand {
+    flex-shrink: 0;
+}
+
+/* Nav takes the flexible middle; scrolls inside itself instead of
+   overlapping the brand or the mode controls on tablet widths. */
+.navlinks {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-x: auto;
+    white-space: nowrap;
+    scrollbar-width: none;
+}
+
+.navlinks::-webkit-scrollbar {
+    display: none;
 }
 
 .six-brand {
@@ -212,7 +242,6 @@ a {
 .six-theme-link strong {
     color: var(--text);
     font-size: 14px;
-    font-family: var(--sq-mono);
     font-variant-numeric: tabular-nums;
 }
 
@@ -533,14 +562,14 @@ input, select, textarea {
         grid-template-columns: 1fr;
     }
 
-    .six-cockpit-panel {
-        position: static;
+    .six-trust-strip > *,
+    .six-portfolio-strip > *,
+    .six-decision-grid > * {
+        min-width: 0;
     }
 
-    .navlinks {
-        max-width: calc(100vw - 220px);
-        overflow-x: auto;
-        white-space: nowrap;
+    .six-cockpit-panel {
+        position: static;
     }
 }
 
@@ -550,7 +579,20 @@ input, select, textarea {
         height: auto;
         align-items: flex-start;
         gap: 10px;
-        padding: 10px 12px;
+        padding: 10px max(12px, env(safe-area-inset-right)) 10px max(12px, env(safe-area-inset-left));
+    }
+
+    /* Wide tables clip behind the rounded panels otherwise — let the
+       branded panels scroll horizontally on phones. */
+    .six-primary-panel,
+    .six-cockpit-panel,
+    .six-secondary-tabs {
+        overflow-x: auto;
+    }
+
+    /* iOS Safari zooms the page when a focused control is under 16px. */
+    input, select, textarea, .six-settings-input {
+        font-size: 16px;
     }
 
     .six-brand small {
