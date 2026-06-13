@@ -31,9 +31,29 @@ Key paths:
 
 This repository contains only SixQuant trading-platform material. Do not add archive doctrine, vault exports, unrelated product concepts, games, learning journals, publishing sites or files belonging to another repository.
 
+## Risk discipline
+
+Plans pass through a Five-Question Gate (cash, concentration, news, trend,
+defined downside) and configurable Risk Rules (position cap, cash reserve,
+exit-alert drawdown — Settings → Risk Rules). Breaches block the plan; held
+assets past the drawdown threshold raise exit alerts. Snapshot workflows
+write heartbeat files so a missed pipeline run is flagged before data goes
+stale.
+
+## Device modes
+
+Layout auto-detects phone, tablet, and desktop. Phones get Check mode — a
+glance strip (portfolio, positions, exit alerts, regime) and
+priority-column tables sized to the screen. Settings → Display Mode can
+lock a layout if a device misdetects.
+
 ## Current release
 
-Release 2 adds the ASX delayed-feed path and dynamic brokerage, spread, gross-return, net-return and breakeven calculations. Crypto remains the primary operational surface.
+**SixQuant 1.0** (2026-06-13) — platform rebadge, dark trading-terminal
+theme, risk controls, pipeline heartbeat, device modes, and a defect sweep
+across desktop/tablet/iOS. Pack: `docs/RELEASE-SIXQUANT-1.0.md`. Changelog:
+`docs/CHANGELOG.md`. Crypto remains the primary operational surface;
+Stocks runs on the delayed ASX feed for review-only planning.
 
 ---
 © 2026 Zencloud Advisory. All rights reserved. Proprietary and confidential.

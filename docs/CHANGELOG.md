@@ -1,5 +1,57 @@
 # Changelog
 
+## 2026-06-13 — SixQuant 1.0
+
+Platform rebadged **SixSignal → SixQuant** and hardened into a working
+release across desktop, tablet, and phone. Full pack:
+`docs/RELEASE-SIXQUANT-1.0.md`.
+
+### Brand and theme
+
+- Full rename across UI, docs, generators, workflows and data schema labels
+  (`sixquant.crypto.snapshot.v1`, `sixquant.asx.feed.v2`). Legacy
+  `sixsignal.*` fee-defaults localStorage key migrates on load.
+- New brand layer `sixquant.css`: dark trading-terminal theme — neutral
+  charcoal surfaces, electric-blue accent, market green/red semantics,
+  Inter UI type, IBM Plex Mono tabular numerics, new bar-mark favicon.
+
+### Risk controls (decision-support boundary unchanged)
+
+- Five-Question Gate replaces the generic cockpit checklist; confirm and
+  save-to-journal both require it.
+- Risk Rules in Settings (`sixquant.riskRules.v1`, defaults 8% position cap
+  / 20% cash reserve / −8% exit alert). Cap breaches and missing
+  invalidation block crypto and stock plans; reserve shortfall warns.
+- Position Monitor and the unified Alerts feed flag held assets past the
+  drawdown threshold.
+- Snapshot workflows write `data/heartbeat-<feed>.json`; both terminals
+  flag a missed pipeline run before the 24h staleness banner trips.
+
+### Device modes
+
+- `sixquant-mode.js` sets `data-device=phone|tablet|desktop` from viewport
+  width (Settings can lock a mode; Auto default).
+- Phone: Check-mode glance strip (portfolio, positions with worst drawdown,
+  exit alerts, regime), priority-column tables sized to fit 390px with no
+  side-scroll, 15px base type, 40px touch targets.
+
+### Defects fixed
+
+- `formatTimestamp` undefined in stocks.js scope — any populated ASX feed
+  crashed `renderAll`, killing the stocks page (the original "console is
+  broken" report).
+- Stocks journal MutationObserver re-fired on its own innerHTML writes —
+  infinite loop froze the renderer once the crash above was fixed.
+- Panels clipped wide tables with no scroll above 760px — stocks queue
+  Analyse and journal Delete columns were invisible on desktop.
+- Topbar brand/nav/controls overlapped between 761–1180px (iPad portrait).
+- Crypto queue header was one column short — the 24hr label sat over the
+  1hr data column; missing 1hr header added.
+- iOS hardening: `-webkit-backdrop-filter`, text-size-adjust lock, 16px
+  form controls (no focus zoom), safe-area padding.
+
+---
+
 ## 2026-06-03 — Live Market Data Restored
 
 ### Crypto Data Feed Fixed
