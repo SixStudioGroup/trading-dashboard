@@ -18,6 +18,12 @@ They are adapted below into decision-support equivalents.
 
 ## Now (high value, low effort, inside boundary)
 
+> Status 2026-06-13: N1, N2, N3, N4, N5 shipped. Crypto cockpit checklist is
+> now the five-question gate; risk rules configurable in Settings (defaults
+> 8% position cap / 20% reserve / −8% exit alert); Position Monitor and the
+> Alerts feed surface drawdown breaches; snapshot workflows write
+> `data/heartbeat-*.json` consumed by the feed diagnostics on both terminals.
+
 ### N1. Five-question gate in the Decision Cockpit
 
 Article 1 prescribes a pre-trade checklist: cash balance, existing positions, recent

@@ -354,6 +354,33 @@ function saveGithubPat(pat) {
     } catch { return false; }
 }
 
+const RISK_RULES_STORAGE_KEY = "sixquant.riskRules.v1";
+const DEFAULT_RISK_RULES = { maxPositionPct: 8, cashReservePct: 20, exitAlertPct: 8 };
+
+function loadRiskRules() {
+    if (!storageAvailable()) return { ...DEFAULT_RISK_RULES };
+    try {
+        const stored = JSON.parse(window.localStorage.getItem(RISK_RULES_STORAGE_KEY) || "{}");
+        return {
+            maxPositionPct: Math.max(0.5, finiteNumber(stored.maxPositionPct, DEFAULT_RISK_RULES.maxPositionPct)),
+            cashReservePct: Math.max(0, finiteNumber(stored.cashReservePct, DEFAULT_RISK_RULES.cashReservePct)),
+            exitAlertPct: Math.max(0.5, finiteNumber(stored.exitAlertPct, DEFAULT_RISK_RULES.exitAlertPct))
+        };
+    } catch {
+        return { ...DEFAULT_RISK_RULES };
+    }
+}
+
+function saveRiskRules(rules) {
+    if (!storageAvailable()) return false;
+    try {
+        window.localStorage.setItem(RISK_RULES_STORAGE_KEY, JSON.stringify(rules));
+        return true;
+    } catch {
+        return false;
+    }
+}
+
 function demoHoldings() {
     return DEMO_HOLDINGS.map(normalizeHolding);
 }
@@ -1438,16 +1465,20 @@ function renderPositionMonitor(items, holdingRows) {
     const body = document.getElementById("position-monitor-body");
     if (!body) return;
     const rows = holdingRows.filter(row => row.holding.balance > 0);
+    const exitAlertPct = loadRiskRules().exitAlertPct;
     body.innerHTML = rows.length ? rows.map(row => {
         const item = itemForHolding(items, row.holding);
         const unrealized = unrealizedFor(row);
         const signal = item ? guideStateFor(item).label : "No Action";
-        const exitRisk = item
-            ? (signal === "Sell Risk" || riskFor(item) === "High" || finiteNumber(item.coin.change24h ?? item.coin.price_change_percentage_24h) < 0 ? "Review Position" : "No elevated exit risk")
-            : "Price unavailable";
-        const status = exitRisk === "Review Position" ? "Review" : signal === "Sell Risk" ? "Plan Exit" : "Hold";
+        const drawdownAlert = unrealized.percent !== null && finiteNumber(unrealized.percent) <= -exitAlertPct;
+        const exitRisk = drawdownAlert
+            ? `Exit alert: drawdown past -${exitAlertPct}%`
+            : item
+                ? (signal === "Sell Risk" || riskFor(item) === "High" || finiteNumber(item.coin.change24h ?? item.coin.price_change_percentage_24h) < 0 ? "Review Position" : "No elevated exit risk")
+                : "Price unavailable";
+        const status = drawdownAlert ? "Exit Review" : exitRisk === "Review Position" ? "Review" : signal === "Sell Risk" ? "Plan Exit" : "Hold";
         return `
-            <tr>
+            <tr class="${drawdownAlert ? "alert-row-risk" : ""}">
                 <td>${escapeHtml(row.holding.symbol)} / ${escapeHtml(row.holding.name)}</td>
                 <td class="num">${displayBalance(row.holding.balance, row.holding.symbol)}</td>
                 <td class="num">${displayEntry(row.holding.avgEntryPrice)}</td>
@@ -1512,6 +1543,7 @@ function analysisHtml(selected, portfolioValue) {
                 <button class="table-action" type="button" id="save-plan-journal">Save to Journal</button>
                 <button class="table-action" type="button" id="add-analysis-watch">Add to Watch</button>
             </div>
+            <p class="form-message" id="plan-risk-message" aria-live="polite"></p>
         </div>
         <div class="position-helper">
             <div class="mini-title">Risk Per Trade</div>
@@ -1526,8 +1558,14 @@ function analysisHtml(selected, portfolioValue) {
             <div class="helper-output" id="size-output">Sizing helper only. Final trade decision is external.</div>
         </div>
         <div class="handoff-checklist">
-            <div class="mini-title">CoinSpot Handoff Checklist <span class="checklist-progress" id="checklist-progress">${confirmed ? "5 / 5" : "0 / 5"} checks</span></div>
-            ${["Plan created", "Position size checked", "Invalidation set", "Holding impact reviewed", "Journal reminder acknowledged"].map((label, index) => `
+            <div class="mini-title">Five-Question Gate <span class="checklist-progress" id="checklist-progress">${confirmed ? "5 / 5" : "0 / 5"} checks</span></div>
+            ${[
+                "Cash checked — free funds cover this position without breaking the reserve",
+                `Existing positions reviewed — no unintended concentration with ${escapeHtml(selected.coin.symbol.toUpperCase())}`,
+                `Recent news checked for ${escapeHtml(selected.coin.symbol.toUpperCase())}`,
+                "Trend checked — price versus 20-day and 50-day averages",
+                "Downside defined — loss at invalidation is acceptable"
+            ].map((label, index) => `
                 <label class="check-row"><input type="checkbox" data-handoff-check="${index}" ${confirmed ? "checked" : ""}><span>${label}</span></label>
             `).join("")}
         </div>
@@ -1581,19 +1619,67 @@ function attachAnalysisControls(selected, portfolioValue) {
         el.addEventListener("change", updateChecklistProgress);
     });
     updateChecklistProgress();
+    const setPlanRiskMessage = (text, isError) => {
+        const msg = document.getElementById("plan-risk-message");
+        if (msg) {
+            msg.textContent = text;
+            msg.classList.toggle("plan-risk-error", Boolean(isError));
+        }
+    };
+    // Risk-rule validation (configurable in Settings). Errors block the plan;
+    // warnings inform but do not block — sizing context may be incomplete.
+    const validatePlanRisk = () => {
+        const rules = loadRiskRules();
+        const errors = [];
+        const warnings = [];
+        const size = finiteNumber(document.getElementById("plan-size")?.value);
+        const accountValue = Math.max(0, finiteNumber(document.getElementById("size-portfolio")?.value, portfolioValue));
+        if (!(size > 0)) errors.push("Set an intended position size.");
+        if (!safeText(document.getElementById("plan-invalidation")?.value, "")) errors.push("Set an invalidation level.");
+        if (size > 0 && accountValue > 0 && size > accountValue * (rules.maxPositionPct / 100)) {
+            errors.push(`Position ${formatPrice(size)} exceeds the ${rules.maxPositionPct}% cap (${formatPrice(accountValue * rules.maxPositionPct / 100)} of account value).`);
+        }
+        if (size > 0 && accountValue > portfolioValue + 1) {
+            const freeCash = accountValue - portfolioValue;
+            const reserve = accountValue * (rules.cashReservePct / 100);
+            if (size > freeCash - reserve) {
+                warnings.push(`This size leaves less than the ${rules.cashReservePct}% cash reserve (free ${formatPrice(freeCash)}, reserve ${formatPrice(reserve)}).`);
+            }
+        } else if (size > 0 && rules.cashReservePct > 0) {
+            warnings.push("Set Account value (holdings + cash) in Risk Per Trade to enable the cash-reserve check.");
+        }
+        return { ok: errors.length === 0, errors, warnings };
+    };
     document.getElementById("confirm-plan")?.addEventListener("click", () => {
         const checks = [...document.querySelectorAll("[data-handoff-check]")];
-        const invalidationSet = Boolean(safeText(document.getElementById("plan-invalidation")?.value, ""));
-        const positionChecked = finiteNumber(document.getElementById("plan-size")?.value) > 0;
-        if (checks.every(input => input.checked) && invalidationSet && positionChecked) {
-            planConfirmedAssetId = selected.coin.id;
-            renderDashboard(currentDashboardModel);
+        const verdict = validatePlanRisk();
+        if (!checks.every(input => input.checked)) {
+            setPlanRiskMessage("Answer all five gate questions before confirming.", true);
+            return;
         }
+        if (!verdict.ok) {
+            setPlanRiskMessage(verdict.errors.join(" "), true);
+            return;
+        }
+        planConfirmedAssetId = selected.coin.id;
+        renderDashboard(currentDashboardModel);
+        setPlanRiskMessage(verdict.warnings.join(" "), false);
     });
     document.getElementById("save-plan-journal")?.addEventListener("click", () => {
+        const checks = [...document.querySelectorAll("[data-handoff-check]")];
+        const verdict = validatePlanRisk();
+        if (!checks.every(input => input.checked)) {
+            setPlanRiskMessage("Answer all five gate questions before saving the plan.", true);
+            return;
+        }
+        if (!verdict.ok) {
+            setPlanRiskMessage(verdict.errors.join(" "), true);
+            return;
+        }
         planConfirmedAssetId = selected.coin.id;
         addTrade(planTradeFromSelection(selected, portfolioValue));
         renderDashboard(currentDashboardModel);
+        setPlanRiskMessage(verdict.warnings.join(" "), false);
     });
     document.getElementById("add-analysis-watch")?.addEventListener("click", () => {
         const state = guideStateFor(selected).label;
@@ -2569,8 +2655,30 @@ function renderAlerts(model) {
         isRisk:    ev.klass === "risk",
     }));
 
+    // Held-asset drawdown alerts (N3): any holding past the configured
+    // exit threshold surfaces here as a risk row.
+    const exitAlertPct = loadRiskRules().exitAlertPct;
+    const exitRows = manualHoldings.filter(h => h.balance > 0).map(holding => {
+        const valuation = holdingValuation(model.markets, holding);
+        const row = { holding, ...valuation };
+        const unrealized = unrealizedFor(row);
+        if (unrealized.percent === null || finiteNumber(unrealized.percent) > -exitAlertPct) return null;
+        return {
+            klass: "risk",
+            market: "crypto",
+            assetHtml: `<strong>${escapeHtml(holding.symbol)}</strong> <span class="muted">${escapeHtml(holding.name)}</span>`,
+            badge: "Exit Alert",
+            trigger: `Drawdown ${displayPercentValue(unrealized.percent)} breaches -${exitAlertPct}%`,
+            movement: displayPercentValue(unrealized.percent),
+            price: row.market ? formatPrice(row.market.current_price) : "—",
+            rule: `Held position is past the -${exitAlertPct}% drawdown threshold. Review the exit plan in the Position Monitor.`,
+            isNew: false,
+            isRisk: true,
+        };
+    }).filter(Boolean);
+
     const KLASS_ORDER = { risk: 0, strong: 1, volume: 2, watch: 3 };
-    const allRows = [...cryptoRows, ...stockRows].sort(
+    const allRows = [...exitRows, ...cryptoRows, ...stockRows].sort(
         (a, b) => (KLASS_ORDER[a.klass] ?? 9) - (KLASS_ORDER[b.klass] ?? 9)
     );
 
@@ -3148,8 +3256,38 @@ function migrateAssetClassTags() {
     if (unknownCount) console.warn(`ZenCloud migration: ${unknownCount} record(s) tagged "unknown" — review asset class in Journal.`);
 }
 
+function initRiskRulesCard() {
+    const maxInput = document.getElementById("risk-max-position");
+    const reserveInput = document.getElementById("risk-cash-reserve");
+    const exitInput = document.getElementById("risk-exit-alert");
+    const msg = document.getElementById("risk-rules-message");
+    if (!maxInput || !reserveInput || !exitInput) return;
+    const fill = (rules) => {
+        maxInput.value = rules.maxPositionPct;
+        reserveInput.value = rules.cashReservePct;
+        exitInput.value = rules.exitAlertPct;
+    };
+    fill(loadRiskRules());
+    document.getElementById("risk-rules-save")?.addEventListener("click", () => {
+        const rules = {
+            maxPositionPct: Math.max(0.5, finiteNumber(maxInput.value, DEFAULT_RISK_RULES.maxPositionPct)),
+            cashReservePct: Math.max(0, finiteNumber(reserveInput.value, DEFAULT_RISK_RULES.cashReservePct)),
+            exitAlertPct: Math.max(0.5, finiteNumber(exitInput.value, DEFAULT_RISK_RULES.exitAlertPct))
+        };
+        const saved = saveRiskRules(rules);
+        fill(rules);
+        if (msg) msg.textContent = saved ? "Risk rules saved. They apply on the next analysis." : "Storage unavailable — rules not saved.";
+    });
+    document.getElementById("risk-rules-reset")?.addEventListener("click", () => {
+        saveRiskRules({ ...DEFAULT_RISK_RULES });
+        fill(DEFAULT_RISK_RULES);
+        if (msg) msg.textContent = "Risk rules reset to defaults.";
+    });
+}
+
 function initSettingsPage() {
     if (page !== "settings") return;
+    initRiskRulesCard();
     const patInput = document.getElementById("github-pat-input");
     const patMsg = document.getElementById("github-pat-message");
     const patSave = document.getElementById("github-pat-save");
@@ -3338,8 +3476,35 @@ function initSharePanel() {
     });
 }
 
+// N5: pipeline heartbeat — flags a missed snapshot workflow run well before
+// the 24h data-staleness threshold trips. Crypto refreshes 3x daily.
+const HEARTBEAT_MAX_AGE_HOURS = 12;
+
+async function checkFeedHeartbeat() {
+    const target = document.getElementById("feed-heartbeat");
+    if (!target) return;
+    try {
+        const resp = await fetch("data/heartbeat-crypto.json", { cache: "no-cache" });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const beat = await resp.json();
+        const last = new Date(beat.lastRun);
+        if (Number.isNaN(last.getTime())) throw new Error("bad timestamp");
+        const ageHours = (Date.now() - last.getTime()) / 3600000;
+        if (ageHours > HEARTBEAT_MAX_AGE_HOURS) {
+            target.textContent = `MISSED RUN — last pipeline run ${ageHours.toFixed(1)}h ago (expected under ${HEARTBEAT_MAX_AGE_HOURS}h)`;
+            target.classList.add("negative");
+        } else {
+            target.textContent = `OK — pipeline ran ${ageHours < 1 ? "under an hour" : Math.round(ageHours) + "h"} ago`;
+            target.classList.remove("negative");
+        }
+    } catch {
+        target.textContent = "Heartbeat unavailable";
+    }
+}
+
 async function boot() {
     migrateAssetClassTags();
+    checkFeedHeartbeat();
     const markets = await getMarkets();
     const model = buildDecisionPipeline(markets);
     recordSignalHistory(model.assets);

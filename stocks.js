@@ -109,6 +109,22 @@ function formatTimestamp(value) {
     });
 }
 
+// Mirrors app.js loadRiskRules — stocks.html does not load app.js.
+function loadRiskRules() {
+    const defaults = { maxPositionPct: 8, cashReservePct: 20, exitAlertPct: 8 };
+    if (!storageAvailable()) return defaults;
+    try {
+        const stored = JSON.parse(window.localStorage.getItem("sixquant.riskRules.v1") || "{}");
+        return {
+            maxPositionPct: Math.max(0.5, finiteNumber(stored.maxPositionPct, defaults.maxPositionPct)),
+            cashReservePct: Math.max(0, finiteNumber(stored.cashReservePct, defaults.cashReservePct)),
+            exitAlertPct: Math.max(0.5, finiteNumber(stored.exitAlertPct, defaults.exitAlertPct))
+        };
+    } catch {
+        return defaults;
+    }
+}
+
 function loadPrivacyMode() {
     if (!storageAvailable()) return false;
     try {
@@ -773,6 +789,18 @@ function initPlanForm() {
     form.addEventListener("submit", event => {
         event.preventDefault();
         const data = new FormData(form);
+        const message = document.getElementById("stock-plan-message");
+        const rules = loadRiskRules();
+        const size = finiteNumber(data.get("positionSize"));
+        const accountValue = finiteNumber(data.get("accountValue"));
+        if (!safeText(String(data.get("invalidation") || ""), "")) {
+            if (message) message.textContent = "Risk rule: set an invalidation level before recording the plan.";
+            return;
+        }
+        if (size > 0 && accountValue > 0 && size > accountValue * (rules.maxPositionPct / 100)) {
+            if (message) message.textContent = `Risk rule: position ${formatMoney(size)} exceeds the ${rules.maxPositionPct}% cap (${formatMoney(accountValue * rules.maxPositionPct / 100)} of account value).`;
+            return;
+        }
         const plan = normalizePlan({
             symbol: data.get("symbol"),
             name: data.get("name"),

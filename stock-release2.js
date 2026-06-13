@@ -243,6 +243,32 @@
     if (typeof renderAll === 'function') renderAll();
   }
 
+  // ASX feed runs weekdays only — the allowed age must span a weekend gap
+  // (Friday 16:15 capture to Monday 10:00 open is ~66h).
+  const HEARTBEAT_MAX_AGE_HOURS = 76;
+
+  async function checkAsxHeartbeat() {
+    const warning = document.getElementById('stock-heartbeat-warning');
+    const detail = document.getElementById('stock-heartbeat-detail');
+    if (!warning || !detail) return;
+    try {
+      const resp = await fetch('data/heartbeat-asx.json', { cache: 'no-cache' });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const beat = await resp.json();
+      const last = new Date(beat.lastRun);
+      if (Number.isNaN(last.getTime())) throw new Error('bad timestamp');
+      const ageHours = (Date.now() - last.getTime()) / 3600000;
+      if (ageHours > HEARTBEAT_MAX_AGE_HOURS) {
+        detail.textContent = `last ASX pipeline run ${Math.round(ageHours)}h ago (expected under ${HEARTBEAT_MAX_AGE_HOURS}h). Check the GitHub Action before relying on feed state.`;
+        warning.hidden = false;
+      } else {
+        warning.hidden = true;
+      }
+    } catch (_error) {
+      warning.hidden = true;
+    }
+  }
+
   function initRelease2Stocks() {
     hydrateFeeDefaults();
     bindFeeInputs();
@@ -250,6 +276,7 @@
     renderFeePanel();
     renderJournalFees();
     loadAsxFeed();
+    checkAsxHeartbeat();
     journalObserver = new MutationObserver(renderJournalFees);
     observeJournal();
   }

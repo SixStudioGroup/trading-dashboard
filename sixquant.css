@@ -474,6 +474,30 @@ input, select, textarea {
     color: var(--muted);
 }
 
+/* Risk rules (N1/N2/N3) */
+.form-message.plan-risk-error {
+    color: #FF7B81;
+    font-weight: 600;
+}
+
+.risk-rule-field {
+    display: grid;
+    gap: 4px;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+    min-width: 160px;
+    flex: 1;
+}
+
+#feed-heartbeat.negative {
+    color: #FF7B81;
+}
+
+#position-monitor-body tr.alert-row-risk td {
+    background: rgba(234, 57, 67, 0.10);
+}
+
 /* --------------------------------------------------------------------------
    Semantic states — base theme hardcodes light-surface colours; brighten
    them for dark surfaces so badges, pills, and rule cards stay readable.

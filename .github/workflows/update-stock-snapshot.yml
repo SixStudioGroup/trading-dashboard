@@ -35,13 +35,18 @@ jobs:
         run: python scripts/fetch_stocks.py
         continue-on-error: true
 
+      - name: Write feed heartbeat
+        if: steps.fetch.outcome == 'success'
+        run: |
+          python -c "import json, datetime; json.dump({'feed': 'stocks', 'lastRun': datetime.datetime.now(datetime.timezone.utc).isoformat(), 'status': 'ok'}, open('data/heartbeat-stocks.json', 'w'), indent=2)"
+
       - name: Commit and push if changed
         if: steps.fetch.outcome == 'success'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git diff --quiet data/stocks-snapshot.json || (
-            git add data/stocks-snapshot.json &&
+          git diff --quiet data/stocks-snapshot.json data/heartbeat-stocks.json || (
+            git add data/stocks-snapshot.json data/heartbeat-stocks.json &&
             git commit -m "chore: update stocks snapshot [skip ci]" &&
             git push
           )
