@@ -834,3 +834,19 @@ html[data-device="phone"] .six-focus-table .table-action {
     padding-left: 8px;
     padding-right: 8px;
 }
+
+html[data-device="phone"] body[data-page="dashboard"] .six-focus-table .badge {
+    font-size: 10px;
+    padding: 3px 6px;
+    letter-spacing: 0;
+    white-space: nowrap;
+}
+
+html[data-device="phone"] body[data-page="dashboard"] .six-focus-table .coin {
+    max-width: 96px;
+}
+
+html[data-device="phone"] body[data-page="dashboard"] .six-focus-table td.num,
+html[data-device="phone"] body[data-page="dashboard"] .six-focus-table th.num {
+    font-size: 12px;
+}
