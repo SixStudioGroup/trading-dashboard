@@ -7,6 +7,9 @@ Thumbs.db
 *.tmp
 *.bak
 
+# Claude Code machine-local settings (permissions are per-machine)
+.claude/settings.local.json
+
 # Local environment and secrets
 .env
 .env.*
