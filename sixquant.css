@@ -8,14 +8,14 @@
 :root {
     --brand-blue: #2F81F7;
     --brand-blue-dark: #1F6FEB;
-    --brand-navy: #0D1B33;
-    --page: #0A0F1C;
-    --panel: #101A2E;
-    --panel-soft: #0D1626;
-    --panel-raised: #16223A;
-    --line: rgba(148, 163, 184, 0.16);
-    --text: #E8EEF9;
-    --muted: #94A3B8;
+    --brand-navy: #161D2D;
+    --page: #131722;
+    --panel: #1B2130;
+    --panel-soft: #161B27;
+    --panel-raised: #252B3B;
+    --line: rgba(160, 175, 200, 0.18);
+    --text: #DEE4EE;
+    --muted: #A4AFC0;
     --cyan: #2F81F7;
     --green: #16C784;
     --red: #EA3943;
@@ -30,8 +30,8 @@
     --vaf-accent-hover: #1F6FEB;
     --vaf-accent-subtle: rgba(47, 129, 247, 0.12);
     --vaf-accent-border: rgba(47, 129, 247, 0.45);
-    --vaf-navy: #0D1B33;
-    --vaf-navy-dark: #091224;
+    --vaf-navy: #161D2D;
+    --vaf-navy-dark: #10141F;
     --vaf-font-heading: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
     --vaf-font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
     --vaf-font-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', monospace;
@@ -64,7 +64,7 @@ a {
 
 .topbar,
 .six-topbar {
-    background: rgba(9, 14, 27, 0.94);
+    background: rgba(16, 20, 31, 0.96);
     -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--line);
@@ -121,7 +121,7 @@ a {
     width: 34px;
     height: 34px;
     border-radius: 10px;
-    background: linear-gradient(180deg, #101A2E, #0A0F1C);
+    background: linear-gradient(180deg, #1B2130, #131722);
     border: 1px solid var(--line);
     display: flex;
     align-items: flex-end;
@@ -313,7 +313,7 @@ a {
 
 .panel-header,
 .trade-guide-header {
-    background: linear-gradient(180deg, rgba(22, 34, 58, 0.85), rgba(16, 26, 46, 0.6));
+    background: linear-gradient(180deg, rgba(37, 43, 59, 0.8), rgba(27, 33, 48, 0.5));
 }
 
 .panel-title {
@@ -360,7 +360,21 @@ a {
 td.num, th.num {
     font-family: var(--sq-mono);
     font-variant-numeric: tabular-nums;
-    font-size: 12.5px;
+    font-size: 13px;
+}
+
+/* Tables can exceed their panel width (the stocks queue runs ~1000px);
+   panels scroll horizontally at every width instead of clipping the
+   trailing Analyse/Actions columns. */
+.six-primary-panel,
+.six-cockpit-panel,
+.six-secondary-tabs,
+.trade-guide-panel {
+    overflow-x: auto;
+}
+
+.form-actions {
+    flex-wrap: wrap;
 }
 
 .selected-row td {
@@ -569,7 +583,7 @@ input, select, textarea {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #22304C;
+    background: #323A4E;
 }
 
 /* --------------------------------------------------------------------------
