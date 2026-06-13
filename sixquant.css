@@ -850,3 +850,10 @@ html[data-device="phone"] body[data-page="dashboard"] .six-focus-table td.num,
 html[data-device="phone"] body[data-page="dashboard"] .six-focus-table th.num {
     font-size: 12px;
 }
+
+/* Crypto queue on phone also drops the 1hr column (col 5);
+   24hr + price stay. */
+html[data-device="phone"] body[data-page="dashboard"] .six-focus-table th:nth-child(5),
+html[data-device="phone"] body[data-page="dashboard"] .six-focus-table td:nth-child(5) {
+    display: none;
+}
