@@ -807,3 +807,30 @@ html[data-device="phone"] .check-summary {
 .check-summary .check-stat strong.positive {
     color: var(--green);
 }
+
+/* Phone: tighter cells so the queues fit 390px without panel scroll. */
+html[data-device="phone"] .six-focus-table th,
+html[data-device="phone"] .six-focus-table td {
+    padding-left: 6px;
+    padding-right: 6px;
+}
+
+html[data-device="phone"] .six-focus-table .coin {
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+html[data-device="phone"] body[data-page="stocks"] .six-focus-table th:nth-child(1),
+html[data-device="phone"] body[data-page="stocks"] .six-focus-table td:nth-child(1) {
+    display: none;
+}
+
+html[data-device="phone"] .six-focus-table .table-action {
+    padding-left: 8px;
+    padding-right: 8px;
+}
