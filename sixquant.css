@@ -363,16 +363,6 @@ td.num, th.num {
     font-size: 13px;
 }
 
-/* Tables can exceed their panel width (the stocks queue runs ~1000px);
-   panels scroll horizontally at every width instead of clipping the
-   trailing Analyse/Actions columns. */
-.six-primary-panel,
-.six-cockpit-panel,
-.six-secondary-tabs,
-.trade-guide-panel {
-    overflow-x: auto;
-}
-
 .form-actions {
     flex-wrap: wrap;
 }
@@ -678,4 +668,18 @@ input, select, textarea {
     .stock-plan-form {
         grid-template-columns: 1fr;
     }
+}
+
+/* ==========================================================================
+   Final overrides — must stay at the end of this file.
+   Tables can exceed their panel width (the stocks queue runs ~1000px);
+   panels scroll horizontally at every width instead of clipping the
+   trailing Analyse/Actions columns.
+   ========================================================================== */
+
+.six-primary-panel,
+.six-cockpit-panel,
+.six-secondary-tabs,
+.trade-guide-panel {
+    overflow-x: auto;
 }
