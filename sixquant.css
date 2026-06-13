@@ -683,3 +683,127 @@ input, select, textarea {
 .trade-guide-panel {
     overflow-x: auto;
 }
+
+/* ==========================================================================
+   Device modes — sixquant-mode.js sets data-device on <html> (auto from
+   viewport, or locked via Settings). Phone mode trades columns for
+   readability: bigger type, bigger touch targets, brighter borders, and
+   priority columns instead of invisible side-scroll.
+   ========================================================================== */
+
+html[data-device="tablet"] {
+    --line: rgba(170, 184, 208, 0.24);
+}
+
+html[data-device="phone"] {
+    --line: rgba(170, 184, 208, 0.26);
+}
+
+html[data-device="phone"] body {
+    font-size: 15px;
+}
+
+html[data-device="phone"] td.num,
+html[data-device="phone"] th.num {
+    font-size: 13.5px;
+}
+
+html[data-device="phone"] .six-metric span,
+html[data-device="phone"] .six-strip-item span,
+html[data-device="phone"] .six-theme-link span {
+    font-size: 11px;
+}
+
+html[data-device="phone"] .table-action,
+html[data-device="phone"] .button-primary,
+html[data-device="phone"] .filter-btn {
+    min-height: 40px;
+    padding-top: 9px;
+    padding-bottom: 9px;
+}
+
+/* Queue tables fit the phone screen with priority columns — no side-scroll,
+   no 540px minimum, normal table layout restored. */
+html[data-device="phone"] .six-focus-table {
+    min-width: 0;
+    width: 100%;
+    display: table;
+}
+
+/* Crypto queue: Coin / Signal / Price / 24hr / Analyse (drop Score col 3) */
+html[data-device="phone"] body[data-page="dashboard"] .six-focus-table th:nth-child(3),
+html[data-device="phone"] body[data-page="dashboard"] .six-focus-table td:nth-child(3) {
+    display: none;
+}
+
+/* Stocks queue: Rank / Ticker / Price / 1D / State / Analyse
+   (drop Company 3, Sector 4, 5D 7, Rel Vol 8, Risk 10) */
+html[data-device="phone"] body[data-page="stocks"] .six-focus-table th:nth-child(3),
+html[data-device="phone"] body[data-page="stocks"] .six-focus-table td:nth-child(3),
+html[data-device="phone"] body[data-page="stocks"] .six-focus-table th:nth-child(4),
+html[data-device="phone"] body[data-page="stocks"] .six-focus-table td:nth-child(4),
+html[data-device="phone"] body[data-page="stocks"] .six-focus-table th:nth-child(7),
+html[data-device="phone"] body[data-page="stocks"] .six-focus-table td:nth-child(7),
+html[data-device="phone"] body[data-page="stocks"] .six-focus-table th:nth-child(8),
+html[data-device="phone"] body[data-page="stocks"] .six-focus-table td:nth-child(8),
+html[data-device="phone"] body[data-page="stocks"] .six-focus-table th:nth-child(10),
+html[data-device="phone"] body[data-page="stocks"] .six-focus-table td:nth-child(10) {
+    display: none;
+}
+
+/* Position monitor: Asset / Current / P-L AUD / P-L pct / Exit risk / Status
+   (drop Balance 2, Entry 3, Signal 7, Held 9) */
+html[data-device="phone"] .position-monitor-table th:nth-child(2),
+html[data-device="phone"] .position-monitor-table td:nth-child(2),
+html[data-device="phone"] .position-monitor-table th:nth-child(3),
+html[data-device="phone"] .position-monitor-table td:nth-child(3),
+html[data-device="phone"] .position-monitor-table th:nth-child(7),
+html[data-device="phone"] .position-monitor-table td:nth-child(7),
+html[data-device="phone"] .position-monitor-table th:nth-child(9),
+html[data-device="phone"] .position-monitor-table td:nth-child(9) {
+    display: none;
+}
+
+/* Check-mode summary — phone-only glance strip on the crypto terminal. */
+.check-summary {
+    display: none;
+}
+
+html[data-device="phone"] .check-summary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    padding: 12px;
+    margin-bottom: 14px;
+}
+
+.check-summary .check-stat {
+    display: grid;
+    gap: 4px;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--panel-soft);
+}
+
+.check-summary .check-stat span {
+    color: var(--muted);
+    text-transform: uppercase;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+}
+
+.check-summary .check-stat strong {
+    font-size: 19px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+
+.check-summary .check-stat strong.negative {
+    color: var(--red);
+}
+
+.check-summary .check-stat strong.positive {
+    color: var(--green);
+}

@@ -1226,6 +1226,7 @@ function renderDashboard(model) {
     updateCommandStatus(holdingRows, portfolioValue);
     document.querySelector(".command-status")?.classList.toggle("is-fallback", Boolean(model.dataConfidence?.isFallback));
     renderMarketRegime(model);
+    renderCheckSummary(holdingRows, portfolioValue);
 
     document.getElementById("opportunities-body").innerHTML = opportunityRows.map(item => `
         <tr class="${item.coin.id === selectedAssetId ? "selected-row" : ""}">
@@ -1346,6 +1347,34 @@ function renderDashboard(model) {
     renderSessionChecklist();
     renderPerformanceSummary("dashboard-performance-summary");
     attachAnalysisControls(selected, portfolioValue);
+}
+
+// Check-mode glance strip (phone): portfolio, open positions with worst
+// drawdown, exit-alert count, regime. Populated every render; CSS shows it
+// only when data-device="phone".
+function renderCheckSummary(holdingRows, portfolioValue) {
+    const portfolioEl = document.getElementById("cs-portfolio");
+    if (!portfolioEl) return;
+    const open = holdingRows.filter(row => row.holding.balance > 0);
+    const withPl = open.map(row => unrealizedFor(row)).filter(u => u.percent !== null);
+    const worst = withPl.length ? Math.min(...withPl.map(u => u.percent)) : null;
+    const exitAlertPct = loadRiskRules().exitAlertPct;
+    const alerts = withPl.filter(u => u.percent <= -exitAlertPct).length;
+    portfolioEl.textContent = hideValues ? maskMoney() : formatPrice(portfolioValue);
+    const positionsEl = document.getElementById("cs-positions");
+    if (positionsEl) {
+        positionsEl.textContent = open.length === 0 ? "None" : `${open.length}${worst !== null ? ` · worst ${formatSignedPercent(worst)}` : ""}`;
+        positionsEl.className = worst !== null && worst < 0 ? "negative" : worst !== null ? "positive" : "";
+    }
+    const alertsEl = document.getElementById("cs-alerts");
+    if (alertsEl) {
+        alertsEl.textContent = alerts === 0 ? "None" : `${alerts} past -${exitAlertPct}%`;
+        alertsEl.className = alerts > 0 ? "negative" : "positive";
+    }
+    const regimeEl = document.getElementById("cs-regime");
+    if (regimeEl) {
+        regimeEl.textContent = safeText(document.querySelector("#market-regime-panel .regime-header strong")?.textContent, "Unavailable");
+    }
 }
 
 function updateCommandStatus(holdingRows, portfolioValue) {
@@ -3285,9 +3314,24 @@ function initRiskRulesCard() {
     });
 }
 
+function initDeviceModeCard() {
+    const sel = document.getElementById("device-mode-select");
+    if (!sel) return;
+    let current = "auto";
+    try { current = window.localStorage.getItem("sixquant.deviceMode.v1") || "auto"; } catch { /* default */ }
+    sel.value = current;
+    sel.addEventListener("change", () => {
+        try { window.localStorage.setItem("sixquant.deviceMode.v1", sel.value); } catch { /* storage off */ }
+        if (window.SixQuantDeviceMode) window.SixQuantDeviceMode.apply();
+        const msg = document.getElementById("device-mode-message");
+        if (msg) msg.textContent = sel.value === "auto" ? "Layout follows screen size automatically." : `Layout locked to ${sel.value} on this device.`;
+    });
+}
+
 function initSettingsPage() {
     if (page !== "settings") return;
     initRiskRulesCard();
+    initDeviceModeCard();
     const patInput = document.getElementById("github-pat-input");
     const patMsg = document.getElementById("github-pat-message");
     const patSave = document.getElementById("github-pat-save");
