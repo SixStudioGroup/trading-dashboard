@@ -857,3 +857,20 @@ html[data-device="phone"] body[data-page="dashboard"] .six-focus-table th:nth-ch
 html[data-device="phone"] body[data-page="dashboard"] .six-focus-table td:nth-child(5) {
     display: none;
 }
+
+/* Crypto queue: shave a few px so the table sits fully inside the phone
+   panel and Analyse needs no scroll (was ~391px in a 390px panel). */
+html[data-device="phone"] body[data-page="dashboard"] .six-focus-table th,
+html[data-device="phone"] body[data-page="dashboard"] .six-focus-table td {
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+html[data-device="phone"] body[data-page="dashboard"] .six-focus-table .coin {
+    max-width: 82px;
+}
+
+html[data-device="phone"] body[data-page="dashboard"] .six-focus-table .table-action {
+    padding-left: 7px;
+    padding-right: 7px;
+}
