@@ -56,7 +56,7 @@ Alerts entry when any held asset passes −8% (configurable in Settings).
 
 Article 2's strongest repeatable lesson. Add a repo `CLAUDE.md` recording: snapshot
 schemas (`sixquant.crypto.snapshot.v1`, `sixquant.asx.feed.v2`), feed cadence and
-workflow names, localStorage key namespace (`zencloud.*`, `sixquant.*`), risk rules,
+workflow names, localStorage key namespace (`sixquant.*`, `sixquant.*`), risk rules,
 brand tokens, and the decision-support boundary — so every future agent session
 starts with full context instead of 15 minutes of re-explaining.
 

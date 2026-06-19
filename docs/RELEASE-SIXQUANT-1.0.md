@@ -4,7 +4,7 @@
 |---|---|
 | Release | SixQuant 1.0 |
 | Date | 2026-06-13 |
-| Production URL | https://zencloudau.github.io/trading-dashboard/ |
+| Production URL | https://sixstudiogroup.github.io/trading-dashboard/ |
 | Deploy | GitHub Pages, `main` branch root, push-to-deploy |
 | Commit range | `f189232` … `4522183` |
 | Status | Live, verified, released for live testing |
@@ -12,7 +12,7 @@
 ## What this release is
 
 The SixSignal trading dashboard rebadged and hardened into **SixQuant by
-StudioSix** — a decision-support trading terminal with enforced risk
+Six Studio Group** — a decision-support trading terminal with enforced risk
 discipline, working data pipelines with health monitoring, and layouts that
 adapt to phone, tablet, and desktop automatically.
 
@@ -104,4 +104,4 @@ never holds trading-capable credentials (SECURITY.md).
   `docs/IMPROVEMENT-ROADMAP.md`.
 
 ---
-© 2026 Zencloud Advisory. All rights reserved. Proprietary and confidential.
+© 2026 Six Studio Group. All rights reserved. Proprietary and confidential.

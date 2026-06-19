@@ -1,4 +1,4 @@
-# ZenCloud Trading OS — Schema Fix, Asset Filtering & Gist Share
+# SixQuant Trading OS — Schema Fix, Asset Filtering & Gist Share
 
 **Date:** 2026-05-26  
 **Status:** Approved  
@@ -8,7 +8,7 @@
 
 ## Scope
 
-Three improvements to ZenCloud Trading OS:
+Three improvements to SixQuant Trading OS:
 
 1. Fix data overlap between Crypto and Stocks workspaces via strict `assetClass` schema
 2. Add asset-class filter UI to Journal and Reports pages
@@ -84,7 +84,7 @@ Pure JS, no new dependencies. Filter logic in `journal.html` inline script or ne
 
 - New "Share Settings" section in `settings.html`
 - User pastes GitHub PAT with `gist` scope
-- Stored in localStorage key `zencloud.githubPat.v1`
+- Stored in localStorage key `sixquant.githubPat.v1`
 - Blocked in demo mode — error shown: "GitHub sharing requires Private Local Mode"
 - PAT field is `type="password"`, never logged
 
@@ -116,7 +116,7 @@ Modal shows per-trade field toggles (applied globally to all selected trades):
 - Warning displayed before POST: "Secret Gists are accessible to anyone with the URL. Do not share sensitive financial data you are not comfortable making accessible."
 - User must click "Confirm & Create" to proceed
 - POST to `https://api.github.com/gists` with PAT in `Authorization: Bearer` header
-- Payload: single file `zencloud-trades.json`, `public: false`
+- Payload: single file `sixquant-trades.json`, `public: false`
 - On success: Gist URL copied to clipboard and displayed in modal
 - On failure: error message shown with GitHub API error detail
 
@@ -124,7 +124,7 @@ Modal shows per-trade field toggles (applied globally to all selected trades):
 
 ```json
 {
-  "zencloud_export": true,
+  "sixquant_export": true,
   "exported_at": "2026-05-26T10:00:00+10:00",
   "asset_class_filter": "crypto",
   "trades": [

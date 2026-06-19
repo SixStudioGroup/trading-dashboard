@@ -1,4 +1,4 @@
-# ZenCloud Trading OS — Platform Rename & Nav Restructure
+# SixQuant Trading OS — Platform Rename & Nav Restructure
 
 **Date:** 2026-05-26  
 **Status:** Approved  
@@ -8,7 +8,7 @@
 
 ## Scope
 
-Standardise platform name to "ZenCloud Trading OS" across all pages and restructure navigation to be context-sensitive per workspace, with a workspace switcher and vertical divider on shared pages.
+Standardise platform name to "SixQuant Trading OS" across all pages and restructure navigation to be context-sensitive per workspace, with a workspace switcher and vertical divider on shared pages.
 
 Out of scope: JS changes, new pages, new data features, backend.
 
@@ -16,18 +16,18 @@ Out of scope: JS changes, new pages, new data features, backend.
 
 ## 1. Name Standardisation
 
-Replace all occurrences of "ZenCloud Crypto Dashboard" with "ZenCloud Trading OS". Update `<title>` tags to `{Page} — ZenCloud Trading OS` format.
+Replace all occurrences of "SixQuant Crypto Dashboard" with "SixQuant Trading OS". Update `<title>` tags to `{Page} — SixQuant Trading OS` format.
 
 | File | `<title>` | Brand `<span>` text | Brand `aria-label` |
 |---|---|---|---|
-| `index.html` | `Crypto Workspace — ZenCloud Trading OS` | `ZenCloud Trading OS` | `ZenCloud Trading OS` |
-| `stocks.html` | `Stocks Workspace — ZenCloud Trading OS` | `ZenCloud Trading OS` | `ZenCloud Trading OS` |
-| `logs.html` | `Market Logs — ZenCloud Trading OS` | `ZenCloud Trading OS` | `ZenCloud Trading OS` |
-| `alerts.html` | `Alerts — ZenCloud Trading OS` | `ZenCloud Trading OS` | `ZenCloud Trading OS` |
-| `journal.html` | `Journal — ZenCloud Trading OS` | `ZenCloud Trading OS` | `ZenCloud Trading OS` |
-| `reports.html` | `Reports — ZenCloud Trading OS` | `ZenCloud Trading OS` | `ZenCloud Trading OS` |
-| `guide.html` | `Guide — ZenCloud Trading OS` | `ZenCloud Trading OS` | `ZenCloud Trading OS` |
-| `settings.html` | `Settings — ZenCloud Trading OS` | `ZenCloud Trading OS` | `ZenCloud Trading OS` |
+| `index.html` | `Crypto Workspace — SixQuant Trading OS` | `SixQuant Trading OS` | `SixQuant Trading OS` |
+| `stocks.html` | `Stocks Workspace — SixQuant Trading OS` | `SixQuant Trading OS` | `SixQuant Trading OS` |
+| `logs.html` | `Market Logs — SixQuant Trading OS` | `SixQuant Trading OS` | `SixQuant Trading OS` |
+| `alerts.html` | `Alerts — SixQuant Trading OS` | `SixQuant Trading OS` | `SixQuant Trading OS` |
+| `journal.html` | `Journal — SixQuant Trading OS` | `SixQuant Trading OS` | `SixQuant Trading OS` |
+| `reports.html` | `Reports — SixQuant Trading OS` | `SixQuant Trading OS` | `SixQuant Trading OS` |
+| `guide.html` | `Guide — SixQuant Trading OS` | `SixQuant Trading OS` | `SixQuant Trading OS` |
+| `settings.html` | `Settings — SixQuant Trading OS` | `SixQuant Trading OS` | `SixQuant Trading OS` |
 
 ---
 
@@ -40,7 +40,7 @@ Three static nav variants — one per page group. All implemented as hand-crafte
 Crypto workspace button active. Content links follow directly.
 
 ```
-Z ZenCloud Trading OS  |  [Crypto ✓]  Logs  Alerts  Journal  Reports  Guide  Settings
+Z SixQuant Trading OS  |  [Crypto ✓]  Logs  Alerts  Journal  Reports  Guide  Settings
 ```
 
 HTML structure:
@@ -63,7 +63,7 @@ HTML structure:
 Stocks workspace button active. Same content links.
 
 ```
-Z ZenCloud Trading OS  |  [Stocks ✓]  Logs  Alerts  Journal  Reports  Guide  Settings
+Z SixQuant Trading OS  |  [Stocks ✓]  Logs  Alerts  Journal  Reports  Guide  Settings
 ```
 
 HTML structure: identical to 2a with `active` on Stocks button instead.
@@ -73,7 +73,7 @@ HTML structure: identical to 2a with `active` on Stocks button instead.
 Both workspace buttons shown as switcher (neither active). Vertical divider separates workspace group from content links. Current page link carries `.active`.
 
 ```
-Z ZenCloud Trading OS  |  [Crypto]  [Stocks]  ╎  Logs ✓  Alerts  Journal  Reports  Guide  Settings
+Z SixQuant Trading OS  |  [Crypto]  [Stocks]  ╎  Logs ✓  Alerts  Journal  Reports  Guide  Settings
 ```
 
 HTML structure:
@@ -145,8 +145,8 @@ No new files. No JS changes. No new dependencies.
 
 ## Testing Checklist
 
-- [ ] All 8 page titles read `{Page} — ZenCloud Trading OS`
-- [ ] Brand text reads "ZenCloud Trading OS" on all pages
+- [ ] All 8 page titles read `{Page} — SixQuant Trading OS`
+- [ ] Brand text reads "SixQuant Trading OS" on all pages
 - [ ] Crypto workspace button active (blue) on `index.html` only
 - [ ] Stocks workspace button active (blue) on `stocks.html` only
 - [ ] Neither workspace button active on shared pages

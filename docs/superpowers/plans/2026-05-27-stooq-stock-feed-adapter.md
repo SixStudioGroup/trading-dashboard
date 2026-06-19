@@ -73,7 +73,7 @@ git commit -m "chore: add seed stocks-snapshot.json placeholder"
 Write only the three stub functions. The rest of the script is added in Task 3.
 
 ```python
-"""scripts/fetch_stocks.py — Stooq stock snapshot generator for ZenCloud Trading OS."""
+"""scripts/fetch_stocks.py — Stooq stock snapshot generator for SixQuant Trading OS."""
 
 
 def derive_signal_state(change1d, change5d, rel_vol):
@@ -228,7 +228,7 @@ git commit -m "test: add signal derivation unit tests (TDD stub)"
 
 ```python
 """
-scripts/fetch_stocks.py — Stooq stock snapshot generator for ZenCloud Trading OS.
+scripts/fetch_stocks.py — Stooq stock snapshot generator for SixQuant Trading OS.
 Fetches daily CSV for 41 symbols, derives signals, writes data/stocks-snapshot.json.
 Run by GitHub Actions hourly. No API keys required.
 """

@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Standardise the platform name to "ZenCloud Trading OS" on all pages and replace the flat 7-link nav with a context-sensitive nav that has workspace switcher buttons, a vertical divider, and a consistent set of content links including Settings.
+**Goal:** Standardise the platform name to "SixQuant Trading OS" on all pages and replace the flat 7-link nav with a context-sensitive nav that has workspace switcher buttons, a vertical divider, and a consistent set of content links including Settings.
 
 **Architecture:** Pure HTML and CSS changes across 8 static pages. No JS changes. Three nav variants: workspace-Crypto (index.html), workspace-Stocks (stocks.html), shared (all other pages). Three CSS rules added to styles.css.
 
@@ -92,7 +92,7 @@
 **Files:**
 - Modify: `index.html`
 
-**Context:** index.html currently has title `ZenCloud Crypto Dashboard`, brand text `ZenCloud Crypto Dashboard`, and a flat nav with `class="active"` on the Crypto Workspace link.
+**Context:** index.html currently has title `SixQuant Crypto Dashboard`, brand text `SixQuant Crypto Dashboard`, and a flat nav with `class="active"` on the Crypto Workspace link.
 
 - [ ] **Step 1: Verify current state**
 
@@ -100,33 +100,33 @@
   ```bash
   grep -n "Crypto Dashboard\|nav-workspace-btn" index.html
   ```
-  Expected: lines referencing "ZenCloud Crypto Dashboard", no `nav-workspace-btn`.
+  Expected: lines referencing "SixQuant Crypto Dashboard", no `nav-workspace-btn`.
 
 - [ ] **Step 2: Update title**
 
   Find and replace:
   ```html
-  <title>ZenCloud Crypto Dashboard</title>
+  <title>SixQuant Crypto Dashboard</title>
   ```
   With:
   ```html
-  <title>Crypto Workspace — ZenCloud Trading OS</title>
+  <title>Crypto Workspace — SixQuant Trading OS</title>
   ```
 
 - [ ] **Step 3: Update brand text and aria-label**
 
   Find and replace:
   ```html
-  <a class="brand" href="index.html" aria-label="ZenCloud Crypto Dashboard">
+  <a class="brand" href="index.html" aria-label="SixQuant Crypto Dashboard">
       <span class="brand-mark">Z</span>
-      <span>ZenCloud Crypto Dashboard</span>
+      <span>SixQuant Crypto Dashboard</span>
   </a>
   ```
   With:
   ```html
-  <a class="brand" href="index.html" aria-label="ZenCloud Trading OS">
+  <a class="brand" href="index.html" aria-label="SixQuant Trading OS">
       <span class="brand-mark">Z</span>
-      <span>ZenCloud Trading OS</span>
+      <span>SixQuant Trading OS</span>
   </a>
   ```
 
@@ -163,9 +163,9 @@
 
   Run:
   ```bash
-  grep -n "nav-workspace-btn\|ZenCloud Trading OS\|Crypto Workspace" index.html
+  grep -n "nav-workspace-btn\|SixQuant Trading OS\|Crypto Workspace" index.html
   ```
-  Expected: title line with "Crypto Workspace — ZenCloud Trading OS", brand aria-label/span with "ZenCloud Trading OS", two `nav-workspace-btn` lines, no remaining "Crypto Dashboard".
+  Expected: title line with "Crypto Workspace — SixQuant Trading OS", brand aria-label/span with "SixQuant Trading OS", two `nav-workspace-btn` lines, no remaining "Crypto Dashboard".
 
 - [ ] **Step 6: Commit**
 
@@ -181,7 +181,7 @@
 **Files:**
 - Modify: `stocks.html`
 
-**Context:** stocks.html already has brand text "ZenCloud Trading OS". Title is `Stocks Workspace - ZenCloud Trading OS` (dash separator — update to em-dash). Nav is flat with `class="active"` on Stocks Workspace link.
+**Context:** stocks.html already has brand text "SixQuant Trading OS". Title is `Stocks Workspace - SixQuant Trading OS` (dash separator — update to em-dash). Nav is flat with `class="active"` on Stocks Workspace link.
 
 - [ ] **Step 1: Verify current state**
 
@@ -195,11 +195,11 @@
 
   Find and replace:
   ```html
-  <title>Stocks Workspace - ZenCloud Trading OS</title>
+  <title>Stocks Workspace - SixQuant Trading OS</title>
   ```
   With:
   ```html
-  <title>Stocks Workspace — ZenCloud Trading OS</title>
+  <title>Stocks Workspace — SixQuant Trading OS</title>
   ```
 
 - [ ] **Step 3: Replace nav with workspace-Stocks variant**
@@ -254,7 +254,7 @@
 - Modify: `logs.html`
 - Modify: `alerts.html`
 
-**Context:** Both pages still say "ZenCloud Crypto Dashboard" in title, brand text, and aria-label. Both need the shared nav variant.
+**Context:** Both pages still say "SixQuant Crypto Dashboard" in title, brand text, and aria-label. Both need the shared nav variant.
 
 ### logs.html
 
@@ -262,27 +262,27 @@
 
   Find and replace:
   ```html
-  <title>Market Logs - ZenCloud Crypto Dashboard</title>
+  <title>Market Logs - SixQuant Crypto Dashboard</title>
   ```
   With:
   ```html
-  <title>Market Logs — ZenCloud Trading OS</title>
+  <title>Market Logs — SixQuant Trading OS</title>
   ```
 
 - [ ] **Step 2: Update logs.html brand text and aria-label**
 
   Find and replace:
   ```html
-  <a class="brand" href="index.html" aria-label="ZenCloud Crypto Dashboard">
+  <a class="brand" href="index.html" aria-label="SixQuant Crypto Dashboard">
       <span class="brand-mark">Z</span>
-      <span>ZenCloud Crypto Dashboard</span>
+      <span>SixQuant Crypto Dashboard</span>
   </a>
   ```
   With:
   ```html
-  <a class="brand" href="index.html" aria-label="ZenCloud Trading OS">
+  <a class="brand" href="index.html" aria-label="SixQuant Trading OS">
       <span class="brand-mark">Z</span>
-      <span>ZenCloud Trading OS</span>
+      <span>SixQuant Trading OS</span>
   </a>
   ```
 
@@ -321,27 +321,27 @@
 
   Find and replace:
   ```html
-  <title>Alerts - ZenCloud Crypto Dashboard</title>
+  <title>Alerts - SixQuant Crypto Dashboard</title>
   ```
   With:
   ```html
-  <title>Alerts — ZenCloud Trading OS</title>
+  <title>Alerts — SixQuant Trading OS</title>
   ```
 
 - [ ] **Step 5: Update alerts.html brand text and aria-label**
 
   Find and replace:
   ```html
-  <a class="brand" href="index.html" aria-label="ZenCloud Crypto Dashboard">
+  <a class="brand" href="index.html" aria-label="SixQuant Crypto Dashboard">
       <span class="brand-mark">Z</span>
-      <span>ZenCloud Crypto Dashboard</span>
+      <span>SixQuant Crypto Dashboard</span>
   </a>
   ```
   With:
   ```html
-  <a class="brand" href="index.html" aria-label="ZenCloud Trading OS">
+  <a class="brand" href="index.html" aria-label="SixQuant Trading OS">
       <span class="brand-mark">Z</span>
-      <span>ZenCloud Trading OS</span>
+      <span>SixQuant Trading OS</span>
   </a>
   ```
 
@@ -380,7 +380,7 @@
   ```bash
   grep -n "Crypto Dashboard\|nav-workspace-btn\|<title>" logs.html alerts.html
   ```
-  Expected: titles with "ZenCloud Trading OS", two `nav-workspace-btn` lines per file, zero "Crypto Dashboard" matches.
+  Expected: titles with "SixQuant Trading OS", two `nav-workspace-btn` lines per file, zero "Crypto Dashboard" matches.
 
 - [ ] **Step 8: Commit**
 
@@ -397,7 +397,7 @@
 - Modify: `journal.html`
 - Modify: `reports.html`
 
-**Context:** Both pages already have brand text "ZenCloud Trading OS". Titles use "Shared Journal"/"Shared Reports" — update to short form. journal.html nav is missing Logs/Alerts links; reports.html nav has old flat structure.
+**Context:** Both pages already have brand text "SixQuant Trading OS". Titles use "Shared Journal"/"Shared Reports" — update to short form. journal.html nav is missing Logs/Alerts links; reports.html nav has old flat structure.
 
 ### journal.html
 
@@ -405,11 +405,11 @@
 
   Find and replace:
   ```html
-  <title>Shared Journal - ZenCloud Trading OS</title>
+  <title>Shared Journal - SixQuant Trading OS</title>
   ```
   With:
   ```html
-  <title>Journal — ZenCloud Trading OS</title>
+  <title>Journal — SixQuant Trading OS</title>
   ```
 
 - [ ] **Step 2: Replace journal.html nav**
@@ -446,11 +446,11 @@
 
   Find and replace:
   ```html
-  <title>Shared Reports - ZenCloud Trading OS</title>
+  <title>Shared Reports - SixQuant Trading OS</title>
   ```
   With:
   ```html
-  <title>Reports — ZenCloud Trading OS</title>
+  <title>Reports — SixQuant Trading OS</title>
   ```
 
 - [ ] **Step 4: Replace reports.html nav**
@@ -505,7 +505,7 @@
 - Modify: `guide.html`
 - Modify: `settings.html`
 
-**Context:** Both pages already have brand text "ZenCloud Trading OS". guide.html title is "Shared User Guide"; settings.html title is "Settings". settings.html nav is already shortened but needs workspace buttons added.
+**Context:** Both pages already have brand text "SixQuant Trading OS". guide.html title is "Shared User Guide"; settings.html title is "Settings". settings.html nav is already shortened but needs workspace buttons added.
 
 ### guide.html
 
@@ -513,11 +513,11 @@
 
   Find and replace:
   ```html
-  <title>Shared User Guide - ZenCloud Trading OS</title>
+  <title>Shared User Guide - SixQuant Trading OS</title>
   ```
   With:
   ```html
-  <title>Guide — ZenCloud Trading OS</title>
+  <title>Guide — SixQuant Trading OS</title>
   ```
 
 - [ ] **Step 2: Replace guide.html nav**
@@ -555,11 +555,11 @@
 
   Find and replace:
   ```html
-  <title>Settings - ZenCloud Trading OS</title>
+  <title>Settings - SixQuant Trading OS</title>
   ```
   With:
   ```html
-  <title>Settings — ZenCloud Trading OS</title>
+  <title>Settings — SixQuant Trading OS</title>
   ```
 
 - [ ] **Step 4: Replace settings.html nav**
@@ -644,8 +644,8 @@
 
 - [ ] **Step 5: Smoke test (manual, after Pages deploys ~1-2 min)**
 
-  - [ ] All 8 page `<title>` tags read `{Page} — ZenCloud Trading OS`
-  - [ ] Brand text reads "ZenCloud Trading OS" on all pages
+  - [ ] All 8 page `<title>` tags read `{Page} — SixQuant Trading OS`
+  - [ ] Brand text reads "SixQuant Trading OS" on all pages
   - [ ] Crypto workspace button active (blue fill) on `index.html` only
   - [ ] Stocks workspace button active (blue fill) on `stocks.html` only
   - [ ] Neither workspace button active on logs/alerts/journal/reports/guide/settings

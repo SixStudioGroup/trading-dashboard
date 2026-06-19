@@ -1,9 +1,9 @@
 (() => {
-  const PLAN_KEY = 'zencloud.stocks.tradeJournal.v1';
+  const PLAN_KEY = 'sixquant.stocks.tradeJournal.v1';
   const FEE_DEFAULTS_KEY = 'sixquant.stocks.auBrokerDefaults.v2';
   // Pre-rebrand key; migrated to FEE_DEFAULTS_KEY on load so saved fee defaults survive.
   const LEGACY_FEE_DEFAULTS_KEY = 'sixsignal.stocks.auBrokerDefaults.v2';
-  const PRIVATE_MODE_KEY = 'zencloud.portalMode.v1';
+  const PRIVATE_MODE_KEY = 'sixquant.portalMode.v1';
   const PRIVATE_MODE = 'private';
   const FEED_URL = 'data/asx-feed.json';
   const MAX_FEED_AGE_HOURS = 36;

@@ -2,7 +2,7 @@
 
 ## Release Objective
 
-Stabilise ZenCloud Trading Dashboard as a disciplined manual trading terminal before expanding feature scope.
+Stabilise SixQuant Trading Dashboard as a disciplined manual trading terminal before expanding feature scope.
 
 The immediate goal is not feature expansion. The immediate goal is workflow maturity.
 

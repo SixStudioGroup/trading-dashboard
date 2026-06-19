@@ -2,9 +2,9 @@
 
 ## Core Principle
 
-ZenCloud decides.
+SixQuant decides.
 CoinSpot executes.
-ZenCloud records and reviews.
+SixQuant records and reviews.
 
 The dashboard is a manual decision-support environment.
 

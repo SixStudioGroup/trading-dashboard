@@ -1,6 +1,6 @@
 # SixQuant — agent context
 
-SixQuant (formerly SixSignal) by StudioSix. Static decision-support trading terminal
+SixQuant (formerly SixSignal) by Six Studio Group. Static decision-support trading terminal
 on GitHub Pages (`main` branch, root). **Decision support only**: it plans, records,
 and reviews. It never places orders, never connects to a broker, never holds
 trading-capable credentials. See SECURITY.md and docs/IMPROVEMENT-ROADMAP.md.
@@ -34,14 +34,14 @@ GitHub Actions generate and commit JSON snapshots (no client-side API keys):
 
 ## localStorage namespace
 
-User records live in the browser only. Keys: `zencloud.*` (portfolio, journals,
+User records live in the browser only. Keys: `sixquant.*` (portfolio, journals,
 watchlist, settings, Gist PAT) and `sixquant.stocks.auBrokerDefaults.v2` (fee
 defaults; legacy `sixsignal.*` key is migrated on load). Never rename keys without
 a migration shim — it silently wipes the operator's records.
 
 ## Rules for changes
 
-- British spelling in UI copy ("Analyse", "Artefacts" convention across ZenCloud).
+- British spelling in UI copy ("Analyse", "Artefacts" convention across SixQuant).
 - No broker/exchange credentials, no execution features, no client-side secrets.
 - Feed source, mode, timestamp, and degraded state must stay visible (SECURITY.md).
 - Workflows: least-privilege permissions, secrets via `${{ secrets.* }}` only,

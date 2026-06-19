@@ -6,7 +6,7 @@
 |---|---|---|---|---|
 | Release 0.1 | Prototype trading dashboard | Crypto watchlist, market data, manual holdings, basic review surfaces | User can scan crypto and maintain manual holdings | Complete |
 | Release 0.2 | Decision terminal direction | Opportunity queue, analysis panel, execution boundary, fallback state | User can analyse before external execution | Complete |
-| Release 0.3 | SixQuant rebrand | Product renamed, StudioSix parent identity, visual theme, favicon, route identity | User-facing product reads as SixQuant | Complete |
+| Release 0.3 | SixQuant rebrand | Product renamed, Six Studio Group parent identity, visual theme, favicon, route identity | User-facing product reads as SixQuant | Complete |
 | Release 0.4 | Multi-asset workflow | Stocks workspace, shared journal, review, alerts, evidence trail | Crypto and stocks share one operating model | Complete |
 | Release 0.5 | UX remediation | Navigation repair, route consistency, brand cleanup, screen alignment | Active routes are coherent and linked | Complete |
 | Release 1.0 RC | UAT candidate | Operator manual, UAT plan, release readiness matrix, responsive polish | Controlled UAT can start | Complete |

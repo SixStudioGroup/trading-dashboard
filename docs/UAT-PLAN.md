@@ -26,7 +26,7 @@ Scan → Analyse → Decide → Record → Review.
 | Test Category | Pass Criteria | Fail Condition | Severity |
 |---|---|---|---|
 | Navigation | Every top navigation link resolves to the correct page and uses SixQuant language | Any route shows old product shell or unclear page identity | Critical |
-| Brand | User-facing pages show SixQuant as the product and StudioSix as parent brand | User sees legacy product identity on active routes | Critical |
+| Brand | User-facing pages show SixQuant as the product and Six Studio Group as parent brand | User sees legacy product identity on active routes | Critical |
 | Workflow | User can describe the core loop after using the app | User treats the app as a generic market dashboard | High |
 | Crypto Workflow | User can select one asset, inspect cockpit, and understand execution gating | User tries to trade directly from queue | High |
 | Stocks Workflow | User can filter/select a ticker and build a stock plan | User cannot find where to create a plan | High |

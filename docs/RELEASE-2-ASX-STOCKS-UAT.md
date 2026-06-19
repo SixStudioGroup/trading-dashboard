@@ -9,7 +9,7 @@
 | ASX ticker display | ASX tickers must render without `.AX` suffix and use AUD currency. | Completed | `stock-release2.js` normalisation removes `.AX` and forces ASX/AUD defaults. | Confirm after action-generated feed is deployed. |
 | ASX universe | Universe must be broad enough for Australian swing-trading review. | Partial | Generator seeds 40 liquid ASX names across core sectors. | Expand toward ASX 200 in next release or provider-backed symbol source. |
 | Dynamic fees | Brokerage per side, percentage fee, spread/slippage, target, entry, and position size must calculate gross/net outcome. | Completed | `stock-release2.js` `calculateNetOutcome()` and fee panel rendering. | Browser UAT required after deployment. |
-| Fee persistence | Broker defaults and saved plans must persist fee assumptions in Private Local Mode. | Completed | `sixquant.stocks.auBrokerDefaults.v2` and augmented `zencloud.stocks.tradeJournal.v1`. | Public Demo Mode intentionally does not persist private records. |
+| Fee persistence | Broker defaults and saved plans must persist fee assumptions in Private Local Mode. | Completed | `sixquant.stocks.auBrokerDefaults.v2` and augmented `sixquant.stocks.tradeJournal.v1`. | Public Demo Mode intentionally does not persist private records. |
 | Journal/review | Saved stock plans must surface net outcome and total costs in the journal fee column. | Completed | `stock-release2.js` journal fee patch. | Confirm after a Private Local Mode save. |
 | Broker boundary | SixQuant must remain a manual decision cockpit, not an execution platform. | Completed | UI copy and broker handoff remain locked/manual. | No broker prefill/link/execution added. |
 

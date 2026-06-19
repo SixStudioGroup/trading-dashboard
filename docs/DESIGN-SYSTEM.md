@@ -6,7 +6,7 @@ The trading dashboard uses a restrained execution-terminal palette. The colour s
 
 ## Core Tokens
 
-Primary action: ZenCloud blue.
+Primary action: SixQuant blue.
 
 Background: cool slate.
 

@@ -1,11 +1,11 @@
-const PORTAL_MODE_STORAGE_KEY = "zencloud.portalMode.v1";
-const PRIVACY_STORAGE_KEY = "zencloud.hideValues.v1";
+const PORTAL_MODE_STORAGE_KEY = "sixquant.portalMode.v1";
+const PRIVACY_STORAGE_KEY = "sixquant.hideValues.v1";
 const PUBLIC_DEMO_MODE = "demo";
 const PRIVATE_LOCAL_MODE = "private";
-const STOCK_JOURNAL_STORAGE_KEY = "zencloud.stocks.tradeJournal.v1";
-const STOCK_HOLDINGS_STORAGE_KEY = "zencloud.stocks.holdings.v1";
+const STOCK_JOURNAL_STORAGE_KEY = "sixquant.stocks.tradeJournal.v1";
+const STOCK_HOLDINGS_STORAGE_KEY = "sixquant.stocks.holdings.v1";
 const STOCK_ASSET_CLASS = "stock";
-const MASTER_STOCK_RULE = "If the idea did not start in ZenCloud, do not proceed to broker handoff.";
+const MASTER_STOCK_RULE = "If the idea did not start in SixQuant, do not proceed to broker handoff.";
 const STOCK_PUBLIC_WARNING = "Public Demo Mode uses demo-only stock data. Private Local Mode stores stock records only in this browser.";
 
 const DEMO_STOCKS = [
@@ -36,7 +36,7 @@ const DEMO_STOCK_JOURNAL = [
         accountValue: 50000,
         riskPercent: 1,
         invalidationPrice: 41.5,
-        fromZenCloud: true,
+        fromSixQuant: true,
         recordedAt: "2026-05-12T09:30:00+10:00"
     }
 ];
@@ -47,7 +47,7 @@ const DEMO_STOCK_HOLDINGS = [
 ];
 
 const brokerChecklistItems = [
-    "Idea started in ZenCloud Stocks Workspace",
+    "Idea started in SixQuant Stocks Workspace",
     "Thesis recorded",
     "Invalidation recorded",
     "Position size reviewed",
@@ -66,7 +66,7 @@ let activeRegionFilter = "All";
 
 function storageAvailable() {
     try {
-        const key = "__zencloud_stock_storage_test__";
+        const key = "__sixquant_stock_storage_test__";
         window.localStorage.setItem(key, key);
         window.localStorage.removeItem(key);
         return true;
@@ -247,8 +247,8 @@ function normalizePlan(plan = {}) {
         referencePrice,
         positionSize,
         allocation: positionSize,
-        whyNow: safeText(plan.whyNow ?? plan.thesis, "Manual ZenCloud reason required"),
-        thesis: safeText(plan.whyNow ?? plan.thesis, "Manual ZenCloud reason required"),
+        whyNow: safeText(plan.whyNow ?? plan.thesis, "Manual SixQuant reason required"),
+        thesis: safeText(plan.whyNow ?? plan.thesis, "Manual SixQuant reason required"),
         entryTrigger: safeText(plan.entryTrigger, "Manual trigger required"),
         invalidation: safeText(plan.invalidation, "Manual invalidation required"),
         reviewTarget: safeText(plan.reviewTarget, "Manual review target required"),
@@ -257,7 +257,7 @@ function normalizePlan(plan = {}) {
         accountValue,
         riskPercent,
         invalidationPrice,
-        fromZenCloud: plan.fromZenCloud !== false,
+        fromSixQuant: plan.fromSixQuant !== false,
         recordedAt: safeText(plan.recordedAt, new Date().toISOString())
     };
 }
@@ -427,7 +427,7 @@ function initMasterRuleFooter() {
     if (document.querySelector(".master-rule-footer")) return;
     const footer = document.createElement("footer");
     footer.className = "master-rule-footer";
-    footer.innerHTML = `<strong>${MASTER_STOCK_RULE}</strong><span>ZenCloud decides. Broker handoff is a placeholder. ZenCloud records and reviews.</span><span>${STOCK_PUBLIC_WARNING}</span>`;
+    footer.innerHTML = `<strong>${MASTER_STOCK_RULE}</strong><span>SixQuant decides. Broker handoff is a placeholder. SixQuant records and reviews.</span><span>${STOCK_PUBLIC_WARNING}</span>`;
     document.body.appendChild(footer);
 }
 
@@ -607,7 +607,7 @@ function renderAnalysis() {
     if (!panel) return;
     const stock = findSelectedStock();
     if (!stock) {
-        panel.innerHTML = `<div class="empty-analysis">Select a ticker from the queue. Broker review stays locked until ZenCloud records the plan.</div>`;
+        panel.innerHTML = `<div class="empty-analysis">Select a ticker from the queue. Broker review stays locked until SixQuant records the plan.</div>`;
         return;
     }
     const consensus = stockAgentConsensus(stock);
@@ -725,13 +725,13 @@ function renderBrokerReview() {
                 <p>${escapeHtml(MASTER_STOCK_RULE)}</p>
             </div>
             <div class="rules-grid stock-rules-grid">
-                <div class="rule-card ${planSaved ? "strong" : "watch"}">Plan<span>${planSaved ? "Saved in ZenCloud" : "Save plan first"}</span></div>
+                <div class="rule-card ${planSaved ? "strong" : "watch"}">Plan<span>${planSaved ? "Saved in SixQuant" : "Save plan first"}</span></div>
                 <div class="rule-card ${checklistComplete ? "strong" : "watch"}">Checklist<span>${completedBrokerChecks.size} / ${brokerChecklistItems.length}</span></div>
                 <div class="rule-card">Broker handoff<span>Broker execution not connected.</span></div>
                 <div class="rule-card risk">Status<span>${ready ? "Placeholder only" : "Locked"}</span></div>
             </div>
             ${savedPlan ? `<p class="broker-lock-note">Saved plan: ${escapeHtml(savedPlan.symbol)} / ${escapeHtml(savedPlan.state)} / ${escapeHtml(savedPlan.entryTrigger)}. Broker execution not connected.</p>` : ""}
-            <p class="broker-lock-note">Broker execution not connected. ZenCloud does not open, prefill, or link to a broker.</p>
+            <p class="broker-lock-note">Broker execution not connected. SixQuant does not open, prefill, or link to a broker.</p>
         </div>
     `;
 }
@@ -818,7 +818,7 @@ function initPlanForm() {
             riskPercent: data.get("riskPercent"),
             invalidationPrice: data.get("invalidationPrice"),
             assetClass: STOCK_ASSET_CLASS,
-            fromZenCloud: true,
+            fromSixQuant: true,
             recordedAt: new Date().toISOString()
         });
         stockJournal = saveCollection(STOCK_JOURNAL_STORAGE_KEY, [plan, ...stockJournal.map(normalizePlan).filter(row => row.symbol !== plan.symbol)]);

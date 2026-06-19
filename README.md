@@ -1,8 +1,8 @@
 # SixQuant Terminal
 
-SixQuant Terminal is the StudioSix trading decision platform contained in this repository.
+SixQuant Terminal is the Six Studio Group trading decision platform contained in this repository.
 
-Production site: https://zencloudau.github.io/trading-dashboard/
+Production site: https://sixstudiogroup.github.io/trading-dashboard/
 
 ## Product surfaces
 
@@ -56,4 +56,4 @@ across desktop/tablet/iOS. Pack: `docs/RELEASE-SIXQUANT-1.0.md`. Changelog:
 Stocks runs on the delayed ASX feed for review-only planning.
 
 ---
-© 2026 Zencloud Advisory. All rights reserved. Proprietary and confidential.
+© 2026 Six Studio Group. All rights reserved. Proprietary and confidential.

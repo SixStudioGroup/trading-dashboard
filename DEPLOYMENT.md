@@ -2,11 +2,11 @@
 
 | Field | Value |
 |---|---|
-| Production URL | https://zencloudau.github.io/trading-dashboard/ |
+| Production URL | https://sixstudiogroup.github.io/trading-dashboard/ |
 | Platform | GitHub Pages |
 | Source branch | `main` |
 | Site type | Static HTML, CSS and JavaScript |
-| Product | SixQuant Terminal by StudioSix |
+| Product | SixQuant Terminal by Six Studio Group |
 | Current release | SixQuant 1.0 (`docs/RELEASE-SIXQUANT-1.0.md`) |
 | Primary surface | Crypto Terminal |
 | Secondary surface | Stocks Terminal with delayed ASX feed |

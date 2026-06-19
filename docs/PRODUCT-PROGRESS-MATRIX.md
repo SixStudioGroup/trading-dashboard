@@ -4,7 +4,7 @@
 
 | Product Area | Completed | In Progress | Next Phase | Status |
 |---|---|---|---|---|
-| Brand Identity | SixQuant name selected; StudioSix parent brand established; favicon added; core user-facing pages migrated | Historical docs and internal code identifiers may still reference ZenCloud | Optional archival cleanup of non-user-facing docs | Complete |
+| Brand Identity | SixQuant name selected; Six Studio Group parent brand established; favicon added; core user-facing pages migrated | Historical docs and internal code identifiers may still reference SixQuant | Optional archival cleanup of non-user-facing docs | Complete |
 | Crypto Terminal | Crypto route clarified; cockpit layout created; command bar added; diagnostics collapsed; Decision Checklist added | Minor polish only | Controlled UAT review | Complete |
 | Stocks Workspace | Stocks page rebranded; table mismatch fixed; thematic links added; queue/cockpit/plan workflow established | Minor polish only | Controlled UAT review | Complete |
 | Review Centre | Reports rebuilt as SixQuant Review Centre focused on weekly, behaviour, trades, exposure, and consensus | Minor polish only | Controlled UAT review | Complete |

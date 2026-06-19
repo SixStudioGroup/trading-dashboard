@@ -1,5 +1,5 @@
 """
-scripts/fetch_stocks.py — Stooq stock snapshot generator for ZenCloud Trading OS.
+scripts/fetch_stocks.py — Stooq stock snapshot generator for SixQuant Trading OS.
 Fetches daily CSV for 41 symbols, derives signals, writes data/stocks-snapshot.json.
 Run by GitHub Actions hourly. No API keys required.
 """

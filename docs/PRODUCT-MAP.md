@@ -2,7 +2,7 @@
 
 ## Product Positioning
 
-ZenCloud Trading Dashboard is a manual decision-support platform for crypto swing trading and structured market review. The product is not intended to become an automated trading engine or brokerage interface.
+SixQuant Trading Dashboard is a manual decision-support platform for crypto swing trading and structured market review. The product is not intended to become an automated trading engine or brokerage interface.
 
 The platform should optimise disciplined decision-making, portfolio awareness, execution gating, and review.
 

@@ -32,11 +32,11 @@ let detailedFetchErrorLogged = false;
 // a key stored in GitHub Secrets and commits data/crypto-snapshot.json 3× daily.
 const MARKET_DATA_PROXY_URL = "data/crypto-snapshot.json";
 const REFRESH_INTERVAL_MS = 60000;
-const PORTAL_MODE_STORAGE_KEY = "zencloud.portalMode.v1";
-const PRIVACY_STORAGE_KEY = "zencloud.hideValues.v1";
+const PORTAL_MODE_STORAGE_KEY = "sixquant.portalMode.v1";
+const PRIVACY_STORAGE_KEY = "sixquant.hideValues.v1";
 const PUBLIC_DEMO_MODE = "demo";
 const PRIVATE_LOCAL_MODE = "private";
-const MASTER_RULE = "If the idea did not start in ZenCloud, do not execute it in CoinSpot.";
+const MASTER_RULE = "If the idea did not start in SixQuant, do not execute it in CoinSpot.";
 const PUBLIC_PRIVACY_WARNING = "Do not enter group trade deals, private signals, real balances, or private strategy notes into the public demo site. Private data is stored only in your browser and should not be committed to GitHub.";
 const PUBLIC_SITE_RULE = "Shared GitHub Pages deployment is public. Use Public Demo Mode when sharing the portal.";
 const MARKET_PROVIDERS = {
@@ -86,7 +86,7 @@ const DEMO_TRADE_JOURNAL = [
         reasonEntry: "Demo trade plan for workflow preview only",
         plannedInvalidation: "Demo invalidation: review if momentum weakens",
         notes: "Demo trade plan - not real trading data",
-        fromZenCloud: true,
+        fromSixQuant: true,
         status: "open",
         updatedAt: "2026-05-10T10:00:00+10:00"
     },
@@ -109,7 +109,7 @@ const DEMO_TRADE_JOURNAL = [
         plannedInvalidation: "Demo invalidation level",
         notes: "Demo report data - not real trading data",
         ruleFollowed: true,
-        fromZenCloud: true,
+        fromSixQuant: true,
         mistakeType: "Other",
         lessonLearned: "Demo lesson only",
         status: "closed",
@@ -130,7 +130,7 @@ const DEMO_STOCK_TRADE_JOURNAL = [
         thesis: "Demo stock plan - workflow preview only",
         invalidation: "Demo invalidation level",
         brokerNote: "External broker placeholder only",
-        fromZenCloud: true,
+        fromSixQuant: true,
         recordedAt: "2026-05-12T09:30:00+10:00"
     }
 ];
@@ -155,20 +155,20 @@ const page = document.body.dataset.page;
 const CRYPTO_ASSET_CLASS = "crypto";
 const STOCK_ASSET_CLASS = "stock";
 const UNKNOWN_ASSET_CLASS = "unknown";
-const GITHUB_PAT_STORAGE_KEY = "zencloud.githubPat.v1";
-const JOURNAL_FILTER_KEY = "zencloud.journalFilter.v1";
+const GITHUB_PAT_STORAGE_KEY = "sixquant.githubPat.v1";
+const JOURNAL_FILTER_KEY = "sixquant.journalFilter.v1";
 const KNOWN_CRYPTO_SYMBOLS = new Set([
     "BTC","ETH","BNB","ADA","DOT","LTC","XLM","DOGE","THETA","FET",
     "NEAR","ETC","TRB","XRP","SOL","AVAX","MATIC","LINK","UNI","AAVE",
     "ATOM","ALGO","MANA","SAND","CRV","SUSHI","YFI","SNX"
 ]);
-const HOLDINGS_STORAGE_KEY = "zencloud.manualHoldings.v1";
-const TRADE_JOURNAL_STORAGE_KEY = "zencloud.tradeJournal.v1";
-const STOCK_JOURNAL_STORAGE_KEY = "zencloud.stocks.tradeJournal.v1";
-const STOCK_HOLDINGS_STORAGE_KEY = "zencloud.stocks.holdings.v1";
-const ANALYSIS_WATCHLIST_STORAGE_KEY = "zencloud.watchlist.v1";
-const SIGNAL_HISTORY_STORAGE_KEY = "zencloud.signalHistory.v1";
-const SESSION_CHECKLIST_STORAGE_KEY = "zencloud.sessionChecklist.v1";
+const HOLDINGS_STORAGE_KEY = "sixquant.manualHoldings.v1";
+const TRADE_JOURNAL_STORAGE_KEY = "sixquant.tradeJournal.v1";
+const STOCK_JOURNAL_STORAGE_KEY = "sixquant.stocks.tradeJournal.v1";
+const STOCK_HOLDINGS_STORAGE_KEY = "sixquant.stocks.holdings.v1";
+const ANALYSIS_WATCHLIST_STORAGE_KEY = "sixquant.watchlist.v1";
+const SIGNAL_HISTORY_STORAGE_KEY = "sixquant.signalHistory.v1";
+const SESSION_CHECKLIST_STORAGE_KEY = "sixquant.sessionChecklist.v1";
 const SESSION_CHECKLIST_ITEMS = [
     "Check Opportunity Queue",
     "Review holdings",
@@ -284,7 +284,7 @@ function escapeHtml(value) {
 
 function storageAvailable() {
     try {
-        const key = "__zencloud_storage_test__";
+        const key = "__sixquant_storage_test__";
         window.localStorage.setItem(key, key);
         window.localStorage.removeItem(key);
         return true;
@@ -703,7 +703,7 @@ function normalizeTrade(trade = {}) {
         resultPercent: Number.isFinite(resultPercent) ? resultPercent : calculatedResultPercent,
         notes: safeText(trade.notes, ""),
         ruleFollowed: typeof trade.ruleFollowed === "boolean" ? trade.ruleFollowed : false,
-        fromZenCloud: typeof trade.fromZenCloud === "boolean" ? trade.fromZenCloud : true,
+        fromSixQuant: typeof trade.fromSixQuant === "boolean" ? trade.fromSixQuant : true,
         agentConsensus: safeText(trade.agentConsensus, "Not recorded"),
         mistakeType: safeText(trade.mistakeType, "Other"),
         lessonLearned: safeText(trade.lessonLearned, ""),
@@ -727,7 +727,7 @@ function stockPlanAsTrade(plan = {}) {
         reasonEntry: safeText(plan.whyNow ?? plan.thesis, "Manual stock plan"),
         plannedInvalidation: safeText(plan.invalidation, "Manual invalidation required"),
         notes: safeText(plan.notes ?? plan.brokerNote, "Broker execution not connected."),
-        fromZenCloud: plan.fromZenCloud !== false,
+        fromSixQuant: plan.fromSixQuant !== false,
         status: "open",
         updatedAt: safeText(plan.recordedAt, new Date().toISOString())
     });
@@ -1106,7 +1106,7 @@ function initMasterRuleFooter() {
     if (document.querySelector(".master-rule-footer")) return;
     const footer = document.createElement("footer");
     footer.className = "master-rule-footer";
-    footer.innerHTML = `<strong>${MASTER_RULE}</strong><span>ZenCloud decides. CoinSpot executes. ZenCloud records and reviews.</span><span>${PUBLIC_PRIVACY_WARNING}</span><span>${PUBLIC_SITE_RULE}</span>`;
+    footer.innerHTML = `<strong>${MASTER_RULE}</strong><span>SixQuant decides. CoinSpot executes. SixQuant records and reviews.</span><span>${PUBLIC_PRIVACY_WARNING}</span><span>${PUBLIC_SITE_RULE}</span>`;
     document.body.appendChild(footer);
 }
 
@@ -1736,7 +1736,7 @@ function planTradeFromSelection(selected, portfolioValue = 0) {
         reasonEntry: safeText(document.getElementById("plan-reason")?.value, swingReasonFor(selected)),
         plannedInvalidation: safeText(document.getElementById("plan-invalidation")?.value, invalidationSentence(state)),
         agentConsensus: agentConsensusFor(selected, portfolioValue).label,
-        fromZenCloud: true,
+        fromSixQuant: true,
         notes: safeText(document.getElementById("plan-notes")?.value, ""),
         status: "open"
     };
@@ -3030,7 +3030,7 @@ function renderBehaviourReport(trades) {
     const overtradingDays = Object.values(openedByDay).filter(count => count > 3).length;
     el.innerHTML = [
         ["Trades without plan", withoutPlan],
-        ["Trades outside ZenCloud signal", outsideSignal],
+        ["Trades outside SixQuant signal", outsideSignal],
         ["Overtrading days", overtradingDays],
         ["Average holding time", holdingDays.length ? `${average(holdingDays).toFixed(1)} days` : "Not enough data"],
         ["Most common mistake", mostCommon(trades.map(trade => trade.mistakeType), "Not enough data")],
@@ -3038,7 +3038,7 @@ function renderBehaviourReport(trades) {
         ["Most common consensus", mostCommon(trades.map(trade => trade.agentConsensus), "Not enough data")],
         ["Crypto records", trades.filter(trade => trade.assetClass === CRYPTO_ASSET_CLASS).length],
         ["Stock records", trades.filter(trade => trade.assetClass === STOCK_ASSET_CLASS).length],
-        ["Trades from ZenCloud", trades.filter(trade => trade.fromZenCloud).length]
+        ["Trades from SixQuant", trades.filter(trade => trade.fromSixQuant).length]
     ].map(([label, value]) => reportMetric(label, value)).join("");
 }
 
@@ -3104,7 +3104,7 @@ function renderJournal() {
                 <td>${escapeHtml(trade.exitReason || "Not recorded")}</td>
                 <td>${trade.resultAud === null ? "Not recorded" : displayMoneyText(trade.resultAud, formatSignedMoney)}</td>
                 <td>${trade.ruleFollowed ? "Yes" : "No"}</td>
-                <td>${trade.fromZenCloud ? "Yes" : "No"}</td>
+                <td>${trade.fromSixQuant ? "Yes" : "No"}</td>
                 <td>${escapeHtml(trade.mistakeType)}</td>
                 <td>${escapeHtml(trade.lessonLearned || "Not recorded")}</td>
                 <td>${escapeHtml(trade.notes || "Not recorded")}</td>
@@ -3147,7 +3147,7 @@ function renderJournal() {
             <td class="num ${trade.resultAud > 0 ? "positive" : trade.resultAud < 0 ? "negative" : "neutral"}">${trade.resultAud === null ? "Not recorded" : displayMoneyText(trade.resultAud, formatSignedMoney)}</td>
             <td class="num ${trade.resultPercent > 0 ? "positive" : trade.resultPercent < 0 ? "negative" : "neutral"}">${trade.resultPercent === null ? "Not recorded" : displayPercentValue(trade.resultPercent)}</td>
             <td>${escapeHtml(trade.agentConsensus)}</td>
-            <td>${trade.fromZenCloud ? "Yes" : "No"}</td>
+            <td>${trade.fromSixQuant ? "Yes" : "No"}</td>
             <td>${escapeHtml(trade.exitReason || "Manual close")}</td>
             <td>
                 ${isStockWorkspaceRecord(trade)
@@ -3194,7 +3194,7 @@ function fillJournalForm(id) {
     document.getElementById("journal-exit-price").value = trade.exitPrice ?? "";
     document.getElementById("journal-exit-reason").value = trade.exitReason;
     document.getElementById("journal-rule-followed").value = String(trade.ruleFollowed);
-    document.getElementById("journal-from-zencloud").value = String(trade.fromZenCloud);
+    document.getElementById("journal-from-sixquant").value = String(trade.fromSixQuant);
     document.getElementById("journal-mistake-type").value = trade.mistakeType;
     document.getElementById("journal-lesson").value = trade.lessonLearned;
     document.getElementById("journal-notes").value = trade.notes;
@@ -3208,7 +3208,7 @@ function clearJournalForm() {
     document.getElementById("journal-asset-class").value = CRYPTO_ASSET_CLASS;
     document.getElementById("journal-entry-date").value = formatDateTimeLocal(new Date());
     document.getElementById("journal-consensus").value = "";
-    document.getElementById("journal-from-zencloud").value = "true";
+    document.getElementById("journal-from-sixquant").value = "true";
     document.getElementById("journal-rule-followed").value = "false";
     document.getElementById("journal-mistake-type").value = "Other";
 }
@@ -3240,7 +3240,7 @@ function initJournalControls() {
             exitPrice: data.get("exitPrice"),
             exitReason: data.get("exitReason"),
             ruleFollowed: data.get("ruleFollowed") === "true",
-            fromZenCloud: data.get("fromZenCloud") !== "false",
+            fromSixQuant: data.get("fromSixQuant") !== "false",
             mistakeType: data.get("mistakeType"),
             lessonLearned: data.get("lessonLearned"),
             notes: data.get("notes"),
@@ -3282,7 +3282,7 @@ function migrateAssetClassTags() {
     if (!changed) return;
     window.localStorage.setItem(TRADE_JOURNAL_STORAGE_KEY, JSON.stringify(migrated));
     const unknownCount = migrated.filter(r => r.assetClass === UNKNOWN_ASSET_CLASS).length;
-    if (unknownCount) console.warn(`ZenCloud migration: ${unknownCount} record(s) tagged "unknown" — review asset class in Journal.`);
+    if (unknownCount) console.warn(`SixQuant migration: ${unknownCount} record(s) tagged "unknown" — review asset class in Journal.`);
 }
 
 function initRiskRulesCard() {
@@ -3374,7 +3374,7 @@ function buildGistPayload(trades, fields) {
     });
     const classes = [...new Set(trades.map(t => t.assetClass))];
     return {
-        zencloud_export: true,
+        sixquant_export: true,
         exported_at: new Date().toISOString(),
         asset_class_filter: classes.length === 1 ? classes[0] : "mixed",
         trades: rows
@@ -3385,9 +3385,9 @@ async function createGist(payload) {
     const pat = loadGithubPat();
     if (!pat) throw new Error("No GitHub PAT saved. Add one in Settings → Share Settings.");
     const body = {
-        description: "ZenCloud Trading OS — shared trade snapshot",
+        description: "SixQuant Trading OS — shared trade snapshot",
         public: false,
-        files: { "zencloud-trades.json": { content: JSON.stringify(payload, null, 2) } }
+        files: { "sixquant-trades.json": { content: JSON.stringify(payload, null, 2) } }
     };
     const response = await fetch("https://api.github.com/gists", {
         method: "POST",

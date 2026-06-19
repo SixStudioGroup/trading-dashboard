@@ -1,4 +1,4 @@
-# ZenCloud: Schema Fix, Journal Filter & Gist Share — Implementation Plan
+# SixQuant: Schema Fix, Journal Filter & Gist Share — Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -200,8 +200,8 @@
 
   ```js
   const UNKNOWN_ASSET_CLASS = "unknown";
-  const GITHUB_PAT_STORAGE_KEY = "zencloud.githubPat.v1";
-  const JOURNAL_FILTER_KEY = "zencloud.journalFilter.v1";
+  const GITHUB_PAT_STORAGE_KEY = "sixquant.githubPat.v1";
+  const JOURNAL_FILTER_KEY = "sixquant.journalFilter.v1";
   const KNOWN_CRYPTO_SYMBOLS = new Set([
       "BTC","ETH","BNB","ADA","DOT","LTC","XLM","DOGE","THETA","FET",
       "NEAR","ETC","TRB","XRP","SOL","AVAX","MATIC","LINK","UNI","AAVE",
@@ -307,7 +307,7 @@
       if (!changed) return;
       window.localStorage.setItem(TRADE_JOURNAL_STORAGE_KEY, JSON.stringify(migrated));
       const unknownCount = migrated.filter(r => r.assetClass === UNKNOWN_ASSET_CLASS).length;
-      if (unknownCount) console.warn(`ZenCloud migration: ${unknownCount} record(s) tagged "unknown" — review asset class in Journal.`);
+      if (unknownCount) console.warn(`SixQuant migration: ${unknownCount} record(s) tagged "unknown" — review asset class in Journal.`);
   }
   ```
 
@@ -334,9 +334,9 @@
   Open journal.html in private mode, switch to Private Local Mode. In console:
   ```js
   // Manually set a record without assetClass
-  localStorage.setItem("zencloud.tradeJournal.v1", JSON.stringify([{id:"T1",symbol:"BTC",entryPrice:50000,positionSize:1000}]));
+  localStorage.setItem("sixquant.tradeJournal.v1", JSON.stringify([{id:"T1",symbol:"BTC",entryPrice:50000,positionSize:1000}]));
   migrateAssetClassTags();
-  JSON.parse(localStorage.getItem("zencloud.tradeJournal.v1"))[0].assetClass
+  JSON.parse(localStorage.getItem("sixquant.tradeJournal.v1"))[0].assetClass
   // Expected: "crypto"
   ```
 
@@ -585,7 +585,7 @@
   ```
   Replace with:
   ```html
-  <thead><tr><th class="share-checkbox-col" id="share-all-th" style="display:none;"><input type="checkbox" id="share-select-all" aria-label="Select all"></th><th>Class</th><th>Symbol / Ticker</th><th>Entry</th><th class="num">Entry price</th><th class="num">Position size</th><th>Signal</th><th>Consensus</th><th>Reason</th><th>Invalidation</th><th>Exit</th><th class="num">Exit price</th><th>Exit reason</th><th>Result</th><th>Plan?</th><th>ZenCloud?</th><th>Mistake</th><th>Lesson</th><th>Notes</th></tr></thead>
+  <thead><tr><th class="share-checkbox-col" id="share-all-th" style="display:none;"><input type="checkbox" id="share-select-all" aria-label="Select all"></th><th>Class</th><th>Symbol / Ticker</th><th>Entry</th><th class="num">Entry price</th><th class="num">Position size</th><th>Signal</th><th>Consensus</th><th>Reason</th><th>Invalidation</th><th>Exit</th><th class="num">Exit price</th><th>Exit reason</th><th>Result</th><th>Plan?</th><th>SixQuant?</th><th>Mistake</th><th>Lesson</th><th>Notes</th></tr></thead>
   ```
 
 - [ ] **Step 3: Add share modal HTML before closing </main>**
@@ -656,7 +656,7 @@
       });
       const classes = [...new Set(trades.map(t => t.assetClass))];
       return {
-          zencloud_export: true,
+          sixquant_export: true,
           exported_at: new Date().toISOString(),
           asset_class_filter: classes.length === 1 ? classes[0] : "mixed",
           trades: rows
@@ -672,9 +672,9 @@
       const pat = loadGithubPat();
       if (!pat) throw new Error("No GitHub PAT saved. Add one in Settings → Share Settings.");
       const body = {
-          description: "ZenCloud Trading OS — shared trade snapshot",
+          description: "SixQuant Trading OS — shared trade snapshot",
           public: false,
-          files: { "zencloud-trades.json": { content: JSON.stringify(payload, null, 2) } }
+          files: { "sixquant-trades.json": { content: JSON.stringify(payload, null, 2) } }
       };
       const response = await fetch("https://api.github.com/gists", {
           method: "POST",

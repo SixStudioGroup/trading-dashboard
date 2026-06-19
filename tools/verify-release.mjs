@@ -17,7 +17,7 @@ import { rmSync, mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const BASE = (process.argv[2] || "https://zencloudau.github.io/trading-dashboard").replace(/\/$/, "");
+const BASE = (process.argv[2] || "https://sixstudiogroup.github.io/trading-dashboard").replace(/\/$/, "");
 const PORT = Number(process.env.CDP_PORT || 9444);
 const CHROME = process.env.CHROME_PATH || defaultChrome();
 const PAGES = ["index.html", "stocks.html", "journal.html", "alerts.html", "logs.html", "reports.html", "guide.html", "settings.html"];

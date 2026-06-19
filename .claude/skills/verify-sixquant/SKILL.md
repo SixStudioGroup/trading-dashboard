@@ -11,12 +11,12 @@ Run the committed engine from the repo root:
 
 Optional base-URL arg (defaults to production):
 
-    node tools/verify-release.mjs https://zencloudau.github.io/trading-dashboard
+    node tools/verify-release.mjs https://sixstudiogroup.github.io/trading-dashboard
 
 Wait for the GitHub Pages build of the latest commit before running, or the
 check tests stale assets:
 
-    gh api repos/ZenCloudAU/trading-dashboard/pages/builds/latest --jq ".status + \" \" + .commit"
+    gh api repos/SixStudioGroup/trading-dashboard/pages/builds/latest --jq ".status + \" \" + .commit"
 
 (unset GITHUB_TOKEN if gh reports bad credentials — keyring auth is the working one).
 
