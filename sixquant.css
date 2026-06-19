@@ -15,7 +15,7 @@
     --panel-raised: #252B3B;
     --line: rgba(160, 175, 200, 0.18);
     --text: #DEE4EE;
-    --muted: #A4AFC0;
+    --muted: #B8C5D8;
     --cyan: #2F81F7;
     --green: #16C784;
     --red: #EA3943;
@@ -56,6 +56,21 @@ body {
 
 a {
     transition: color 160ms ease, border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+/* Accessibility: skip-to-content link, visually hidden until focused */
+.skip-link {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    z-index: 1000;
+    background: var(--brand-blue, #2F81F7);
+    color: #fff;
+    padding: 8px 14px;
+    border-radius: 0 0 8px 0;
+}
+.skip-link:focus {
+    left: 0;
 }
 
 /* --------------------------------------------------------------------------

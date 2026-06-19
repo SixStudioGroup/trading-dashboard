@@ -1280,6 +1280,14 @@ function renderDashboard(model) {
         button.addEventListener("click", event => {
             selectedAssetId = event.currentTarget.dataset.assetId;
             renderDashboard(model);
+            // Move focus into the freshly rendered cockpit so keyboard and
+            // screen-reader users land on the analysis instead of the now-stale
+            // queue button. Only on this click — never on the 60s poll re-render.
+            const panel = document.getElementById("analysis-panel");
+            if (panel) {
+                panel.setAttribute("tabindex", "-1");
+                panel.focus();
+            }
         });
     });
 
@@ -1373,7 +1381,9 @@ function renderCheckSummary(holdingRows, portfolioValue) {
     }
     const regimeEl = document.getElementById("cs-regime");
     if (regimeEl) {
-        regimeEl.textContent = safeText(document.querySelector("#market-regime-panel .regime-header strong")?.textContent, "Unavailable");
+        const regimeText = safeText(document.querySelector("#market-regime-panel .regime-header strong")?.textContent, "Unavailable");
+        regimeEl.textContent = dataConfidence.isFallback ? `${regimeText} · fallback data` : regimeText;
+        regimeEl.classList.toggle("is-fallback", Boolean(dataConfidence.isFallback));
     }
 }
 
@@ -2240,6 +2250,17 @@ function renderHoldingsManager(markets, holdingRows) {
     body.querySelectorAll("[data-remove-holding]").forEach(button => {
         button.addEventListener("click", event => {
             removeHolding(event.currentTarget.dataset.removeHolding);
+        });
+    });
+
+    // Keyboard-only operators can commit an inline balance/entry edit with Enter
+    // instead of having to mouse over to the row's Save button.
+    body.querySelectorAll(".inline-balance").forEach(input => {
+        input.addEventListener("keydown", event => {
+            if (event.key !== "Enter") return;
+            event.preventDefault();
+            const symbol = input.dataset.balanceSymbol || input.dataset.entrySymbol;
+            if (symbol) body.querySelector(`[data-save-holding="${symbol}"]`)?.click();
         });
     });
 }
@@ -3251,6 +3272,11 @@ function initJournalControls() {
             document.getElementById("journal-message").classList.add("error");
             return;
         }
+        if (trade.status === "closed" && (!trade.exitDate || !(trade.exitPrice > 0))) {
+            document.getElementById("journal-message").textContent = "A closed trade needs both an exit date and a positive exit price.";
+            document.getElementById("journal-message").classList.add("error");
+            return;
+        }
         if (id) updateTrade(id, trade);
         else addTrade(trade);
         document.getElementById("journal-message").textContent = "Trade saved.";
@@ -3547,19 +3573,24 @@ async function checkFeedHeartbeat() {
 }
 
 async function boot() {
-    migrateAssetClassTags();
-    checkFeedHeartbeat();
-    const markets = await getMarkets();
-    const model = buildDecisionPipeline(markets);
-    recordSignalHistory(model.assets);
-    if (page === "dashboard") {
-        renderDashboard(model);
-        renderLogs(model);
-        renderAlerts(model);
+    try {
+        migrateAssetClassTags();
+        checkFeedHeartbeat();
+        const markets = await getMarkets();
+        const model = buildDecisionPipeline(markets);
+        recordSignalHistory(model.assets);
+        if (page === "dashboard") {
+            renderDashboard(model);
+            renderLogs(model);
+            renderAlerts(model);
+        }
+        if (page === "logs") renderLogs(model);
+        if (page === "alerts") renderAlerts(model);
+        if (page === "reports") renderReports(model);
+    } catch (error) {
+        console.error("SixQuant refresh failed", error);
+        setStatus("Refresh failed — data may be stale. Retrying shortly.", false);
     }
-    if (page === "logs") renderLogs(model);
-    if (page === "alerts") renderAlerts(model);
-    if (page === "reports") renderReports(model);
 }
 
 function injectSkeletonRows(bodyId, cols, count = 5) {

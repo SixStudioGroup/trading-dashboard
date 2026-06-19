@@ -257,6 +257,20 @@ function normalizePlan(plan = {}) {
         accountValue,
         riskPercent,
         invalidationPrice,
+        // Preserve Release-2 fee/net economics. initPlanForm re-normalises every
+        // other plan on each save; without carrying these through, saving one plan
+        // would strip the persisted fee calculations off all the others.
+        targetPrice: Math.max(0, finiteNumber(plan.targetPrice)),
+        brokerageFee: finiteNumber(plan.brokerageFee),
+        feePercent: finiteNumber(plan.feePercent),
+        spreadPercent: finiteNumber(plan.spreadPercent),
+        grossProfit: finiteNumber(plan.grossProfit),
+        netProfit: finiteNumber(plan.netProfit),
+        totalCosts: finiteNumber(plan.totalCosts),
+        grossReturnPct: finiteNumber(plan.grossReturnPct),
+        netReturnPct: finiteNumber(plan.netReturnPct),
+        breakevenPrice: finiteNumber(plan.breakevenPrice),
+        feeModelVersion: plan.feeModelVersion,
         fromSixQuant: plan.fromSixQuant !== false,
         recordedAt: safeText(plan.recordedAt, new Date().toISOString())
     };

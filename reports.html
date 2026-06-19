@@ -5,29 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SixQuant Review Centre</title>
     <link rel="stylesheet" href="styles.css?v=ui-20260526">
-    <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="sixquant.css?v=sq-10"><script src="sixquant-mode.js?v=ssg-1"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="sixquant.css?v=ssg-1"><script src="sixquant-mode.js?v=ssg-1"></script>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230A0F1C'/%3E%3Crect x='13' y='36' width='6' height='15' rx='3' fill='%232F81F7'/%3E%3Crect x='23' y='28' width='6' height='23' rx='3' fill='%232F81F7'/%3E%3Crect x='33' y='20' width='6' height='31' rx='3' fill='%232F81F7'/%3E%3Crect x='43' y='12' width='6' height='39' rx='3' fill='%2316C784'/%3E%3C/svg%3E">
     <script src="https://unpkg.com/lucide@0.441.0/dist/umd/lucide.min.js"></script>
 </head>
 <body data-page="reports">
+    <a class="skip-link" href="#main-content">Skip to main content</a>
     <header class="topbar six-topbar">
         <a class="brand six-brand" href="index.html" aria-label="SixQuant Terminal">
             <span class="brand-mark six-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
             <span><strong>SixQuant</strong><small>by Six Studio Group</small></span>
         </a>
         <nav class="navlinks" aria-label="Main navigation">
-            <a href="index.html"><i data-lucide="activity"></i> Crypto</a>
-            <a href="stocks.html"><i data-lucide="bar-chart"></i> Stocks</a>
-            <a href="journal.html"><i data-lucide="book-open"></i> Journal</a>
-            <a href="alerts.html"><i data-lucide="bell"></i> Alerts</a>
-            <a href="logs.html"><i data-lucide="file-text"></i> Evidence</a>
-            <a class="active" href="reports.html"><i data-lucide="pie-chart"></i> Review</a>
-            <a href="guide.html"><i data-lucide="help-circle"></i> Guide</a>
-            <a href="settings.html"><i data-lucide="settings"></i> Settings</a>
+            <a href="index.html"><i aria-hidden="true" data-lucide="activity"></i> Crypto</a>
+            <a href="stocks.html"><i aria-hidden="true" data-lucide="bar-chart"></i> Stocks</a>
+            <a href="journal.html"><i aria-hidden="true" data-lucide="book-open"></i> Journal</a>
+            <a href="alerts.html"><i aria-hidden="true" data-lucide="bell"></i> Alerts</a>
+            <a href="logs.html"><i aria-hidden="true" data-lucide="file-text"></i> Evidence</a>
+            <a class="active" href="reports.html"><i aria-hidden="true" data-lucide="pie-chart"></i> Review</a>
+            <a href="guide.html"><i aria-hidden="true" data-lucide="help-circle"></i> Guide</a>
+            <a href="settings.html"><i aria-hidden="true" data-lucide="settings"></i> Settings</a>
         </nav>
     </header>
 
-    <main class="shell command-shell reports-shell six-shell">
+    <main id="main-content" class="shell command-shell reports-shell six-shell">
         <section class="six-command-bar">
             <div class="six-title-block">
                 <span class="six-kicker">Review Centre</span>
@@ -35,7 +36,7 @@
                 <p>SixQuant reports are calculated from manual journal and position records. No exchange or broker data is fetched.</p>
             </div>
             <div class="six-trust-strip">
-                <div class="status-card compact-status six-feed-state"><span class="status-dot"></span><span id="market-status">Loading live data...</span></div>
+                <div class="status-card compact-status six-feed-state"><span class="status-dot"></span><span id="market-status" aria-live="polite" aria-atomic="true">Loading live data...</span></div>
                 <div class="six-metric"><span>Source</span><strong>Journal records</strong></div>
                 <div class="six-metric"><span>Scope</span><strong>Crypto + Stocks</strong></div>
                 <div class="six-metric"><span>Mode</span><strong>Review only</strong></div>
@@ -62,12 +63,12 @@
 
         <section class="panel secondary-tabs reports-tabs six-secondary-tabs" id="reports-tabs">
             <div class="tab-bar" role="tablist" aria-label="Review Centre">
-                <button class="tab-button active" type="button" data-report-target="weekly-report-tab">Weekly</button>
-                <button class="tab-button" type="button" data-report-target="behaviour-report-tab">Behaviour</button>
-                <button class="tab-button" type="button" data-report-target="trade-review-tab">Trades</button>
-                <button class="tab-button" type="button" data-report-target="position-report-tab">Positions</button>
-                <button class="tab-button" type="button" data-report-target="consensus-report-tab">Consensus</button>
-                <button class="tab-button" type="button" data-report-target="daily-report-tab">Daily</button>
+                <button class="tab-button active" type="button" role="tab" aria-selected="true" data-report-target="weekly-report-tab">Weekly</button>
+                <button class="tab-button" type="button" role="tab" aria-selected="false" data-report-target="behaviour-report-tab">Behaviour</button>
+                <button class="tab-button" type="button" role="tab" aria-selected="false" data-report-target="trade-review-tab">Trades</button>
+                <button class="tab-button" type="button" role="tab" aria-selected="false" data-report-target="position-report-tab">Positions</button>
+                <button class="tab-button" type="button" role="tab" aria-selected="false" data-report-target="consensus-report-tab">Consensus</button>
+                <button class="tab-button" type="button" role="tab" aria-selected="false" data-report-target="daily-report-tab">Daily</button>
             </div>
             <div class="report-filter-bar">
                 <label class="report-date-control"><span>Asset class</span><select id="report-asset-filter"><option value="all">All assets</option><option value="crypto">Crypto only</option><option value="stock">Stocks only</option></select></label>
@@ -105,7 +106,7 @@
         </section>
     </main>
 
-    <script src="app.js?v=ssg-1"></script>
+    <script src="app.js?v=ssg-2"></script>
 <script>if(typeof lucide!=="undefined")lucide.createIcons();</script>
 </body>
 </html>
