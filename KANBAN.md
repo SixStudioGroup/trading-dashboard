@@ -14,12 +14,14 @@
 | Risk controls (gate, rules, exit alerts) | 1.0 | Completed | Cap/invalidation blocks verified live; alerts row per drawdown breach. |
 | Pipeline heartbeat | 1.0 | Completed | Workflows write heartbeat files; both terminals flag missed runs. |
 | Device modes + phone Check mode | 1.0 | Completed | Auto phone/tablet/desktop; phone queues fit 390px with Analyse visible. |
+| Six Studio Group rebrand + org move | UAT | Completed | StudioSix/ZenCloud → Six Studio Group; repo at SixStudioGroup; storage migrated forward (no data loss). |
+| UAT readiness fixes | UAT | Completed | Fee persistence, closed-trade integrity, boot resilience, a11y, fallback visibility. Verified in-browser; register: `docs/UAT-RECOMMENDATIONS-CLOSURE.md`. |
 | Ultrawide day-trading tier | Next | Parked | Build when full-day trading begins: density toggle, status strip, ≥1800px third column for 57" half-window. |
 | Research-brief Action (X1) | Next | Backlog | Server-side 20/50-day MAs committed as data/research-brief.json. |
 
 ## Current production decision
 
-SixQuant 1.0 is live and released for live testing. Crypto remains the primary operational surface; Stocks runs on the delayed ASX feed for review-only planning. Release pack: `docs/RELEASE-SIXQUANT-1.0.md`.
+SixQuant 1.0 is live and released for live testing. Crypto remains the primary operational surface; Stocks runs on the delayed ASX feed for review-only planning. Release pack: `docs/RELEASE-SIXQUANT-1.0.md`. The MVP/MLP review recommendations are all closed — implemented or consciously deferred — in `docs/UAT-RECOMMENDATIONS-CLOSURE.md`. The only open item that is not a code fix is a real ASX live-feed provider decision (Release 1.1); UAT proceeds on the labelled delayed feed.
 
 ## Repository rule
 
