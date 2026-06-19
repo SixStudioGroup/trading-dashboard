@@ -7,7 +7,9 @@ on:
 
 jobs:
   check:
-    uses: SixStudioGroup/velocity-architecture/.github/workflows/link-integrity.yml@main
+    # Shared reusable workflow still lives in the ZenCloudAU org; update this if
+    # velocity-architecture is also moved to SixStudioGroup.
+    uses: ZenCloudAU/velocity-architecture/.github/workflows/link-integrity.yml@main
     with:
       site_url: 'https://sixstudiogroup.github.io/trading-dashboard/'
       repo_name: 'trading-dashboard'
