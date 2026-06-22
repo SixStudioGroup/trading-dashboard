@@ -325,6 +325,9 @@ function normalizeSnapshotAsset(asset) {
         price: finiteNumber(asset.price),
         oneDayChange: finiteNumber(asset.change1d),
         fiveDayChange: finiteNumber(asset.change5d),
+        // Feed flag: change5d was computed from a short (<6-bar) window and is
+        // not a true 5-session change. Carried through so the UI can caveat it.
+        fiveDayPartial: asset.change5dPartial === true,
         relativeVolume: finiteNumber(asset.relativeVolume, 1),
         marketRegime: safeText(asset.marketRegime, "Mixed"),
         region: safeText(asset.region, "Unknown"),
@@ -615,7 +618,7 @@ function renderOpportunityQueue() {
             <td>${escapeHtml(stock.sector)}</td>
             <td class="num">${formatMoney(stock.price)}</td>
             <td class="num ${stock.oneDayChange > 0 ? "positive" : stock.oneDayChange < 0 ? "negative" : "neutral"}">${formatSignedChange(stock.oneDayChange)}</td>
-            <td class="num ${stock.fiveDayChange > 0 ? "positive" : stock.fiveDayChange < 0 ? "negative" : "neutral"}">${formatSignedChange(stock.fiveDayChange)}</td>
+            <td class="num ${stock.fiveDayChange > 0 ? "positive" : stock.fiveDayChange < 0 ? "negative" : "neutral"}" ${stock.fiveDayPartial ? 'title="Partial window (&lt;6 sessions) — not a true 5-day change"' : ""}>${formatSignedChange(stock.fiveDayChange)}${stock.fiveDayPartial ? "*" : ""}</td>
             <td class="num">${finiteNumber(stock.relativeVolume).toFixed(1)}x</td>
             <td><span class="badge ${signalBadgeClass(stock.signalState)}">${escapeHtml(stock.signalState)}</span></td>
             <td>${escapeHtml(stock.riskState)}</td>
@@ -659,7 +662,7 @@ function renderAnalysis() {
                 <div class="rule-card">Sector<span>${escapeHtml(stock.sector)}</span></div>
                 <div class="rule-card">Price<span>${formatMoney(stock.price)}</span></div>
                 <div class="rule-card ${stock.oneDayChange > 0 ? "strong" : stock.oneDayChange < 0 ? "risk" : "watch"}">1D Change<span>${formatSignedChange(stock.oneDayChange)}</span></div>
-                <div class="rule-card ${stock.fiveDayChange > 0 ? "strong" : stock.fiveDayChange < 0 ? "risk" : "watch"}">5D Change<span>${formatSignedChange(stock.fiveDayChange)}</span></div>
+                <div class="rule-card ${stock.fiveDayChange > 0 ? "strong" : stock.fiveDayChange < 0 ? "risk" : "watch"}">5D Change${stock.fiveDayPartial ? " (partial)" : ""}<span>${formatSignedChange(stock.fiveDayChange)}${stock.fiveDayPartial ? "*" : ""}</span></div>
                 <div class="rule-card volume">Relative Volume<span>${finiteNumber(stock.relativeVolume).toFixed(1)}x</span></div>
                 <div class="rule-card ${signalBadgeClass(stock.signalState)}">Signal State<span>${escapeHtml(stock.signalState)}</span></div>
                 <div class="rule-card risk">Risk State<span>${escapeHtml(stock.riskState)}</span></div>
