@@ -109,6 +109,27 @@ function formatTimestamp(value) {
     });
 }
 
+// "As at <time> AEST/AEDT" — prefer the Sydney label the feed already stamped
+// (lastUpdatedSydney); otherwise render the UTC timestamp in Sydney time
+// client-side via Intl (Australia/Sydney resolves AEST/AEDT automatically).
+function formatSydneyTimestamp(data) {
+    if (data && typeof data.lastUpdatedSydney === "string" && data.lastUpdatedSydney.trim()) {
+        return data.lastUpdatedSydney.trim();
+    }
+    const date = new Date(data?.lastUpdated);
+    if (Number.isNaN(date.getTime())) return "Not recorded";
+    try {
+        const formatted = date.toLocaleString("en-AU", {
+            timeZone: "Australia/Sydney",
+            day: "2-digit", month: "short",
+            hour: "2-digit", minute: "2-digit", hour12: false
+        });
+        return `${formatted} (Sydney)`;
+    } catch {
+        return formatTimestamp(data?.lastUpdated);
+    }
+}
+
 // Mirrors app.js loadRiskRules — stocks.html does not load app.js.
 function loadRiskRules() {
     const defaults = { maxPositionPct: 8, cashReservePct: 20, exitAlertPct: 8 };
@@ -873,10 +894,10 @@ function renderSourceBadge() {
         badge.textContent = label;
         if (subtitle) {
             const src = snapshotData.source || "snapshot";
-            const updated = snapshotData.lastUpdated ? formatTimestamp(snapshotData.lastUpdated) : "Not recorded";
+            const updated = snapshotData.lastUpdated ? formatSydneyTimestamp(snapshotData) : "Not recorded";
             const errors = Array.isArray(snapshotData.fetchErrors) ? snapshotData.fetchErrors.length : 0;
             subtitle.textContent = (mode === "delayed" || mode === "fallback")
-                ? `Source: ${src} | Mode: ${mode} | Updated: ${updated} | Errors: ${errors}`
+                ? `Source: ${src} | Mode: ${mode} | As at: ${updated} | Errors: ${errors}`
                 : "Ranked from snapshot. Signals are derived — review only. Not buy/sell recommendations.";
         }
     } else {
@@ -892,7 +913,7 @@ function renderStalenessWarning() {
     if (mode) {
         warning.hidden = (mode === "delayed");
         if (!warning.hidden) {
-            warning.innerHTML = `<span><strong>ASX feed mode: ${escapeHtml(mode)}</strong> — ${escapeHtml(mode === "offline" ? "provider feed not populated yet; run GitHub Action before production stock use." : "data may be stale; confirm price in broker before execution.")} Last updated: ${escapeHtml(snapshotData.lastUpdated ? formatTimestamp(snapshotData.lastUpdated) : "not recorded")}.</span>`;
+            warning.innerHTML = `<span><strong>ASX feed mode: ${escapeHtml(mode)}</strong> — ${escapeHtml(mode === "offline" ? "provider feed not populated yet; run GitHub Action before production stock use." : "data may be stale; confirm price in broker before execution.")} As at: ${escapeHtml(snapshotData.lastUpdated ? formatSydneyTimestamp(snapshotData) : "not recorded")}.</span>`;
         }
     } else {
         warning.hidden = !(snapshotSource === "snapshot" && snapshotData && isSnapshotStale(snapshotData.lastUpdated));

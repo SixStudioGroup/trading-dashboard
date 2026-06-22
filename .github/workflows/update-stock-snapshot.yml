@@ -28,7 +28,9 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install requests
+        # tzdata makes zoneinfo("Australia/Sydney") resolve deterministically
+        # regardless of the runner's system tz database.
+        run: pip install requests tzdata
 
       - name: Fetch stock snapshot
         id: fetch
