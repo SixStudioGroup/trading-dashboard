@@ -1,6 +1,6 @@
 """
 scripts/fetch_stocks.py — Stooq stock snapshot generator for SixQuant Trading OS.
-Fetches daily CSV for 41 symbols, derives signals, writes data/stocks-snapshot.json.
+Fetches daily CSV for the configured symbols, derives signals, writes data/stocks-snapshot.json.
 Run by GitHub Actions hourly. No API keys required.
 """
 
@@ -25,17 +25,37 @@ import requests
 # Stock universe — 41 symbols with static metadata
 # ---------------------------------------------------------------------------
 STOCK_UNIVERSE = [
-    # Australia / ASX
-    {"symbol": "BHP",   "stooq": "BHP.AU",   "name": "BHP Group",               "exchange": "ASX",    "region": "Australia",      "sector": "Materials",              "currency": "AUD"},
+    # Australia / ASX — liquid large-cap swing-trading set (mirrors the documented
+    # universe in tools/generate-asx-feed.mjs; kept broad so the Stooq snapshot
+    # fallback covers the same ASX names the delayed feed does).
     {"symbol": "CBA",   "stooq": "CBA.AU",   "name": "Commonwealth Bank",       "exchange": "ASX",    "region": "Australia",      "sector": "Financials",             "currency": "AUD"},
-    {"symbol": "CSL",   "stooq": "CSL.AU",   "name": "CSL Limited",             "exchange": "ASX",    "region": "Australia",      "sector": "Healthcare",             "currency": "AUD"},
-    {"symbol": "WES",   "stooq": "WES.AU",   "name": "Wesfarmers",              "exchange": "ASX",    "region": "Australia",      "sector": "Consumer Staples",       "currency": "AUD"},
-    {"symbol": "MQG",   "stooq": "MQG.AU",   "name": "Macquarie Group",         "exchange": "ASX",    "region": "Australia",      "sector": "Financials",             "currency": "AUD"},
-    {"symbol": "TLS",   "stooq": "TLS.AU",   "name": "Telstra Group",           "exchange": "ASX",    "region": "Australia",      "sector": "Communication Services", "currency": "AUD"},
-    {"symbol": "WOW",   "stooq": "WOW.AU",   "name": "Woolworths Group",        "exchange": "ASX",    "region": "Australia",      "sector": "Consumer Staples",       "currency": "AUD"},
     {"symbol": "NAB",   "stooq": "NAB.AU",   "name": "National Australia Bank", "exchange": "ASX",    "region": "Australia",      "sector": "Financials",             "currency": "AUD"},
     {"symbol": "WBC",   "stooq": "WBC.AU",   "name": "Westpac Banking Corp",    "exchange": "ASX",    "region": "Australia",      "sector": "Financials",             "currency": "AUD"},
     {"symbol": "ANZ",   "stooq": "ANZ.AU",   "name": "ANZ Group Holdings",      "exchange": "ASX",    "region": "Australia",      "sector": "Financials",             "currency": "AUD"},
+    {"symbol": "MQG",   "stooq": "MQG.AU",   "name": "Macquarie Group",         "exchange": "ASX",    "region": "Australia",      "sector": "Financials",             "currency": "AUD"},
+    {"symbol": "QBE",   "stooq": "QBE.AU",   "name": "QBE Insurance Group",     "exchange": "ASX",    "region": "Australia",      "sector": "Financials",             "currency": "AUD"},
+    {"symbol": "BHP",   "stooq": "BHP.AU",   "name": "BHP Group",               "exchange": "ASX",    "region": "Australia",      "sector": "Materials",              "currency": "AUD"},
+    {"symbol": "RIO",   "stooq": "RIO.AU",   "name": "Rio Tinto",               "exchange": "ASX",    "region": "Australia",      "sector": "Materials",              "currency": "AUD"},
+    {"symbol": "FMG",   "stooq": "FMG.AU",   "name": "Fortescue",               "exchange": "ASX",    "region": "Australia",      "sector": "Materials",              "currency": "AUD"},
+    {"symbol": "NST",   "stooq": "NST.AU",   "name": "Northern Star Resources", "exchange": "ASX",    "region": "Australia",      "sector": "Materials",              "currency": "AUD"},
+    {"symbol": "S32",   "stooq": "S32.AU",   "name": "South32",                 "exchange": "ASX",    "region": "Australia",      "sector": "Materials",              "currency": "AUD"},
+    {"symbol": "CSL",   "stooq": "CSL.AU",   "name": "CSL Limited",             "exchange": "ASX",    "region": "Australia",      "sector": "Healthcare",             "currency": "AUD"},
+    {"symbol": "RMD",   "stooq": "RMD.AU",   "name": "ResMed",                  "exchange": "ASX",    "region": "Australia",      "sector": "Healthcare",             "currency": "AUD"},
+    {"symbol": "COH",   "stooq": "COH.AU",   "name": "Cochlear",                "exchange": "ASX",    "region": "Australia",      "sector": "Healthcare",             "currency": "AUD"},
+    {"symbol": "WDS",   "stooq": "WDS.AU",   "name": "Woodside Energy Group",   "exchange": "ASX",    "region": "Australia",      "sector": "Energy",                 "currency": "AUD"},
+    {"symbol": "STO",   "stooq": "STO.AU",   "name": "Santos",                  "exchange": "ASX",    "region": "Australia",      "sector": "Energy",                 "currency": "AUD"},
+    {"symbol": "WES",   "stooq": "WES.AU",   "name": "Wesfarmers",              "exchange": "ASX",    "region": "Australia",      "sector": "Consumer Discretionary", "currency": "AUD"},
+    {"symbol": "ALL",   "stooq": "ALL.AU",   "name": "Aristocrat Leisure",     "exchange": "ASX",    "region": "Australia",      "sector": "Consumer Discretionary", "currency": "AUD"},
+    {"symbol": "JBH",   "stooq": "JBH.AU",   "name": "JB Hi-Fi",                "exchange": "ASX",    "region": "Australia",      "sector": "Consumer Discretionary", "currency": "AUD"},
+    {"symbol": "WOW",   "stooq": "WOW.AU",   "name": "Woolworths Group",        "exchange": "ASX",    "region": "Australia",      "sector": "Consumer Staples",       "currency": "AUD"},
+    {"symbol": "COL",   "stooq": "COL.AU",   "name": "Coles Group",             "exchange": "ASX",    "region": "Australia",      "sector": "Consumer Staples",       "currency": "AUD"},
+    {"symbol": "TLS",   "stooq": "TLS.AU",   "name": "Telstra Group",           "exchange": "ASX",    "region": "Australia",      "sector": "Communication Services", "currency": "AUD"},
+    {"symbol": "REA",   "stooq": "REA.AU",   "name": "REA Group",               "exchange": "ASX",    "region": "Australia",      "sector": "Communication Services", "currency": "AUD"},
+    {"symbol": "XRO",   "stooq": "XRO.AU",   "name": "Xero",                    "exchange": "ASX",    "region": "Australia",      "sector": "Technology",             "currency": "AUD"},
+    {"symbol": "WTC",   "stooq": "WTC.AU",   "name": "WiseTech Global",         "exchange": "ASX",    "region": "Australia",      "sector": "Technology",             "currency": "AUD"},
+    {"symbol": "TCL",   "stooq": "TCL.AU",   "name": "Transurban Group",        "exchange": "ASX",    "region": "Australia",      "sector": "Industrials",            "currency": "AUD"},
+    {"symbol": "GMG",   "stooq": "GMG.AU",   "name": "Goodman Group",           "exchange": "ASX",    "region": "Australia",      "sector": "Real Estate",            "currency": "AUD"},
+    {"symbol": "ORG",   "stooq": "ORG.AU",   "name": "Origin Energy",           "exchange": "ASX",    "region": "Australia",      "sector": "Utilities",              "currency": "AUD"},
     # U.S. Technology
     {"symbol": "AAPL",  "stooq": "AAPL.US",  "name": "Apple Inc.",              "exchange": "NASDAQ", "region": "U.S. Tech",      "sector": "Technology",             "currency": "USD"},
     {"symbol": "MSFT",  "stooq": "MSFT.US",  "name": "Microsoft Corporation",   "exchange": "NASDAQ", "region": "U.S. Tech",      "sector": "Technology",             "currency": "USD"},
@@ -73,7 +93,7 @@ STOCK_UNIVERSE = [
 ]
 
 REGIONS = ["Australia", "U.S. Tech", "U.S. Large Cap", "Global ADRs"]
-EXPECTED_COUNT = len(STOCK_UNIVERSE)  # 41
+EXPECTED_COUNT = len(STOCK_UNIVERSE)
 STOOQ_BASE = "https://stooq.com/q/d/l/"
 SNAPSHOT_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "stocks-snapshot.json")
 REQUEST_DELAY = 0.5  # seconds between requests; 41 symbols ≈ 25 s total
