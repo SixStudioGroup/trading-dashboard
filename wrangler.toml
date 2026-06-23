@@ -1,0 +1,8 @@
+# Cloudflare Pages project config for the SixQuant terminal.
+# The site is plain static HTML/CSS/JS with NO build step, so the published
+# output is the repo root. The repo is private; GitHub Pages cannot serve a
+# private repo on the free plan (it 404s), so Cloudflare Pages hosts it instead
+# (private repo + free). See docs/deployment/cloudflare-pages.md.
+name = "sixquant"
+pages_build_output_dir = "."
+compatibility_date = "2026-06-23"

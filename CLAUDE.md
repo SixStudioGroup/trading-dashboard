@@ -1,7 +1,8 @@
 # SixQuant — agent context
 
 SixQuant (formerly SixSignal) by Six Studio Group. Static decision-support trading terminal
-on GitHub Pages (`main` branch, root). **Decision support only**: it plans, records,
+on **Cloudflare Pages** (`main` branch, root; the private repo 404s on GitHub Pages — see
+docs/deployment/cloudflare-pages.md). **Decision support only**: it plans, records,
 and reviews. It never places orders, never connects to a broker, never holds
 trading-capable credentials. See SECURITY.md and docs/IMPROVEMENT-ROADMAP.md.
 
