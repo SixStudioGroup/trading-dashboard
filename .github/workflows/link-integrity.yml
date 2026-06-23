@@ -16,5 +16,7 @@ jobs:
     # SHA deliberately when the reusable workflow is updated upstream.
     uses: ZenCloudAU/velocity-architecture/.github/workflows/link-integrity.yml@db025022a5ebe9b5d04c30424d1cad0207d60203 # main
     with:
-      site_url: 'https://sixstudiogroup.github.io/trading-dashboard/'
+      # Hosting moved off GitHub Pages (which 404s for a private repo) to
+      # Cloudflare Pages. Update this to the custom domain once one is attached.
+      site_url: 'https://sixquant.pages.dev/'
       repo_name: 'trading-dashboard'

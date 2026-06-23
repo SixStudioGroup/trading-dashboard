@@ -1,0 +1,15 @@
+# Cloudflare Pages security headers for the SixQuant terminal.
+# CSP is deliberately app-compatible:
+#  - 'unsafe-inline' scripts: every page has an inline <script> bootstrap block.
+#  - unpkg.com: the Lucide icon library is loaded from there.
+#  - connect-src api.github.com: the journal "share to gist" feature POSTs there.
+#  - connect-src api.coingecko.com: client-side crypto data fallback.
+#  - img-src https: data: : coin logos load from the CoinGecko image CDN.
+# Tighten later with per-page script hashes/nonces if the inline blocks are removed.
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), camera=(), microphone=(), payment=()
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.github.com https://api.coingecko.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
