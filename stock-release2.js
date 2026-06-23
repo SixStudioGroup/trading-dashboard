@@ -258,7 +258,16 @@
       const last = new Date(beat.lastRun);
       if (Number.isNaN(last.getTime())) throw new Error('bad timestamp');
       const ageHours = (Date.now() - last.getTime()) / 3600000;
-      if (ageHours > HEARTBEAT_MAX_AGE_HOURS) {
+      // Surface BOTH a stale run (age) AND an unhealthy status. The generator
+      // writes status 'degraded'/'failed' (with a detail) when validation or a
+      // fetch fails and it refuses to overwrite the last-good feed.
+      const status = typeof beat.status === 'string' ? beat.status.toLowerCase() : '';
+      const unhealthy = status && status !== 'ok' && status !== 'seed';
+      if (unhealthy) {
+        const reason = typeof beat.detail === 'string' && beat.detail ? ` (${beat.detail})` : '';
+        detail.textContent = `last ASX pipeline run reported "${beat.status}"${reason}. The last good feed is being shown; check the GitHub Action before relying on feed state.`;
+        warning.hidden = false;
+      } else if (ageHours > HEARTBEAT_MAX_AGE_HOURS) {
         detail.textContent = `last ASX pipeline run ${Math.round(ageHours)}h ago (expected under ${HEARTBEAT_MAX_AGE_HOURS}h). Check the GitHub Action before relying on feed state.`;
         warning.hidden = false;
       } else {
