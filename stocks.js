@@ -660,7 +660,7 @@ function renderAnalysis() {
                 <div class="rule-card">Ticker<span>${escapeHtml(stock.symbol)}</span></div>
                 <div class="rule-card">Company<span>${escapeHtml(stock.name)}</span></div>
                 <div class="rule-card">Sector<span>${escapeHtml(stock.sector)}</span></div>
-                <div class="rule-card">Price<span>${formatMoney(stock.price)}</span></div>
+                <div class="rule-card">Price (delayed)<span>${formatMoney(stock.price)}</span></div>
                 <div class="rule-card ${stock.oneDayChange > 0 ? "strong" : stock.oneDayChange < 0 ? "risk" : "watch"}">1D Change<span>${formatSignedChange(stock.oneDayChange)}</span></div>
                 <div class="rule-card ${stock.fiveDayChange > 0 ? "strong" : stock.fiveDayChange < 0 ? "risk" : "watch"}">5D Change${stock.fiveDayPartial ? " (partial)" : ""}<span>${formatSignedChange(stock.fiveDayChange)}${stock.fiveDayPartial ? "*" : ""}</span></div>
                 <div class="rule-card volume">Relative Volume<span>${finiteNumber(stock.relativeVolume).toFixed(1)}x</span></div>
@@ -948,25 +948,36 @@ function initTabs() {
     });
 }
 
+// Every stock-data label carries a DELAYED / SNAPSHOT / DEMO qualifier. SixQuant
+// has NO licensed live exchange feed — the UI must never let the operator read
+// these prices as licensed real-time ASX data.
 function renderSourceBadge() {
     const badge = document.getElementById("stock-source-badge");
     if (!badge) return;
     const subtitle = document.getElementById("stock-queue-subtitle");
     if (snapshotSource === "snapshot" && snapshotData) {
         const mode = snapshotData.displayMode || snapshotData.mode || "snapshot";
-        const label = { delayed: "ASX delayed feed", fallback: "ASX stale fallback", offline: "ASX offline", snapshot: "Stooq Snapshot" }[mode] || "Stooq Snapshot";
+        const label = {
+            delayed: "ASX DELAYED feed (unlicensed)",
+            fallback: "ASX delayed — STALE fallback",
+            offline: "ASX offline",
+            snapshot: "Stooq daily SNAPSHOT"
+        }[mode] || "Stooq daily SNAPSHOT";
         badge.textContent = label;
         if (subtitle) {
             const src = snapshotData.source || "snapshot";
             const updated = snapshotData.lastUpdated ? formatSydneyTimestamp(snapshotData) : "Not recorded";
             const errors = Array.isArray(snapshotData.fetchErrors) ? snapshotData.fetchErrors.length : 0;
+            const universe = snapshotData.universeMeta && snapshotData.universeMeta.asOf
+                ? ` | Universe: ${escapeHtml(snapshotData.universeMeta.name || "ASX list")} rev ${escapeHtml(String(snapshotData.universeMeta.revision ?? "?"))} (${escapeHtml(snapshotData.universeMeta.asOf)})`
+                : "";
             subtitle.textContent = (mode === "delayed" || mode === "fallback")
-                ? `Source: ${src} | Mode: ${mode} | As at: ${updated} | Errors: ${errors}`
-                : "Ranked from snapshot. Signals are derived — review only. Not buy/sell recommendations.";
+                ? `DELAYED, unlicensed data — not real-time. Source: ${src} | Mode: ${mode} | As at: ${updated} | Errors: ${errors}${universe}`
+                : "Ranked from a daily SNAPSHOT — delayed, review only. Not real-time and not buy/sell recommendations.";
         }
     } else {
-        badge.textContent = "Demo fallback";
-        if (subtitle) subtitle.textContent = "Demo-only ranked review list. No live feed or paid API.";
+        badge.textContent = "DEMO data (not real)";
+        if (subtitle) subtitle.textContent = "Demo-only ranked review list. No live feed, no licensed data, no paid API.";
     }
 }
 
@@ -975,9 +986,16 @@ function renderStalenessWarning() {
     if (!warning) return;
     const mode = snapshotData?.displayMode;
     if (mode) {
-        warning.hidden = (mode === "delayed");
-        if (!warning.hidden) {
-            warning.innerHTML = `<span><strong>ASX feed mode: ${escapeHtml(mode)}</strong> — ${escapeHtml(mode === "offline" ? "provider feed not populated yet; run GitHub Action before production stock use." : "data may be stale; confirm price in broker before execution.")} As at: ${escapeHtml(snapshotData.lastUpdated ? formatSydneyTimestamp(snapshotData) : "not recorded")}.</span>`;
+        const asAt = escapeHtml(snapshotData.lastUpdated ? formatSydneyTimestamp(snapshotData) : "not recorded");
+        const holiday = safeText(snapshotData.asxHoliday);
+        const holidayNote = holiday ? ` ASX is closed today (${escapeHtml(holiday)}); prices are from the prior session.` : "";
+        warning.hidden = false;
+        if (mode === "delayed") {
+            // Persistent low-key notice — delayed data is the normal healthy state,
+            // but the operator must never mistake it for licensed real-time data.
+            warning.innerHTML = `<span><strong>DELAYED ASX data — not licensed real-time.</strong> Review-only prices from an unlicensed delayed provider; confirm live price, spread and liquidity in your broker before any execution.${holidayNote} As at: ${asAt}.</span>`;
+        } else {
+            warning.innerHTML = `<span><strong>ASX feed mode: ${escapeHtml(mode)}</strong> — ${escapeHtml(mode === "offline" ? "provider feed not populated yet; run the GitHub Action before any stock use." : "data may be STALE; confirm price in broker before execution.")}${holidayNote} As at: ${asAt}.</span>`;
         }
     } else {
         warning.hidden = !(snapshotSource === "snapshot" && snapshotData && isSnapshotStale(snapshotData.lastUpdated));
