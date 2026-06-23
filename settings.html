@@ -83,6 +83,20 @@
             </div>
         </section>
         <section class="panel six-secondary-tabs">
+            <div class="panel-header"><h2 class="panel-title">ASX Broker Fee Defaults</h2><p class="panel-subtitle">Australian execution-cost assumptions used by the Stocks fee-aware position sizing and net-outcome planning.</p></div>
+            <div class="panel-body">
+                <p>These defaults pre-fill the Stocks Trade Plan fee panel and feed the fee-aware position size and breakeven maths. They model your broker's <strong>brokerage per side</strong> (a flat AUD charge each time you buy or sell), an optional <strong>percentage fee per side</strong>, and an assumed <strong>spread / slippage</strong>. Stored in this browser only — SixQuant never connects to a broker or places orders.</p>
+                <div class="six-settings-row">
+                    <label class="risk-rule-field" for="broker-fee-brokerage">Brokerage per side (AUD)<input id="broker-fee-brokerage" type="number" min="0" step="any" class="six-settings-input"></label>
+                    <label class="risk-rule-field" for="broker-fee-percent">Fee % per side<input id="broker-fee-percent" type="number" min="0" step="any" class="six-settings-input"></label>
+                    <label class="risk-rule-field" for="broker-fee-spread">Spread / slippage %<input id="broker-fee-spread" type="number" min="0" step="any" class="six-settings-input"></label>
+                    <button id="broker-fee-save" class="button-primary" type="button">Save Fee Defaults</button>
+                    <button id="broker-fee-reset" class="table-action" type="button">Reset Defaults</button>
+                </div>
+                <p class="form-message" id="broker-fee-message" aria-live="polite"></p>
+            </div>
+        </section>
+        <section class="panel six-secondary-tabs">
             <div class="panel-header"><h2 class="panel-title">Share Settings</h2><p class="panel-subtitle">GitHub token for Gist sharing. Private Local Mode only.</p></div>
             <div class="panel-body">
                 <p>Use a GitHub Personal Access Token with only the gist scope. The token is stored in this browser only and used only for GitHub Gist sharing.</p>
@@ -101,7 +115,7 @@
             <div class="six-strip-item"><span>Review</span><strong>Record every decision.</strong></div>
         </section>
     </main><footer class="sq-footer"><span><strong>Decision support only</strong> — no order execution</span><span class="sq-footer-sep">·</span><span>A Six Studio Group product</span></footer>
-    <script src="app.js?v=ssg-3"></script>
+    <script src="app.js?v=ssg-4"></script>
 <script>if(typeof lucide!=="undefined")lucide.createIcons();</script>
 </body>
 </html>

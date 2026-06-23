@@ -3357,10 +3357,62 @@ function initDeviceModeCard() {
     });
 }
 
+// ASX broker fee defaults — shared key with stock-release2.js so saving here
+// pre-fills the Stocks fee panel and drives fee-aware position sizing.
+const BROKER_FEE_DEFAULTS_KEY = "sixquant.stocks.auBrokerDefaults.v2";
+const DEFAULT_BROKER_FEES = { brokerageFee: 5, feePercent: 0, spreadPercent: 0.10 };
+
+function loadBrokerFeeDefaults() {
+    if (!storageAvailable()) return { ...DEFAULT_BROKER_FEES };
+    try {
+        const stored = JSON.parse(window.localStorage.getItem(BROKER_FEE_DEFAULTS_KEY) || "{}");
+        return {
+            brokerageFee: Math.max(0, finiteNumber(stored.brokerageFee, DEFAULT_BROKER_FEES.brokerageFee)),
+            feePercent: Math.max(0, finiteNumber(stored.feePercent, DEFAULT_BROKER_FEES.feePercent)),
+            spreadPercent: Math.max(0, finiteNumber(stored.spreadPercent, DEFAULT_BROKER_FEES.spreadPercent))
+        };
+    } catch { return { ...DEFAULT_BROKER_FEES }; }
+}
+
+function initBrokerFeeCard() {
+    const brokerageInput = document.getElementById("broker-fee-brokerage");
+    const percentInput = document.getElementById("broker-fee-percent");
+    const spreadInput = document.getElementById("broker-fee-spread");
+    const msg = document.getElementById("broker-fee-message");
+    if (!brokerageInput || !percentInput || !spreadInput) return;
+    const fill = (fees) => {
+        brokerageInput.value = fees.brokerageFee;
+        percentInput.value = fees.feePercent;
+        spreadInput.value = fees.spreadPercent;
+    };
+    fill(loadBrokerFeeDefaults());
+    document.getElementById("broker-fee-save")?.addEventListener("click", () => {
+        const fees = {
+            brokerageFee: Math.max(0, finiteNumber(brokerageInput.value, DEFAULT_BROKER_FEES.brokerageFee)),
+            feePercent: Math.max(0, finiteNumber(percentInput.value, DEFAULT_BROKER_FEES.feePercent)),
+            spreadPercent: Math.max(0, finiteNumber(spreadInput.value, DEFAULT_BROKER_FEES.spreadPercent))
+        };
+        let saved = false;
+        if (storageAvailable()) {
+            try { window.localStorage.setItem(BROKER_FEE_DEFAULTS_KEY, JSON.stringify(fees)); saved = true; } catch { saved = false; }
+        }
+        fill(fees);
+        if (msg) msg.textContent = saved ? "Broker fee defaults saved. They apply on the Stocks plan." : "Storage unavailable — fee defaults not saved.";
+    });
+    document.getElementById("broker-fee-reset")?.addEventListener("click", () => {
+        if (storageAvailable()) {
+            try { window.localStorage.setItem(BROKER_FEE_DEFAULTS_KEY, JSON.stringify(DEFAULT_BROKER_FEES)); } catch { /* storage off */ }
+        }
+        fill(DEFAULT_BROKER_FEES);
+        if (msg) msg.textContent = "Broker fee defaults reset.";
+    });
+}
+
 function initSettingsPage() {
     if (page !== "settings") return;
     initRiskRulesCard();
     initDeviceModeCard();
+    initBrokerFeeCard();
     const patInput = document.getElementById("github-pat-input");
     const patMsg = document.getElementById("github-pat-message");
     const patSave = document.getElementById("github-pat-save");

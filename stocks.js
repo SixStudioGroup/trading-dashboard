@@ -714,17 +714,73 @@ function stockPlanForSelectedStock() {
     return selectedStockSymbol ? stockJournal.map(normalizePlan).find(plan => plan.symbol === selectedStockSymbol) || null : null;
 }
 
+// Broker fee assumptions for fee-aware sizing. Reads the live Fee panel inputs
+// when present, otherwise the persisted AU broker defaults (written by
+// stock-release2.js / Settings). Kept here so the Risk panel is self-contained.
+const STOCK_FEE_DEFAULTS_KEY = "sixquant.stocks.auBrokerDefaults.v2";
+
+function currentFeeAssumptions() {
+    let defaults = { brokerageFee: 5, feePercent: 0, spreadPercent: 0.10 };
+    if (storageAvailable()) {
+        try {
+            const stored = JSON.parse(window.localStorage.getItem(STOCK_FEE_DEFAULTS_KEY) || "{}");
+            defaults = {
+                brokerageFee: finiteNumber(stored.brokerageFee, defaults.brokerageFee),
+                feePercent: finiteNumber(stored.feePercent, defaults.feePercent),
+                spreadPercent: finiteNumber(stored.spreadPercent, defaults.spreadPercent)
+            };
+        } catch { /* fall back to defaults */ }
+    }
+    const fromInput = (id, fallback) => {
+        const el = document.getElementById(id);
+        return el && el.value !== "" ? Math.max(0, finiteNumber(el.value, fallback)) : Math.max(0, fallback);
+    };
+    return {
+        brokerageFee: fromInput("stock-fee-brokerage", defaults.brokerageFee),
+        feePercent: fromInput("stock-fee-percent", defaults.feePercent),
+        spreadPercent: fromInput("stock-fee-spread", defaults.spreadPercent)
+    };
+}
+
 function riskPanelValues() {
     const accountValue = Math.max(0, finiteNumber(document.getElementById("stock-risk-account")?.value));
     const riskPercent = Math.max(0, finiteNumber(document.getElementById("stock-risk-percent")?.value));
     const entryPrice = Math.max(0, finiteNumber(document.getElementById("stock-risk-entry")?.value));
     const invalidationPrice = Math.max(0, finiteNumber(document.getElementById("stock-risk-invalidation-price")?.value));
+    const fees = currentFeeAssumptions();
     const maxLossAmount = accountValue * (riskPercent / 100);
     const perShareRisk = Math.max(0, entryPrice - invalidationPrice);
-    const estimatedShares = perShareRisk > 0 ? Math.floor(maxLossAmount / perShareRisk) : 0;
+
+    // FEE-UNAWARE baseline: shares from price risk alone (what the panel used
+    // to show). Kept so the operator can see how much sizing the fees cost.
+    const grossShares = perShareRisk > 0 ? Math.floor(maxLossAmount / perShareRisk) : 0;
+
+    // FEE-AWARE sizing: a stop-out realises price risk PLUS round-trip costs, so
+    // those costs must fit inside the same risk budget. Round-trip cost on N
+    // shares = 2*brokerage (fixed) + entry*N*(2*feePct + spreadPct)/100. Solve
+    // N*(perShareRisk + perShareVarCost) + 2*brokerage <= maxLoss for N.
+    const perShareVarCost = entryPrice * ((2 * fees.feePercent + fees.spreadPercent) / 100);
+    const fixedRoundTrip = 2 * fees.brokerageFee;
+    const riskBudgetAfterFixed = maxLossAmount - fixedRoundTrip;
+    const denom = perShareRisk + perShareVarCost;
+    const estimatedShares = denom > 0 && riskBudgetAfterFixed > 0
+        ? Math.floor(riskBudgetAfterFixed / denom)
+        : 0;
+
     const suggestedPositionSize = estimatedShares * entryPrice;
+    const grossPositionSize = grossShares * entryPrice;
+    // Worst-case round-trip cost on the fee-aware size (both legs transacted).
+    const roundTripCost = estimatedShares > 0
+        ? fixedRoundTrip + suggestedPositionSize * ((2 * fees.feePercent + fees.spreadPercent) / 100)
+        : 0;
+    // Realised loss if stopped at invalidation = price risk + round-trip cost.
+    const worstCaseLoss = estimatedShares * perShareRisk + roundTripCost;
     const allocationAfterTrade = accountValue > 0 ? (suggestedPositionSize / accountValue) * 100 : 0;
-    return { accountValue, riskPercent, entryPrice, invalidationPrice, maxLossAmount, suggestedPositionSize, estimatedShares, allocationAfterTrade };
+    return {
+        accountValue, riskPercent, entryPrice, invalidationPrice, fees,
+        maxLossAmount, suggestedPositionSize, estimatedShares, allocationAfterTrade,
+        grossShares, grossPositionSize, roundTripCost, worstCaseLoss
+    };
 }
 
 function renderRiskPanel() {
@@ -735,10 +791,12 @@ function renderRiskPanel() {
         output.textContent = "Enter account, risk, entry, and an invalidation price below entry.";
         return;
     }
+    const sizeGiveup = Math.max(0, risk.grossShares - risk.estimatedShares);
     output.innerHTML = `
-        <span>Max loss amount <strong>${formatMoney(risk.maxLossAmount)}</strong></span>
-        <span>Suggested position size <strong>${formatMoney(risk.suggestedPositionSize)}</strong></span>
-        <span>Estimated shares <strong>${formatUnits(risk.estimatedShares)}</strong></span>
+        <span>Max loss budget <strong>${formatMoney(risk.maxLossAmount)}</strong></span>
+        <span>Suggested position size (fee-aware) <strong>${formatMoney(risk.suggestedPositionSize)}</strong></span>
+        <span>Estimated shares <strong>${formatUnits(risk.estimatedShares)}</strong>${sizeGiveup > 0 ? ` <span class="muted">(${formatUnits(sizeGiveup)} fewer than fee-blind ${formatUnits(risk.grossShares)})</span>` : ""}</span>
+        <span>Worst-case loss incl. round-trip fees <strong>${formatMoney(risk.worstCaseLoss)}</strong> <span class="muted">(fees ${formatMoney(risk.roundTripCost)})</span></span>
         <span>Allocation after trade <strong>${risk.allocationAfterTrade.toFixed(1)}%</strong></span>
     `;
 }
@@ -871,7 +929,10 @@ function initPlanForm() {
         document.getElementById("stock-plan-message").textContent = "";
         renderRiskPanel();
     });
-    ["stock-risk-account", "stock-risk-percent", "stock-risk-entry", "stock-risk-invalidation-price"].forEach(id => {
+    // Risk inputs AND fee inputs both drive the fee-aware risk panel: changing a
+    // brokerage/spread assumption must re-size the position immediately.
+    ["stock-risk-account", "stock-risk-percent", "stock-risk-entry", "stock-risk-invalidation-price",
+     "stock-fee-brokerage", "stock-fee-percent", "stock-fee-spread"].forEach(id => {
         document.getElementById(id)?.addEventListener("input", renderRiskPanel);
     });
     renderRiskPanel();
