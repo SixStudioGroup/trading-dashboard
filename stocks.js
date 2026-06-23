@@ -109,6 +109,27 @@ function formatTimestamp(value) {
     });
 }
 
+// "As at <time> AEST/AEDT" — prefer the Sydney label the feed already stamped
+// (lastUpdatedSydney); otherwise render the UTC timestamp in Sydney time
+// client-side via Intl (Australia/Sydney resolves AEST/AEDT automatically).
+function formatSydneyTimestamp(data) {
+    if (data && typeof data.lastUpdatedSydney === "string" && data.lastUpdatedSydney.trim()) {
+        return data.lastUpdatedSydney.trim();
+    }
+    const date = new Date(data?.lastUpdated);
+    if (Number.isNaN(date.getTime())) return "Not recorded";
+    try {
+        const formatted = date.toLocaleString("en-AU", {
+            timeZone: "Australia/Sydney",
+            day: "2-digit", month: "short",
+            hour: "2-digit", minute: "2-digit", hour12: false
+        });
+        return `${formatted} (Sydney)`;
+    } catch {
+        return formatTimestamp(data?.lastUpdated);
+    }
+}
+
 // Mirrors app.js loadRiskRules — stocks.html does not load app.js.
 function loadRiskRules() {
     const defaults = { maxPositionPct: 8, cashReservePct: 20, exitAlertPct: 8 };
@@ -304,6 +325,9 @@ function normalizeSnapshotAsset(asset) {
         price: finiteNumber(asset.price),
         oneDayChange: finiteNumber(asset.change1d),
         fiveDayChange: finiteNumber(asset.change5d),
+        // Feed flag: change5d was computed from a short (<6-bar) window and is
+        // not a true 5-session change. Carried through so the UI can caveat it.
+        fiveDayPartial: asset.change5dPartial === true,
         relativeVolume: finiteNumber(asset.relativeVolume, 1),
         marketRegime: safeText(asset.marketRegime, "Mixed"),
         region: safeText(asset.region, "Unknown"),
@@ -594,7 +618,7 @@ function renderOpportunityQueue() {
             <td>${escapeHtml(stock.sector)}</td>
             <td class="num">${formatMoney(stock.price)}</td>
             <td class="num ${stock.oneDayChange > 0 ? "positive" : stock.oneDayChange < 0 ? "negative" : "neutral"}">${formatSignedChange(stock.oneDayChange)}</td>
-            <td class="num ${stock.fiveDayChange > 0 ? "positive" : stock.fiveDayChange < 0 ? "negative" : "neutral"}">${formatSignedChange(stock.fiveDayChange)}</td>
+            <td class="num ${stock.fiveDayChange > 0 ? "positive" : stock.fiveDayChange < 0 ? "negative" : "neutral"}" ${stock.fiveDayPartial ? 'title="Partial window (&lt;6 sessions) — not a true 5-day change"' : ""}>${formatSignedChange(stock.fiveDayChange)}${stock.fiveDayPartial ? "*" : ""}</td>
             <td class="num">${finiteNumber(stock.relativeVolume).toFixed(1)}x</td>
             <td><span class="badge ${signalBadgeClass(stock.signalState)}">${escapeHtml(stock.signalState)}</span></td>
             <td>${escapeHtml(stock.riskState)}</td>
@@ -636,9 +660,9 @@ function renderAnalysis() {
                 <div class="rule-card">Ticker<span>${escapeHtml(stock.symbol)}</span></div>
                 <div class="rule-card">Company<span>${escapeHtml(stock.name)}</span></div>
                 <div class="rule-card">Sector<span>${escapeHtml(stock.sector)}</span></div>
-                <div class="rule-card">Price<span>${formatMoney(stock.price)}</span></div>
+                <div class="rule-card">Price (delayed)<span>${formatMoney(stock.price)}</span></div>
                 <div class="rule-card ${stock.oneDayChange > 0 ? "strong" : stock.oneDayChange < 0 ? "risk" : "watch"}">1D Change<span>${formatSignedChange(stock.oneDayChange)}</span></div>
-                <div class="rule-card ${stock.fiveDayChange > 0 ? "strong" : stock.fiveDayChange < 0 ? "risk" : "watch"}">5D Change<span>${formatSignedChange(stock.fiveDayChange)}</span></div>
+                <div class="rule-card ${stock.fiveDayChange > 0 ? "strong" : stock.fiveDayChange < 0 ? "risk" : "watch"}">5D Change${stock.fiveDayPartial ? " (partial)" : ""}<span>${formatSignedChange(stock.fiveDayChange)}${stock.fiveDayPartial ? "*" : ""}</span></div>
                 <div class="rule-card volume">Relative Volume<span>${finiteNumber(stock.relativeVolume).toFixed(1)}x</span></div>
                 <div class="rule-card ${signalBadgeClass(stock.signalState)}">Signal State<span>${escapeHtml(stock.signalState)}</span></div>
                 <div class="rule-card risk">Risk State<span>${escapeHtml(stock.riskState)}</span></div>
@@ -690,17 +714,73 @@ function stockPlanForSelectedStock() {
     return selectedStockSymbol ? stockJournal.map(normalizePlan).find(plan => plan.symbol === selectedStockSymbol) || null : null;
 }
 
+// Broker fee assumptions for fee-aware sizing. Reads the live Fee panel inputs
+// when present, otherwise the persisted AU broker defaults (written by
+// stock-release2.js / Settings). Kept here so the Risk panel is self-contained.
+const STOCK_FEE_DEFAULTS_KEY = "sixquant.stocks.auBrokerDefaults.v2";
+
+function currentFeeAssumptions() {
+    let defaults = { brokerageFee: 5, feePercent: 0, spreadPercent: 0.10 };
+    if (storageAvailable()) {
+        try {
+            const stored = JSON.parse(window.localStorage.getItem(STOCK_FEE_DEFAULTS_KEY) || "{}");
+            defaults = {
+                brokerageFee: finiteNumber(stored.brokerageFee, defaults.brokerageFee),
+                feePercent: finiteNumber(stored.feePercent, defaults.feePercent),
+                spreadPercent: finiteNumber(stored.spreadPercent, defaults.spreadPercent)
+            };
+        } catch { /* fall back to defaults */ }
+    }
+    const fromInput = (id, fallback) => {
+        const el = document.getElementById(id);
+        return el && el.value !== "" ? Math.max(0, finiteNumber(el.value, fallback)) : Math.max(0, fallback);
+    };
+    return {
+        brokerageFee: fromInput("stock-fee-brokerage", defaults.brokerageFee),
+        feePercent: fromInput("stock-fee-percent", defaults.feePercent),
+        spreadPercent: fromInput("stock-fee-spread", defaults.spreadPercent)
+    };
+}
+
 function riskPanelValues() {
     const accountValue = Math.max(0, finiteNumber(document.getElementById("stock-risk-account")?.value));
     const riskPercent = Math.max(0, finiteNumber(document.getElementById("stock-risk-percent")?.value));
     const entryPrice = Math.max(0, finiteNumber(document.getElementById("stock-risk-entry")?.value));
     const invalidationPrice = Math.max(0, finiteNumber(document.getElementById("stock-risk-invalidation-price")?.value));
+    const fees = currentFeeAssumptions();
     const maxLossAmount = accountValue * (riskPercent / 100);
     const perShareRisk = Math.max(0, entryPrice - invalidationPrice);
-    const estimatedShares = perShareRisk > 0 ? Math.floor(maxLossAmount / perShareRisk) : 0;
+
+    // FEE-UNAWARE baseline: shares from price risk alone (what the panel used
+    // to show). Kept so the operator can see how much sizing the fees cost.
+    const grossShares = perShareRisk > 0 ? Math.floor(maxLossAmount / perShareRisk) : 0;
+
+    // FEE-AWARE sizing: a stop-out realises price risk PLUS round-trip costs, so
+    // those costs must fit inside the same risk budget. Round-trip cost on N
+    // shares = 2*brokerage (fixed) + entry*N*(2*feePct + spreadPct)/100. Solve
+    // N*(perShareRisk + perShareVarCost) + 2*brokerage <= maxLoss for N.
+    const perShareVarCost = entryPrice * ((2 * fees.feePercent + fees.spreadPercent) / 100);
+    const fixedRoundTrip = 2 * fees.brokerageFee;
+    const riskBudgetAfterFixed = maxLossAmount - fixedRoundTrip;
+    const denom = perShareRisk + perShareVarCost;
+    const estimatedShares = denom > 0 && riskBudgetAfterFixed > 0
+        ? Math.floor(riskBudgetAfterFixed / denom)
+        : 0;
+
     const suggestedPositionSize = estimatedShares * entryPrice;
+    const grossPositionSize = grossShares * entryPrice;
+    // Worst-case round-trip cost on the fee-aware size (both legs transacted).
+    const roundTripCost = estimatedShares > 0
+        ? fixedRoundTrip + suggestedPositionSize * ((2 * fees.feePercent + fees.spreadPercent) / 100)
+        : 0;
+    // Realised loss if stopped at invalidation = price risk + round-trip cost.
+    const worstCaseLoss = estimatedShares * perShareRisk + roundTripCost;
     const allocationAfterTrade = accountValue > 0 ? (suggestedPositionSize / accountValue) * 100 : 0;
-    return { accountValue, riskPercent, entryPrice, invalidationPrice, maxLossAmount, suggestedPositionSize, estimatedShares, allocationAfterTrade };
+    return {
+        accountValue, riskPercent, entryPrice, invalidationPrice, fees,
+        maxLossAmount, suggestedPositionSize, estimatedShares, allocationAfterTrade,
+        grossShares, grossPositionSize, roundTripCost, worstCaseLoss
+    };
 }
 
 function renderRiskPanel() {
@@ -711,10 +791,12 @@ function renderRiskPanel() {
         output.textContent = "Enter account, risk, entry, and an invalidation price below entry.";
         return;
     }
+    const sizeGiveup = Math.max(0, risk.grossShares - risk.estimatedShares);
     output.innerHTML = `
-        <span>Max loss amount <strong>${formatMoney(risk.maxLossAmount)}</strong></span>
-        <span>Suggested position size <strong>${formatMoney(risk.suggestedPositionSize)}</strong></span>
-        <span>Estimated shares <strong>${formatUnits(risk.estimatedShares)}</strong></span>
+        <span>Max loss budget <strong>${formatMoney(risk.maxLossAmount)}</strong></span>
+        <span>Suggested position size (fee-aware) <strong>${formatMoney(risk.suggestedPositionSize)}</strong></span>
+        <span>Estimated shares <strong>${formatUnits(risk.estimatedShares)}</strong>${sizeGiveup > 0 ? ` <span class="muted">(${formatUnits(sizeGiveup)} fewer than fee-blind ${formatUnits(risk.grossShares)})</span>` : ""}</span>
+        <span>Worst-case loss incl. round-trip fees <strong>${formatMoney(risk.worstCaseLoss)}</strong> <span class="muted">(fees ${formatMoney(risk.roundTripCost)})</span></span>
         <span>Allocation after trade <strong>${risk.allocationAfterTrade.toFixed(1)}%</strong></span>
     `;
 }
@@ -847,7 +929,10 @@ function initPlanForm() {
         document.getElementById("stock-plan-message").textContent = "";
         renderRiskPanel();
     });
-    ["stock-risk-account", "stock-risk-percent", "stock-risk-entry", "stock-risk-invalidation-price"].forEach(id => {
+    // Risk inputs AND fee inputs both drive the fee-aware risk panel: changing a
+    // brokerage/spread assumption must re-size the position immediately.
+    ["stock-risk-account", "stock-risk-percent", "stock-risk-entry", "stock-risk-invalidation-price",
+     "stock-fee-brokerage", "stock-fee-percent", "stock-fee-spread"].forEach(id => {
         document.getElementById(id)?.addEventListener("input", renderRiskPanel);
     });
     renderRiskPanel();
@@ -863,25 +948,36 @@ function initTabs() {
     });
 }
 
+// Every stock-data label carries a DELAYED / SNAPSHOT / DEMO qualifier. SixQuant
+// has NO licensed live exchange feed — the UI must never let the operator read
+// these prices as licensed real-time ASX data.
 function renderSourceBadge() {
     const badge = document.getElementById("stock-source-badge");
     if (!badge) return;
     const subtitle = document.getElementById("stock-queue-subtitle");
     if (snapshotSource === "snapshot" && snapshotData) {
         const mode = snapshotData.displayMode || snapshotData.mode || "snapshot";
-        const label = { delayed: "ASX delayed feed", fallback: "ASX stale fallback", offline: "ASX offline", snapshot: "Stooq Snapshot" }[mode] || "Stooq Snapshot";
+        const label = {
+            delayed: "ASX DELAYED feed (unlicensed)",
+            fallback: "ASX delayed — STALE fallback",
+            offline: "ASX offline",
+            snapshot: "Stooq daily SNAPSHOT"
+        }[mode] || "Stooq daily SNAPSHOT";
         badge.textContent = label;
         if (subtitle) {
             const src = snapshotData.source || "snapshot";
-            const updated = snapshotData.lastUpdated ? formatTimestamp(snapshotData.lastUpdated) : "Not recorded";
+            const updated = snapshotData.lastUpdated ? formatSydneyTimestamp(snapshotData) : "Not recorded";
             const errors = Array.isArray(snapshotData.fetchErrors) ? snapshotData.fetchErrors.length : 0;
+            const universe = snapshotData.universeMeta && snapshotData.universeMeta.asOf
+                ? ` | Universe: ${escapeHtml(snapshotData.universeMeta.name || "ASX list")} rev ${escapeHtml(String(snapshotData.universeMeta.revision ?? "?"))} (${escapeHtml(snapshotData.universeMeta.asOf)})`
+                : "";
             subtitle.textContent = (mode === "delayed" || mode === "fallback")
-                ? `Source: ${src} | Mode: ${mode} | Updated: ${updated} | Errors: ${errors}`
-                : "Ranked from snapshot. Signals are derived — review only. Not buy/sell recommendations.";
+                ? `DELAYED, unlicensed data — not real-time. Source: ${src} | Mode: ${mode} | As at: ${updated} | Errors: ${errors}${universe}`
+                : "Ranked from a daily SNAPSHOT — delayed, review only. Not real-time and not buy/sell recommendations.";
         }
     } else {
-        badge.textContent = "Demo fallback";
-        if (subtitle) subtitle.textContent = "Demo-only ranked review list. No live feed or paid API.";
+        badge.textContent = "DEMO data (not real)";
+        if (subtitle) subtitle.textContent = "Demo-only ranked review list. No live feed, no licensed data, no paid API.";
     }
 }
 
@@ -890,9 +986,16 @@ function renderStalenessWarning() {
     if (!warning) return;
     const mode = snapshotData?.displayMode;
     if (mode) {
-        warning.hidden = (mode === "delayed");
-        if (!warning.hidden) {
-            warning.innerHTML = `<span><strong>ASX feed mode: ${escapeHtml(mode)}</strong> — ${escapeHtml(mode === "offline" ? "provider feed not populated yet; run GitHub Action before production stock use." : "data may be stale; confirm price in broker before execution.")} Last updated: ${escapeHtml(snapshotData.lastUpdated ? formatTimestamp(snapshotData.lastUpdated) : "not recorded")}.</span>`;
+        const asAt = escapeHtml(snapshotData.lastUpdated ? formatSydneyTimestamp(snapshotData) : "not recorded");
+        const holiday = safeText(snapshotData.asxHoliday);
+        const holidayNote = holiday ? ` ASX is closed today (${escapeHtml(holiday)}); prices are from the prior session.` : "";
+        warning.hidden = false;
+        if (mode === "delayed") {
+            // Persistent low-key notice — delayed data is the normal healthy state,
+            // but the operator must never mistake it for licensed real-time data.
+            warning.innerHTML = `<span><strong>DELAYED ASX data — not licensed real-time.</strong> Review-only prices from an unlicensed delayed provider; confirm live price, spread and liquidity in your broker before any execution.${holidayNote} As at: ${asAt}.</span>`;
+        } else {
+            warning.innerHTML = `<span><strong>ASX feed mode: ${escapeHtml(mode)}</strong> — ${escapeHtml(mode === "offline" ? "provider feed not populated yet; run the GitHub Action before any stock use." : "data may be STALE; confirm price in broker before execution.")}${holidayNote} As at: ${asAt}.</span>`;
         }
     } else {
         warning.hidden = !(snapshotSource === "snapshot" && snapshotData && isSnapshotStale(snapshotData.lastUpdated));

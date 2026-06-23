@@ -1,8 +1,26 @@
-name: Market Scanner
+name: Market Scanner (manual dry-run)
 on: [workflow_dispatch]
+
+# Read-only manual dry-run: runs the REAL stock-snapshot pipeline via
+# scripts/scanner.py (which delegates to fetch_stocks.py) so an operator can
+# confirm the scan works and inspect derived signals in the logs. It does NOT
+# commit — the scheduled update-stock-snapshot.yml is the workflow that writes
+# and commits data/stocks-snapshot.json. Hence no write permissions are needed.
+permissions:
+  contents: read
+
 jobs:
-  update:
+  scan:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - run: python scripts/scanner.py
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests tzdata
+
+      - name: Run market scanner (dry-run, no commit)
+        run: python scripts/scanner.py

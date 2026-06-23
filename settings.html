@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SixQuant Settings</title>
+    <title>SixQuant — Settings</title>
     <link rel="stylesheet" href="styles.css?v=ui-20260526">
-    <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="sixquant.css?v=ssg-1"><script src="sixquant-mode.js?v=ssg-1"></script><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230A0F1C'/%3E%3Crect x='13' y='36' width='6' height='15' rx='3' fill='%232F81F7'/%3E%3Crect x='23' y='28' width='6' height='23' rx='3' fill='%232F81F7'/%3E%3Crect x='33' y='20' width='6' height='31' rx='3' fill='%232F81F7'/%3E%3Crect x='43' y='12' width='6' height='39' rx='3' fill='%2316C784'/%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="sixquant.css?v=ssg-3"><script src="sixquant-mode.js?v=ssg-1"></script><link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png"><link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png"><link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png"><link rel="manifest" href="site.webmanifest"><meta name="theme-color" content="#0A0F1C"><meta name="description" content="SixQuant settings — privacy mode, display, risk rules, and optional Gist sharing. Decision support only; no order execution."><meta property="og:type" content="website"><meta property="og:site_name" content="SixQuant Terminal"><meta property="og:url" content="https://sixstudiogroup.github.io/trading-dashboard/settings.html"><meta property="og:title" content="SixQuant — Settings"><meta property="og:description" content="SixQuant settings — privacy mode, display, risk rules, and optional Gist sharing. Decision support only; no order execution."><meta property="og:image" content="https://sixstudiogroup.github.io/trading-dashboard/assets/icon-512.png"><meta name="twitter:card" content="summary"><meta name="twitter:title" content="SixQuant — Settings"><meta name="twitter:description" content="SixQuant settings — privacy mode, display, risk rules, and optional Gist sharing. Decision support only; no order execution."><meta name="twitter:image" content="https://sixstudiogroup.github.io/trading-dashboard/assets/icon-512.png">
     <script src="https://unpkg.com/lucide@0.441.0/dist/umd/lucide.min.js"></script>
 </head>
 <body data-page="settings">
     <a class="skip-link" href="#main-content">Skip to main content</a>
     <header class="topbar six-topbar">
         <a class="brand six-brand" href="index.html" aria-label="SixQuant Terminal">
-            <span class="brand-mark six-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
+            <span class="brand-mark six-mark" aria-hidden="true"><img src="assets/logo.svg" alt="" width="22" height="22"></span>
             <span><strong>SixQuant</strong><small>by Six Studio Group</small></span>
         </a>
         <nav class="navlinks" aria-label="Main navigation">
@@ -83,9 +83,24 @@
             </div>
         </section>
         <section class="panel six-secondary-tabs">
+            <div class="panel-header"><h2 class="panel-title">ASX Broker Fee Defaults</h2><p class="panel-subtitle">Australian execution-cost assumptions used by the Stocks fee-aware position sizing and net-outcome planning.</p></div>
+            <div class="panel-body">
+                <p>These defaults pre-fill the Stocks Trade Plan fee panel and feed the fee-aware position size and breakeven maths. They model your broker's <strong>brokerage per side</strong> (a flat AUD charge each time you buy or sell), an optional <strong>percentage fee per side</strong>, and an assumed <strong>spread / slippage</strong>. Stored in this browser only — SixQuant never connects to a broker or places orders.</p>
+                <div class="six-settings-row">
+                    <label class="risk-rule-field" for="broker-fee-brokerage">Brokerage per side (AUD)<input id="broker-fee-brokerage" type="number" min="0" step="any" class="six-settings-input"></label>
+                    <label class="risk-rule-field" for="broker-fee-percent">Fee % per side<input id="broker-fee-percent" type="number" min="0" step="any" class="six-settings-input"></label>
+                    <label class="risk-rule-field" for="broker-fee-spread">Spread / slippage %<input id="broker-fee-spread" type="number" min="0" step="any" class="six-settings-input"></label>
+                    <button id="broker-fee-save" class="button-primary" type="button">Save Fee Defaults</button>
+                    <button id="broker-fee-reset" class="table-action" type="button">Reset Defaults</button>
+                </div>
+                <p class="form-message" id="broker-fee-message" aria-live="polite"></p>
+            </div>
+        </section>
+        <section class="panel six-secondary-tabs">
             <div class="panel-header"><h2 class="panel-title">Share Settings</h2><p class="panel-subtitle">GitHub token for Gist sharing. Private Local Mode only.</p></div>
             <div class="panel-body">
                 <p>Use a GitHub Personal Access Token with only the gist scope. The token is stored in this browser only and used only for GitHub Gist sharing.</p>
+                <p class="security-warning" role="alert">⚠ Security note: this token is stored <strong>unencrypted</strong> in this browser's localStorage. Anyone with access to this device or browser profile can read it. Use a <strong>gist-scoped token only</strong> (no repo, no admin, no other scopes), and clear it when you are finished. Never paste a broadly-scoped token here.</p>
                 <div class="six-settings-row">
                     <input id="github-pat-input" type="password" placeholder="GitHub token" class="six-settings-input" aria-label="GitHub Personal Access Token (gist scope)">
                     <button id="github-pat-save" class="button-primary" type="button">Save Token</button>
@@ -99,8 +114,8 @@
             <div class="six-strip-item"><span>Boundary</span><strong>No broker API. No order placement.</strong></div>
             <div class="six-strip-item"><span>Review</span><strong>Record every decision.</strong></div>
         </section>
-    </main>
-    <script src="app.js?v=ssg-2"></script>
+    </main><footer class="sq-footer"><span><strong>Decision support only</strong> — no order execution</span><span class="sq-footer-sep">·</span><span>A Six Studio Group product</span></footer>
+    <script src="app.js?v=ssg-4"></script>
 <script>if(typeof lucide!=="undefined")lucide.createIcons();</script>
 </body>
 </html>

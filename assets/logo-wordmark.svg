@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="56" viewBox="0 0 240 56" role="img" aria-label="SixQuant">
+  <!-- Horizontal lockup: mark + "SixQuant" wordmark + tagline.
+       Transparent background; tuned for the dark terminal top bar. -->
+  <g transform="translate(4 -4)">
+    <path d="M34 14 C24 18 19 26 19 36 a11 11 0 1 0 22 0 c0 -6 -4.4 -11 -11 -11 c-5 0 -8.6 2.8 -10 6.4"
+          fill="none" stroke="#2F81F7" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="40" y="40" width="4" height="9"  rx="2" fill="#2F81F7"/>
+    <rect x="46" y="34" width="4" height="15" rx="2" fill="#2F81F7"/>
+    <rect x="52" y="26" width="4" height="23" rx="2" fill="#16C784"/>
+  </g>
+  <text x="74" y="30" font-family="'IBM Plex Mono','Cascadia Mono',ui-monospace,monospace"
+        font-size="22" font-weight="700" letter-spacing="-0.5"
+        fill="#F8FAFC">Six<tspan fill="#2F81F7">Quant</tspan></text>
+  <text x="75" y="45" font-family="'IBM Plex Mono','Cascadia Mono',ui-monospace,monospace"
+        font-size="9" font-weight="500" letter-spacing="2.2"
+        fill="#B8C5D8">DECISION TERMINAL</text>
+</svg>

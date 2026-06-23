@@ -79,3 +79,53 @@ Every review should reinforce:
 - execution discipline,
 - repeatability,
 - and trader awareness.
+
+## Canonical Signal Spec v1
+
+Both equity-signal engines MUST implement this spec identically so one ticker
+can never show different signals across surfaces. The two implementations are:
+
+- `scripts/fetch_stocks.py` (Python — Stooq snapshot, also the test target)
+- `tools/generate-asx-feed.mjs` (JavaScript — Yahoo ASX delayed feed)
+
+Each file carries this spec verbatim in a `CANONICAL SIGNAL SPEC v1` comment
+block. Unit tests in `scripts/test_signals.py` lock the Python implementation.
+
+### Inputs
+
+| Field | Definition |
+|---|---|
+| `change1d` | `(close[-1] - close[-2]) / close[-2] * 100` |
+| `change5d` | `(close[-1] - close[-6]) / close[-6] * 100` (5 sessions back) |
+| `relativeVolume` | `volume[-1] / mean(prior up-to-20 sessions, EXCLUDING the current bar)` |
+
+The current bar is **excluded** from the relative-volume baseline so a fresh
+volume spike is not diluted into its own average.
+
+### signalState (first match wins — every label is reachable)
+
+| # | Signal | Condition |
+|---|---|---|
+| 1 | Breakout | `change1d >= 2` AND `relativeVolume >= 1.5` AND `change5d > 0` |
+| 2 | Volume Spike | `relativeVolume >= 2.0` AND `change1d > 0` |
+| 3 | Watch | `change1d > 0` AND `change5d > 0` |
+| 4 | Sell Risk | `change1d <= -2` OR `change5d <= -5` |
+| 5 | No Action | default |
+
+`Watch` is evaluated before `Sell Risk` but never masks it: `Watch` requires
+both changes positive, `Sell Risk` requires a negative move, so they cannot
+overlap.
+
+### riskState (first match wins)
+
+| # | Risk | Condition |
+|---|---|---|
+| 1 | Elevated | `signalState == "Sell Risk"` OR `change1d <= -3` OR `change5d <= -7` |
+| 2 | Review | `relativeVolume >= 2.0` OR `abs(change1d) >= 3` |
+| 3 | Normal | default |
+
+### Partial 5-day window
+
+When fewer than 6 closes are available, `change5d` is computed from the earliest
+available close. The feed flags this with `change5dPartial: true` so the UI and
+downstream logic do not treat a short window as a true 5-session change.

@@ -282,6 +282,18 @@ function escapeHtml(value) {
     }[char]));
 }
 
+// Security: only allow image URLs we trust before they reach an `src` attribute.
+// Permits http(s) and data:image/* URLs; everything else (javascript:, data:text/html,
+// etc.) is dropped to "". Always attribute-escape the result before interpolating.
+function safeImageUrl(value) {
+    if (typeof value !== "string") return "";
+    const url = value.trim();
+    if (!url) return "";
+    if (/^https?:\/\//i.test(url)) return url;
+    if (/^data:image\/[a-z0-9.+-]+[;,]/i.test(url)) return url;
+    return "";
+}
+
 function storageAvailable() {
     try {
         const key = "__sixquant_storage_test__";
@@ -649,8 +661,9 @@ function coinspotStatus(coin) {
 
 function coinCell(coin) {
     const safeCoin = normalizeMarket(coin);
-    const icon = safeCoin.image
-        ? `<img class="coin-icon" src="${safeCoin.image}" alt="">`
+    const imageUrl = safeImageUrl(safeCoin.image);
+    const icon = imageUrl
+        ? `<img class="coin-icon" src="${escapeHtml(imageUrl)}" alt="">`
         : `<span class="coin-icon"></span>`;
     return `<span class="coin">${icon}${escapeHtml(safeCoin.name)}</span>`;
 }
@@ -2044,7 +2057,7 @@ function renderPerformanceSummary(targetId, trades = tradeJournal.map(normalizeT
         ["Best consensus", metrics.bestConsensus],
         ["Worst consensus", metrics.worstConsensus]
     ];
-    el.innerHTML = cells.map(([label, value]) => `<div><span>${label}</span><strong>${value}</strong></div>`).join("");
+    el.innerHTML = cells.map(([label, value]) => `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(String(value))}</strong></div>`).join("");
 }
 
 function guideStateFor(item) {
@@ -2195,7 +2208,7 @@ function renderHoldingsAllocation(holdingRows, portfolioValue) {
     const leadPercent = lead && portfolioValue > 0 && lead.value !== null
         ? Math.round((lead.value / portfolioValue) * 100)
         : activeRows.length === 1 ? 100 : 0;
-    pie.innerHTML = lead ? `${lead.holding.symbol}<br>${hideValues ? "••••" : `${leadPercent}%`}` : "0%";
+    pie.innerHTML = lead ? `${escapeHtml(lead.holding.symbol)}<br>${hideValues ? "••••" : `${leadPercent}%`}` : "0%";
 
     if (!activeRows.length) {
         body.innerHTML = `<tr><td colspan="3" class="loading-cell">No active holdings.</td></tr>`;
@@ -2389,16 +2402,6 @@ function renderTodayMovers(markets) {
     const downBody = document.getElementById("today-down-body");
     if (upBody) upBody.innerHTML = up.map(row).join("");
     if (downBody) downBody.innerHTML = down.map(row).join("");
-}
-
-function tile(coin) {
-    const safeCoin = normalizeMarket(coin);
-    return `
-        <span class="coin-tile">
-            ${safeCoin.image ? `<img class="coin-icon" src="${safeCoin.image}" alt="">` : `<span class="coin-icon"></span>`}
-            <span>${safeCoin.symbol.toUpperCase()}</span>
-        </span>
-    `;
 }
 
 function marketStateFor(coin, volumeThreshold) {
@@ -3354,10 +3357,62 @@ function initDeviceModeCard() {
     });
 }
 
+// ASX broker fee defaults — shared key with stock-release2.js so saving here
+// pre-fills the Stocks fee panel and drives fee-aware position sizing.
+const BROKER_FEE_DEFAULTS_KEY = "sixquant.stocks.auBrokerDefaults.v2";
+const DEFAULT_BROKER_FEES = { brokerageFee: 5, feePercent: 0, spreadPercent: 0.10 };
+
+function loadBrokerFeeDefaults() {
+    if (!storageAvailable()) return { ...DEFAULT_BROKER_FEES };
+    try {
+        const stored = JSON.parse(window.localStorage.getItem(BROKER_FEE_DEFAULTS_KEY) || "{}");
+        return {
+            brokerageFee: Math.max(0, finiteNumber(stored.brokerageFee, DEFAULT_BROKER_FEES.brokerageFee)),
+            feePercent: Math.max(0, finiteNumber(stored.feePercent, DEFAULT_BROKER_FEES.feePercent)),
+            spreadPercent: Math.max(0, finiteNumber(stored.spreadPercent, DEFAULT_BROKER_FEES.spreadPercent))
+        };
+    } catch { return { ...DEFAULT_BROKER_FEES }; }
+}
+
+function initBrokerFeeCard() {
+    const brokerageInput = document.getElementById("broker-fee-brokerage");
+    const percentInput = document.getElementById("broker-fee-percent");
+    const spreadInput = document.getElementById("broker-fee-spread");
+    const msg = document.getElementById("broker-fee-message");
+    if (!brokerageInput || !percentInput || !spreadInput) return;
+    const fill = (fees) => {
+        brokerageInput.value = fees.brokerageFee;
+        percentInput.value = fees.feePercent;
+        spreadInput.value = fees.spreadPercent;
+    };
+    fill(loadBrokerFeeDefaults());
+    document.getElementById("broker-fee-save")?.addEventListener("click", () => {
+        const fees = {
+            brokerageFee: Math.max(0, finiteNumber(brokerageInput.value, DEFAULT_BROKER_FEES.brokerageFee)),
+            feePercent: Math.max(0, finiteNumber(percentInput.value, DEFAULT_BROKER_FEES.feePercent)),
+            spreadPercent: Math.max(0, finiteNumber(spreadInput.value, DEFAULT_BROKER_FEES.spreadPercent))
+        };
+        let saved = false;
+        if (storageAvailable()) {
+            try { window.localStorage.setItem(BROKER_FEE_DEFAULTS_KEY, JSON.stringify(fees)); saved = true; } catch { saved = false; }
+        }
+        fill(fees);
+        if (msg) msg.textContent = saved ? "Broker fee defaults saved. They apply on the Stocks plan." : "Storage unavailable — fee defaults not saved.";
+    });
+    document.getElementById("broker-fee-reset")?.addEventListener("click", () => {
+        if (storageAvailable()) {
+            try { window.localStorage.setItem(BROKER_FEE_DEFAULTS_KEY, JSON.stringify(DEFAULT_BROKER_FEES)); } catch { /* storage off */ }
+        }
+        fill(DEFAULT_BROKER_FEES);
+        if (msg) msg.textContent = "Broker fee defaults reset.";
+    });
+}
+
 function initSettingsPage() {
     if (page !== "settings") return;
     initRiskRulesCard();
     initDeviceModeCard();
+    initBrokerFeeCard();
     const patInput = document.getElementById("github-pat-input");
     const patMsg = document.getElementById("github-pat-message");
     const patSave = document.getElementById("github-pat-save");
@@ -3534,7 +3589,7 @@ function initSharePanel() {
             const url = await createGist(payload);
             try { await navigator.clipboard.writeText(url); } catch {}
             if (resultBox) {
-                resultBox.innerHTML = `Gist created. Link copied to clipboard.<br><a href="${url}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a>`;
+                resultBox.innerHTML = `Gist created. Link copied to clipboard.<br><a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a>`;
                 resultBox.style.display = "block";
             }
             if (warningBox) warningBox.style.display = "none";

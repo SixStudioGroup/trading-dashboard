@@ -1,6 +1,6 @@
 """
 scripts/fetch_stocks.py — Stooq stock snapshot generator for SixQuant Trading OS.
-Fetches daily CSV for 41 symbols, derives signals, writes data/stocks-snapshot.json.
+Fetches daily CSV for the configured symbols, derives signals, writes data/stocks-snapshot.json.
 Run by GitHub Actions hourly. No API keys required.
 """
 
@@ -13,23 +13,49 @@ import time
 from datetime import datetime, timezone
 from statistics import mean
 
+try:
+    from zoneinfo import ZoneInfo  # Python 3.9+
+    SYDNEY_TZ = ZoneInfo("Australia/Sydney")
+except Exception:  # pragma: no cover - zoneinfo always present on 3.11 runner
+    SYDNEY_TZ = None
+
 import requests
 
 # ---------------------------------------------------------------------------
 # Stock universe — 41 symbols with static metadata
 # ---------------------------------------------------------------------------
 STOCK_UNIVERSE = [
-    # Australia / ASX
-    {"symbol": "BHP",   "stooq": "BHP.AU",   "name": "BHP Group",               "exchange": "ASX",    "region": "Australia",      "sector": "Materials",              "currency": "AUD"},
+    # Australia / ASX — liquid large-cap swing-trading set (mirrors the documented
+    # universe in tools/generate-asx-feed.mjs; kept broad so the Stooq snapshot
+    # fallback covers the same ASX names the delayed feed does).
     {"symbol": "CBA",   "stooq": "CBA.AU",   "name": "Commonwealth Bank",       "exchange": "ASX",    "region": "Australia",      "sector": "Financials",             "currency": "AUD"},
-    {"symbol": "CSL",   "stooq": "CSL.AU",   "name": "CSL Limited",             "exchange": "ASX",    "region": "Australia",      "sector": "Healthcare",             "currency": "AUD"},
-    {"symbol": "WES",   "stooq": "WES.AU",   "name": "Wesfarmers",              "exchange": "ASX",    "region": "Australia",      "sector": "Consumer Staples",       "currency": "AUD"},
-    {"symbol": "MQG",   "stooq": "MQG.AU",   "name": "Macquarie Group",         "exchange": "ASX",    "region": "Australia",      "sector": "Financials",             "currency": "AUD"},
-    {"symbol": "TLS",   "stooq": "TLS.AU",   "name": "Telstra Group",           "exchange": "ASX",    "region": "Australia",      "sector": "Communication Services", "currency": "AUD"},
-    {"symbol": "WOW",   "stooq": "WOW.AU",   "name": "Woolworths Group",        "exchange": "ASX",    "region": "Australia",      "sector": "Consumer Staples",       "currency": "AUD"},
     {"symbol": "NAB",   "stooq": "NAB.AU",   "name": "National Australia Bank", "exchange": "ASX",    "region": "Australia",      "sector": "Financials",             "currency": "AUD"},
     {"symbol": "WBC",   "stooq": "WBC.AU",   "name": "Westpac Banking Corp",    "exchange": "ASX",    "region": "Australia",      "sector": "Financials",             "currency": "AUD"},
     {"symbol": "ANZ",   "stooq": "ANZ.AU",   "name": "ANZ Group Holdings",      "exchange": "ASX",    "region": "Australia",      "sector": "Financials",             "currency": "AUD"},
+    {"symbol": "MQG",   "stooq": "MQG.AU",   "name": "Macquarie Group",         "exchange": "ASX",    "region": "Australia",      "sector": "Financials",             "currency": "AUD"},
+    {"symbol": "QBE",   "stooq": "QBE.AU",   "name": "QBE Insurance Group",     "exchange": "ASX",    "region": "Australia",      "sector": "Financials",             "currency": "AUD"},
+    {"symbol": "BHP",   "stooq": "BHP.AU",   "name": "BHP Group",               "exchange": "ASX",    "region": "Australia",      "sector": "Materials",              "currency": "AUD"},
+    {"symbol": "RIO",   "stooq": "RIO.AU",   "name": "Rio Tinto",               "exchange": "ASX",    "region": "Australia",      "sector": "Materials",              "currency": "AUD"},
+    {"symbol": "FMG",   "stooq": "FMG.AU",   "name": "Fortescue",               "exchange": "ASX",    "region": "Australia",      "sector": "Materials",              "currency": "AUD"},
+    {"symbol": "NST",   "stooq": "NST.AU",   "name": "Northern Star Resources", "exchange": "ASX",    "region": "Australia",      "sector": "Materials",              "currency": "AUD"},
+    {"symbol": "S32",   "stooq": "S32.AU",   "name": "South32",                 "exchange": "ASX",    "region": "Australia",      "sector": "Materials",              "currency": "AUD"},
+    {"symbol": "CSL",   "stooq": "CSL.AU",   "name": "CSL Limited",             "exchange": "ASX",    "region": "Australia",      "sector": "Healthcare",             "currency": "AUD"},
+    {"symbol": "RMD",   "stooq": "RMD.AU",   "name": "ResMed",                  "exchange": "ASX",    "region": "Australia",      "sector": "Healthcare",             "currency": "AUD"},
+    {"symbol": "COH",   "stooq": "COH.AU",   "name": "Cochlear",                "exchange": "ASX",    "region": "Australia",      "sector": "Healthcare",             "currency": "AUD"},
+    {"symbol": "WDS",   "stooq": "WDS.AU",   "name": "Woodside Energy Group",   "exchange": "ASX",    "region": "Australia",      "sector": "Energy",                 "currency": "AUD"},
+    {"symbol": "STO",   "stooq": "STO.AU",   "name": "Santos",                  "exchange": "ASX",    "region": "Australia",      "sector": "Energy",                 "currency": "AUD"},
+    {"symbol": "WES",   "stooq": "WES.AU",   "name": "Wesfarmers",              "exchange": "ASX",    "region": "Australia",      "sector": "Consumer Discretionary", "currency": "AUD"},
+    {"symbol": "ALL",   "stooq": "ALL.AU",   "name": "Aristocrat Leisure",     "exchange": "ASX",    "region": "Australia",      "sector": "Consumer Discretionary", "currency": "AUD"},
+    {"symbol": "JBH",   "stooq": "JBH.AU",   "name": "JB Hi-Fi",                "exchange": "ASX",    "region": "Australia",      "sector": "Consumer Discretionary", "currency": "AUD"},
+    {"symbol": "WOW",   "stooq": "WOW.AU",   "name": "Woolworths Group",        "exchange": "ASX",    "region": "Australia",      "sector": "Consumer Staples",       "currency": "AUD"},
+    {"symbol": "COL",   "stooq": "COL.AU",   "name": "Coles Group",             "exchange": "ASX",    "region": "Australia",      "sector": "Consumer Staples",       "currency": "AUD"},
+    {"symbol": "TLS",   "stooq": "TLS.AU",   "name": "Telstra Group",           "exchange": "ASX",    "region": "Australia",      "sector": "Communication Services", "currency": "AUD"},
+    {"symbol": "REA",   "stooq": "REA.AU",   "name": "REA Group",               "exchange": "ASX",    "region": "Australia",      "sector": "Communication Services", "currency": "AUD"},
+    {"symbol": "XRO",   "stooq": "XRO.AU",   "name": "Xero",                    "exchange": "ASX",    "region": "Australia",      "sector": "Technology",             "currency": "AUD"},
+    {"symbol": "WTC",   "stooq": "WTC.AU",   "name": "WiseTech Global",         "exchange": "ASX",    "region": "Australia",      "sector": "Technology",             "currency": "AUD"},
+    {"symbol": "TCL",   "stooq": "TCL.AU",   "name": "Transurban Group",        "exchange": "ASX",    "region": "Australia",      "sector": "Industrials",            "currency": "AUD"},
+    {"symbol": "GMG",   "stooq": "GMG.AU",   "name": "Goodman Group",           "exchange": "ASX",    "region": "Australia",      "sector": "Real Estate",            "currency": "AUD"},
+    {"symbol": "ORG",   "stooq": "ORG.AU",   "name": "Origin Energy",           "exchange": "ASX",    "region": "Australia",      "sector": "Utilities",              "currency": "AUD"},
     # U.S. Technology
     {"symbol": "AAPL",  "stooq": "AAPL.US",  "name": "Apple Inc.",              "exchange": "NASDAQ", "region": "U.S. Tech",      "sector": "Technology",             "currency": "USD"},
     {"symbol": "MSFT",  "stooq": "MSFT.US",  "name": "Microsoft Corporation",   "exchange": "NASDAQ", "region": "U.S. Tech",      "sector": "Technology",             "currency": "USD"},
@@ -67,7 +93,7 @@ STOCK_UNIVERSE = [
 ]
 
 REGIONS = ["Australia", "U.S. Tech", "U.S. Large Cap", "Global ADRs"]
-EXPECTED_COUNT = len(STOCK_UNIVERSE)  # 41
+EXPECTED_COUNT = len(STOCK_UNIVERSE)
 STOOQ_BASE = "https://stooq.com/q/d/l/"
 SNAPSHOT_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "stocks-snapshot.json")
 REQUEST_DELAY = 0.5  # seconds between requests; 41 symbols ≈ 25 s total
@@ -75,6 +101,32 @@ REQUEST_DELAY = 0.5  # seconds between requests; 41 symbols ≈ 25 s total
 
 # ---------------------------------------------------------------------------
 # Signal derivation (also imported by test_signals.py)
+#
+# ===========================================================================
+# CANONICAL SIGNAL SPEC v1  (single source of truth — mirror in
+# tools/generate-asx-feed.mjs and docs/RESPONSE-MATRIX-STANDARD.md)
+#
+# Inputs (all percentages except rel_vol, a ratio):
+#   change1d  = (close[-1] - close[-2]) / close[-2] * 100
+#   change5d  = (close[-1] - close[-6]) / close[-6] * 100   (5 sessions back)
+#   rel_vol   = volume[-1] / mean(volume of the PRIOR up-to-20 sessions,
+#               EXCLUDING the current bar)
+#
+# signalState — evaluated top to bottom, FIRST match wins. Every label is
+# reachable (mutually-exclusive or precedence-ordered):
+#   1. Breakout     : change1d >= 2  AND rel_vol >= 1.5 AND change5d > 0
+#   2. Volume Spike : rel_vol  >= 2.0 AND change1d > 0
+#   3. Watch        : change1d > 0    AND change5d > 0
+#   4. Sell Risk    : change1d <= -2  OR  change5d <= -5
+#   5. No Action    : (default)
+#   Watch precedes Sell Risk but cannot mask it: Watch needs both changes
+#   positive, Sell Risk needs a negative move, so they never overlap.
+#
+# riskState — evaluated top to bottom, FIRST match wins:
+#   1. Elevated : signalState == "Sell Risk" OR change1d <= -3 OR change5d <= -7
+#   2. Review   : rel_vol >= 2.0 OR abs(change1d) >= 3
+#   3. Normal   : (default)
+# ===========================================================================
 # ---------------------------------------------------------------------------
 
 def derive_signal_state(change1d, change5d, rel_vol):
@@ -109,6 +161,23 @@ def derive_market_regime(assets, region):
     if neg / total > 0.6:
         return "Defensive"
     return "Mixed"
+
+
+def sydney_session(now_utc):
+    """Sydney-local stamp + best-effort ASX-open flag (DST handled by zoneinfo).
+
+    Returns (label, abbr, is_open). The open flag uses ASX continuous-trading
+    hours (10:00-16:00 local, Mon-Fri) and intentionally ignores public
+    holidays — it is a staleness label, not a trading calendar.
+    """
+    if SYDNEY_TZ is None:
+        return (now_utc.strftime("%d/%m/%Y %H:%M UTC"), "UTC", False)
+    local = now_utc.astimezone(SYDNEY_TZ)
+    abbr = local.tzname() or ""
+    minutes_of_day = local.hour * 60 + local.minute
+    is_open = local.weekday() < 5 and 600 <= minutes_of_day < 960
+    label = f"{local.strftime('%d/%m/%Y %H:%M')} {abbr}".strip()
+    return (label, abbr, is_open)
 
 
 # ---------------------------------------------------------------------------
@@ -149,7 +218,10 @@ def compute_metrics(rows):
     change1d = (closes[-1] - closes[-2]) / closes[-2] * 100
     change5d = (closes[-1] - closes[-6]) / closes[-6] * 100
     volume = volumes[-1]
-    window = volumes[-min(20, len(volumes)):]
+    # Canonical spec: average the PRIOR up-to-20 sessions, EXCLUDING the
+    # current bar, so today's spike isn't diluted into its own baseline.
+    prior_volumes = volumes[:-1]
+    window = prior_volumes[-20:]
     avg_vol = mean(window) if window else volume
     rel_vol = volume / avg_vol if avg_vol > 0 else 1.0
     return {
@@ -209,7 +281,9 @@ def write_snapshot(path, data):
 # ---------------------------------------------------------------------------
 
 def main():
-    now_iso = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    now_utc = datetime.now(timezone.utc)
+    now_iso = now_utc.isoformat(timespec="seconds")
+    syd_label, syd_abbr, syd_open = sydney_session(now_utc)
     assets = []
     fetch_errors = []
 
@@ -242,6 +316,9 @@ def main():
         "source": "stooq",
         "mode": "snapshot",
         "lastUpdated": now_iso,
+        "lastUpdatedSydney": syd_label,   # e.g. "23/06/2026 17:30 AEST"
+        "sydneyTimezone": syd_abbr,       # "AEST" | "AEDT"
+        "asxSessionOpen": syd_open,       # best-effort (ignores holidays)
         "symbols": [m["symbol"] for m in STOCK_UNIVERSE],
         "fetchErrors": fetch_errors,
         "marketRegimes": regimes,
