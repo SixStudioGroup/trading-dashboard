@@ -834,6 +834,13 @@ html[data-device="phone"] body[data-page="stocks"] .six-focus-table td:nth-child
     display: none;
 }
 
+/* Phone: the "(delayed)" abbr makes the Price header ~141px and pushes the
+   Analyse column off a 390px screen; the delayed-data disclosure stays in the
+   reality-check panel above the queue. */
+html[data-device="phone"] body[data-page="stocks"] .six-focus-table th abbr {
+    display: none;
+}
+
 /* Position monitor: Asset / Current / P-L AUD / P-L pct / Exit risk / Status
    (drop Balance 2, Entry 3, Signal 7, Held 9) */
 html[data-device="phone"] .position-monitor-table th:nth-child(2),
