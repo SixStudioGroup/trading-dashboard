@@ -350,8 +350,7 @@ a {
 }
 
 html[data-device="desktop"] .six-cockpit-panel {
-    /* vh is not scaled by zoom, so divide to stay inside the visible window. */
-    max-height: calc((100vh / var(--sq-zoom, 1)) - 92px);
+    max-height: calc(100vh - 92px);
     overflow-y: auto;
 }
 
@@ -1113,48 +1112,6 @@ html[data-device="phone"] body[data-page="dashboard"] .six-focus-table .table-ac
 .six-feed-state { min-width: 0; max-width: 100%; }
 .six-feed-state span { white-space: normal; overflow-wrap: anywhere; min-width: 0; }
 
-/* ==========================================================================
-   Legibility on large monitors. Every size in this system is in px, so a wide
-   window showed a small strip of small text. Scale the whole page with the
-   window, and let the content use the width it gets.
-   ========================================================================== */
-@media (min-width: 1700px) { :root { --sq-zoom: 1.15; } body { zoom: 1.15; } }
-@media (min-width: 2200px) { :root { --sq-zoom: 1.35; } body { zoom: 1.35; } }
-@media (min-width: 2800px) { :root { --sq-zoom: 1.6; } body { zoom: 1.6; } }
-@media (min-width: 3200px) { :root { --sq-zoom: 1.75; } body { zoom: 1.75; } }
-@media (min-width: 4600px) { :root { --sq-zoom: 2.4; } body { zoom: 2.4; } }
-
-@media (min-width: 1700px) {
-    .six-shell, .sq-footer { max-width: 1800px; }
-}
-
-/* Smallest text on tablet and desktop. Phone keeps its tuned sizes. */
-html:not([data-device="phone"]) .panel-subtitle,
-html:not([data-device="phone"]) .sq-note,
-html:not([data-device="phone"]) .sq-check,
-html:not([data-device="phone"]) .sq-cand-meta,
-html:not([data-device="phone"]) .sq-company,
-html:not([data-device="phone"]) .sq-data-bar span { font-size: 14px; }
-html:not([data-device="phone"]) .six-focus-table th,
-html:not([data-device="phone"]) .sq-meter span,
-html:not([data-device="phone"]) .sq-meter small,
-html:not([data-device="phone"]) .sq-trade-grid dt,
-html:not([data-device="phone"]) .sq-facts dt,
-html:not([data-device="phone"]) .sq-size dt,
-html:not([data-device="phone"]) .sq-setup-form label,
-html:not([data-device="phone"]) .sq-inline-form label,
-html:not([data-device="phone"]) .sq-step label,
-html:not([data-device="phone"]) .six-strip-item span { font-size: 13px; }
-html:not([data-device="phone"]) .six-focus-table td,
-html:not([data-device="phone"]) .sq-trade-grid dd,
-html:not([data-device="phone"]) .sq-facts dd,
-html:not([data-device="phone"]) .sq-size dd { font-size: 15px; }
-html:not([data-device="phone"]) .badge,
-html:not([data-device="phone"]) .table-action { font-size: 13px; }
-
-/* Menu: the main way around, so it has to read as one. */
-html:not([data-device="phone"]) .navlinks a { font-size: 16px; font-weight: 600; padding: 10px 14px; }
-
 /* Form fields were close to invisible against the panel. */
 .sq-setup-form input, .sq-inline-form input, .sq-inline-form select, .sq-step input, .sq-step textarea {
     min-height: 40px;
@@ -1179,7 +1136,6 @@ html:not([data-device="phone"]) .navlinks a { font-size: 16px; font-weight: 600;
 
 /* Stocks table: Analyse must stay on screen at every desktop width. */
 html:not([data-device="phone"]) body[data-page="stocks"]:not([data-view="planner"]) .opportunity-panel { container-type: inline-size; overflow-x: auto; }
-html:not([data-device="phone"]) body[data-page="stocks"]:not([data-view="planner"]) .six-focus-table td { font-size: 14px; }
 @container (max-width: 1180px) {
     body[data-page="stocks"]:not([data-view="planner"]) .six-focus-table th:nth-child(4),
     body[data-page="stocks"]:not([data-view="planner"]) .six-focus-table td:nth-child(4) { display: none; }

@@ -262,19 +262,18 @@ async function run() {
     } catch (e) { record("flow", false, e.message); } finally { s && s.close(); }
   }
 
-  // --- Large monitor: content must fill the window at a readable size ---
-  for (const p of ["index.html", "stocks.html", "today.html"]) {
+  // --- Large monitor: original size, never scaled up ---
+  for (const p of ["index.html", "stocks.html"]) {
     let s;
     try {
       s = await open(`${BASE}/${p}`, { width: 3400, mobile: false });
       const d = JSON.parse(await s.evaluate(`(() => {
         const main = document.querySelector('main').getBoundingClientRect();
         const zoom = parseFloat(getComputedStyle(document.body).zoom) || 1;
-        const nav = parseFloat(getComputedStyle(document.querySelector('.navlinks a')).fontSize);
-        return JSON.stringify({ share: main.width / innerWidth, zoom, nav, overflow: document.documentElement.scrollWidth > innerWidth + 2 });
+        return JSON.stringify({ width: main.width, zoom, overflow: document.documentElement.scrollWidth > innerWidth + 2 });
       })()`));
-      record(`wide:${p}:fills-window`, d.share >= 0.7, `share=${d.share.toFixed(2)}`);
-      record(`wide:${p}:scaled-up`, d.zoom >= 1.5, `zoom=${d.zoom}`);
+      record(`wide:${p}:not-scaled`, d.zoom === 1, `zoom=${d.zoom}`);
+      record(`wide:${p}:original-width`, d.width <= 1420, `width=${Math.round(d.width)}`);
       record(`wide:${p}:no-overflow`, !d.overflow);
     } catch (e) { record(`wide:${p}`, false, e.message); } finally { s && s.close(); }
   }

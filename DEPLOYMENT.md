@@ -15,4 +15,4 @@
 
 A deployment is not considered verified until the live Crypto and Stocks pages load, feed-state labels are correct, the pipeline heartbeat reports OK, no blocking browser error prevents analysis or plan entry, and the phone layout (390px) fits without horizontal page overflow.
 
-Cache-bust discipline: bump the `?v=` query on any changed css/js link (currently `app.js`, `sq-core.js`, `sq-store.js`, `today.js` and `stocks.js` at `?v=mon-1` or `?v=mon-2`, `sixquant.css` at `?v=mon-4`).
+Cache-bust discipline: bump the `?v=` query on any changed css/js link (currently `app.js`, `sq-core.js`, `sq-store.js`, `today.js` and `stocks.js` at `?v=mon-1` or `?v=mon-2`, `sixquant.css` at `?v=mon-6`).
