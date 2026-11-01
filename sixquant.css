@@ -1140,12 +1140,6 @@ html:not([data-device="phone"]) body[data-page="stocks"]:not([data-view="planner
     body[data-page="stocks"]:not([data-view="planner"]) .six-focus-table th:nth-child(4),
     body[data-page="stocks"]:not([data-view="planner"]) .six-focus-table td:nth-child(4) { display: none; }
 }
-@container (max-width: 1000px) {
-    body[data-page="stocks"]:not([data-view="planner"]) .six-focus-table th:nth-child(1),
-    body[data-page="stocks"]:not([data-view="planner"]) .six-focus-table td:nth-child(1),
-    body[data-page="stocks"]:not([data-view="planner"]) .six-focus-table th:nth-child(8),
-    body[data-page="stocks"]:not([data-view="planner"]) .six-focus-table td:nth-child(8) { display: none; }
-}
 
 /* Price chart inside the Stocks and Crypto cockpits. */
 .stock-chart { margin: 12px 0; }
