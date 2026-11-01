@@ -31,6 +31,8 @@ jobs:
         run: node scripts/test_core.mjs
       - name: Stocks calculation tests
         run: node scripts/test_calculations.mjs
+      - name: Internal link check
+        run: node tools/check-links.mjs
       - name: Signal tests
         run: |
           pip install requests tzdata

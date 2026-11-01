@@ -651,8 +651,20 @@ function unrealizedFor(row) {
     return { aud, percent, label: `${formatSignedMoney(aud)} / ${formatSignedPercent(percent)}` };
 }
 
+// A plain link to the exchange's page for the coin. It carries no order details.
 function coinspotUrl(coin) {
-    return null;
+    const symbol = safeText(coin?.symbol, "").toUpperCase();
+    return COINSPOT_SUPPORTED_SYMBOLS.has(symbol) ? `https://www.coinspot.com.au/buy/${symbol.toLowerCase()}` : null;
+}
+
+// Seven-day price line for the selected coin, from the snapshot it already loads.
+function sparklineHtml(coin) {
+    const prices = (coin?.sparkline_in_7d?.price || []).filter(Number.isFinite);
+    if (prices.length < 2) return "";
+    const width = 520, height = 110, pad = 6;
+    const min = Math.min(...prices), span = (Math.max(...prices) - min) || 1;
+    const d = prices.map((p, i) => `${i ? "L" : "M"}${((i / (prices.length - 1)) * width).toFixed(1)} ${(pad + (1 - (p - min) / span) * (height - pad * 2)).toFixed(1)}`).join("");
+    return `<div class="stock-chart"><svg class="sq-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Price over the last seven days"><path class="sq-close" d="${d}"/></svg><p class="sq-chart-key"><span class="k-close">Last 7 days</span></p></div>`;
 }
 
 function coinspotStatus(coin) {
@@ -1616,6 +1628,7 @@ function analysisHtml(selected, portfolioValue) {
             ${coinCell(selected.coin)}
             <span class="badge ${state.klass}">${state.label}</span>
         </div>
+        ${sparklineHtml(selected.coin)}
         <dl class="metric-grid">
             <div><dt>Score</dt><dd>${selected.decision.score}</dd></div>
             <div><dt>Price</dt><dd>${formatPrice(selected.coin.current_price)}</dd></div>
@@ -1948,7 +1961,7 @@ function renderHighestExitRisk(items, holdingRows) {
     if (!candidate) {
         el.innerHTML = `
             <div class="swing-header">
-                <span>Highest Exit Risk</span>
+                <span>Weakest Holding</span>
                 <span class="badge wait">No Action</span>
             </div>
             <div class="swing-empty">No held asset is currently showing elevated exit risk.</div>
@@ -1960,7 +1973,7 @@ function renderHighestExitRisk(items, holdingRows) {
     const reason = state.label === "Sell Risk" ? "Risk state triggered; review position." : "Weakest 24hr move among your holdings. No risk signal is active.";
     el.innerHTML = `
         <div class="swing-header">
-            <span>Highest Exit Risk</span>
+            <span>Weakest Holding</span>
             <button class="table-action" type="button" data-asset-id="${item.coin.id}">Review Position</button>
         </div>
         <div class="swing-body">

@@ -335,8 +335,13 @@ function normalizeSnapshotAsset(asset) {
         relativeVolume: finiteNumber(asset.relativeVolume, 1),
         marketRegime: safeText(asset.marketRegime, "Mixed"),
         region: safeText(asset.region, "Unknown"),
+        ma20: finiteNumber(asset.ma20),
+        ma50: finiteNumber(asset.ma50),
+        high20: finiteNumber(asset.high20),
+        low20: finiteNumber(asset.low20),
+        atr14: finiteNumber(asset.atr14),
         currency: safeText(asset.currency, "USD"),
-        reason: "Derived from Stooq snapshot — review only. Not a buy/sell recommendation.",
+        reason: "From the delayed ASX feed. Review only. Not a buy/sell recommendation.",
         invalidation: "Review if price action or sector context changes materially.",
         source: "snapshot"
     };
@@ -609,7 +614,7 @@ function renderOpportunityQueue() {
     const body = document.getElementById("stock-opportunities-body");
     if (!body) return;
     const stocks = rankedStocks();
-    const bestSetup = stocks[0];
+    const bestSetup = stocks.find(stock => stock.signalState === "Breakout" || stock.signalState === "Volume Spike");
     const bestSetupEl = document.getElementById("stock-best-setup");
     if (bestSetupEl) bestSetupEl.textContent = bestSetup ? `${bestSetup.symbol} / ${bestSetup.signalState}` : "No setup";
     body.innerHTML = stocks.map((stock, index) => {
@@ -644,6 +649,29 @@ function renderOpportunityQueue() {
     });
 }
 
+let stockHistory = {};
+
+async function loadStockHistory() {
+    try {
+        const resp = await fetch("data/asx-history.json", { cache: "no-cache" });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        stockHistory = (await resp.json()).series || {};
+    } catch (_e) {
+        stockHistory = {};
+    }
+    if (selectedStockSymbol) renderAnalysis();
+}
+
+function referenceLevel(value) {
+    return value > 0 ? formatMoney(value) : "Not available";
+}
+
+function stockChartHtml(stock) {
+    const svg = window.SQ ? SQ.chartSvg(stockHistory[stock.symbol]) : "";
+    if (!svg) return `<p class="compact-empty">No price history available for this ticker.</p>`;
+    return `<div class="stock-chart">${svg}<p class="sq-chart-key"><span class="k-close">Close</span><span class="k-ma20">20-day</span><span class="k-ma50">50-day</span><span>Delayed daily closes</span></p></div>`;
+}
+
 function renderAnalysis() {
     const panel = document.getElementById("stock-analysis-panel");
     if (!panel) return;
@@ -660,6 +688,7 @@ function renderAnalysis() {
                 <h3>${escapeHtml(stock.symbol)} / ${escapeHtml(stock.name)}</h3>
                 <p>${escapeHtml(stock.reason)}</p>
             </div>
+            ${stockChartHtml(stock)}
             <div class="rules-grid stock-rules-grid">
                 <div class="rule-card">Ticker<span>${escapeHtml(stock.symbol)}</span></div>
                 <div class="rule-card">Company<span>${escapeHtml(stock.name)}</span></div>
@@ -672,6 +701,10 @@ function renderAnalysis() {
                 <div class="rule-card risk">Risk State<span>${escapeHtml(stock.riskState)}</span></div>
                 <div class="rule-card">Market Regime<span>${escapeHtml(stock.marketRegime)}</span></div>
                 <div class="rule-card risk">Invalidation<span>${escapeHtml(stock.invalidation)}</span></div>
+                <div class="rule-card">20-day average<span>${referenceLevel(stock.ma20)}</span></div>
+                <div class="rule-card">50-day average<span>${referenceLevel(stock.ma50)}</span></div>
+                <div class="rule-card">20-day high / low<span>${referenceLevel(stock.high20)} / ${referenceLevel(stock.low20)}</span></div>
+                <div class="rule-card">Average daily range (ATR 14)<span>${referenceLevel(stock.atr14)}</span></div>
             </div>
             <div class="agent-consensus stock-agent-consensus">
                 <div class="mini-title">Stock Agent Consensus <span class="badge ${consensusBadgeClass(consensus.consensus)}">${escapeHtml(consensus.consensus)}</span></div>
@@ -684,7 +717,7 @@ function renderAnalysis() {
                         </span>
                     `).join("")}
                 </div>
-                <p class="helper-output">Consensus is deterministic and review-only. It does not unlock broker action.</p>
+                <p class="helper-output">These are simple rules on the same price data, not independent opinions, and they have shown no edge in testing. Review only. They do not unlock broker action.</p>
             </div>
             <div class="handoff-checklist">
                 <div class="mini-title">Broker Review Checklist <span class="checklist-progress">${completedBrokerChecks.size} / ${brokerChecklistItems.length} checks</span></div>
@@ -836,6 +869,13 @@ function renderBrokerReview() {
     `;
 }
 
+function planStatusCell(plan) {
+    const label = { open: "Open", closed: "Closed", cancelled: "Cancelled" }[plan.status] || "Planned";
+    const mode = plan.mode === "live" ? "live" : "paper";
+    const action = plan.status === "closed" || plan.status === "cancelled" ? "" : `<br><a href="today.html">${plan.status === "open" ? "Record exit" : "Record fill"}</a>`;
+    return `${label} (${mode})${action}`;
+}
+
 function renderStockJournal() {
     const body = document.getElementById("stock-journal-body");
     if (!body) return;
@@ -851,7 +891,7 @@ function renderStockJournal() {
             <td>${escapeHtml(plan.whyNow)}</td>
             <td>${escapeHtml(plan.entryTrigger)}</td>
             <td>${escapeHtml(plan.invalidation)}</td>
-            <td>Broker execution not connected.</td>
+            <td>${planStatusCell(plan)}</td>
             <td><button class="table-action danger-action" type="button" data-delete-stock-plan="${escapeHtml(plan.id)}">Delete</button></td>
         </tr>
     `).join("") : `<tr><td colspan="11" class="loading-cell">No stock plans recorded.</td></tr>`;
@@ -893,6 +933,17 @@ function initPlanForm() {
         const rules = loadRiskRules();
         const size = finiteNumber(data.get("positionSize"));
         const accountValue = finiteNumber(data.get("accountValue"));
+        const freshness = window.SQ && snapshotSource === "snapshot" ? SQ.asxFreshness(snapshotData) : null;
+        if (freshness && freshness.blocks) {
+            if (message) message.textContent = `Plan not recorded: ${freshness.label}. Wait for fresh data.`;
+            return;
+        }
+        const stopPrice = finiteNumber(data.get("invalidationPrice"));
+        const planEntry = finiteNumber(data.get("entryPrice"));
+        if (!(stopPrice > 0) || (planEntry > 0 && stopPrice >= planEntry)) {
+            if (message) message.textContent = "Risk rule: set an invalidation price below your entry before recording the plan.";
+            return;
+        }
         if (!safeText(String(data.get("invalidation") || ""), "")) {
             if (message) message.textContent = "Risk rule: set an invalidation level before recording the plan.";
             return;
@@ -965,8 +1016,8 @@ function renderSourceBadge() {
             delayed: "ASX DELAYED feed (unlicensed)",
             fallback: "ASX delayed — STALE fallback",
             offline: "ASX offline",
-            snapshot: "Stooq daily SNAPSHOT"
-        }[mode] || "Stooq daily SNAPSHOT";
+            snapshot: "ASX daily snapshot"
+        }[mode] || "ASX daily snapshot";
         badge.textContent = label;
         if (subtitle) {
             const src = snapshotData.source || "snapshot";
@@ -1013,7 +1064,14 @@ function renderRegionFilters() {
         container.innerHTML = "";
         return;
     }
-    container.innerHTML = SNAPSHOT_REGIONS.map(region =>
+    const present = new Set((snapshotData?.assets || []).map(asset => safeText(asset.region, "Unknown")));
+    const regions = SNAPSHOT_REGIONS.filter(region => region === "All" || present.has(region));
+    if (!regions.includes(activeRegionFilter)) activeRegionFilter = "All";
+    if (regions.length < 3) {
+        container.innerHTML = "";
+        return;
+    }
+    container.innerHTML = regions.map(region =>
         `<button class="filter-btn${activeRegionFilter === region ? " active" : ""}" type="button" data-region-filter="${escapeHtml(region)}">${escapeHtml(region)}</button>`
     ).join("");
     container.querySelectorAll("[data-region-filter]").forEach(btn => {
@@ -1043,3 +1101,4 @@ initPlanForm();
 initTabs();
 renderAll();
 loadSnapshotData();
+loadStockHistory();

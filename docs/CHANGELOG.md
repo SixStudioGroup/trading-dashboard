@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-11-02 — Review fixes on the original layout (1.3.1)
+
+- Stocks cockpit: price chart with 20 and 50-day averages, plus 20-day high and low and ATR.
+- Crypto cockpit: seven-day price line. The CoinSpot link now works for supported coins once checks are complete.
+- Stocks plans need a stop below entry and are refused on stale data. The journal shows each plan's status with a link to record the fill or exit.
+- Removed filters with no stocks behind them and the wrong Stooq source label. Best Setup only names a real setup.
+- Rule checks now say they share the same price data and have shown no edge.
+- Replaced the failing link-integrity workflow with `tools/check-links.mjs` in Checks.
+
 ## 2026-11-02 — Original layout restored (1.3)
 
 - The Crypto Terminal is the home page again. The Stocks table and cockpit and the original eight-item menu are back.

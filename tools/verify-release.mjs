@@ -279,6 +279,34 @@ async function run() {
     } catch (e) { record(`wide:${p}`, false, e.message); } finally { s && s.close(); }
   }
 
+  // --- Stocks table: the page people actually use ---
+  {
+    let s;
+    try {
+      s = await open(`${BASE}/stocks.html`, { width: 1440, mobile: false, settle: 6000 });
+      const r = JSON.parse(await s.evaluate(`(async () => {
+        const wait = ms => new Promise(res => setTimeout(res, ms));
+        const q = document.querySelector('.opportunity-panel').getBoundingClientRect();
+        const btn = document.querySelector('[data-analyse-stock]');
+        const b = btn.getBoundingClientRect();
+        const out = { rows: document.querySelectorAll('.six-focus-table tbody tr').length, analyseOnScreen: b.right <= q.right + 1,
+          emptyBanner: getComputedStyle(document.getElementById('stock-heartbeat-warning')).display !== 'none' && !document.getElementById('stock-heartbeat-detail').textContent,
+          chips: document.querySelectorAll('[data-region-filter]').length };
+        btn.click(); await wait(800);
+        const panel = document.getElementById('stock-analysis-panel');
+        out.chart = !!panel.querySelector('svg.sq-chart');
+        out.stooq = /stooq/i.test(document.querySelector('main').innerText);
+        return JSON.stringify(out);
+      })()`));
+      record("stocks:table-populated", r.rows >= 50, `rows=${r.rows}`);
+      record("stocks:analyse-on-screen", r.analyseOnScreen);
+      record("stocks:no-empty-banner", !r.emptyBanner);
+      record("stocks:no-dead-filters", r.chips === 0, `chips=${r.chips}`);
+      record("stocks:cockpit-chart", r.chart);
+      record("stocks:no-wrong-source-label", !r.stooq);
+    } catch (e) { record("stocks", false, e.message); } finally { s && s.close(); }
+  }
+
   // --- Phone: Today fits ---
   {
     let s;

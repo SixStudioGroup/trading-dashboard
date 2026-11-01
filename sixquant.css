@@ -1190,3 +1190,7 @@ html:not([data-device="phone"]) body[data-page="stocks"]:not([data-view="planner
     body[data-page="stocks"]:not([data-view="planner"]) .six-focus-table th:nth-child(8),
     body[data-page="stocks"]:not([data-view="planner"]) .six-focus-table td:nth-child(8) { display: none; }
 }
+
+/* Price chart inside the Stocks and Crypto cockpits. */
+.stock-chart { margin: 12px 0; }
+.stock-chart .sq-chart { display: block; width: 100%; height: auto; }
