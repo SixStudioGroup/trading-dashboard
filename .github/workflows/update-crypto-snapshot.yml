@@ -37,12 +37,16 @@ jobs:
         continue-on-error: true
 
       - name: Write feed heartbeat
-        if: steps.generate.outcome == 'success'
-        run: node -e "require('fs').writeFileSync('data/heartbeat-crypto.json', JSON.stringify({ feed: 'crypto', lastRun: new Date().toISOString(), status: 'ok' }, null, 2) + '\n')"
+        run: |
+          node -e "require('fs').writeFileSync('data/heartbeat-crypto.json', JSON.stringify({ feed: 'crypto', lastRun: new Date().toISOString(), status: process.argv[1] }, null, 2) + '\n')" "${{ steps.generate.outcome == 'success' && 'ok' || 'failed' }}"
 
       - name: Commit snapshot if changed
-        if: steps.generate.outcome == 'success'
         uses: stefanzweifel/git-auto-commit-action@b863ae1933cb653a53c021fe36dbb774e1fb9403 # v5
         with:
           commit_message: 'data: refresh crypto snapshot'
           file_pattern: 'data/crypto-snapshot.json data/heartbeat-crypto.json'
+
+      # Keep the job red when the fetch failed; the heartbeat above records it too.
+      - name: Fail the job if the snapshot failed
+        if: steps.generate.outcome == 'failure'
+        run: exit 1

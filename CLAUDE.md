@@ -7,8 +7,11 @@ trading-capable credentials. See SECURITY.md and docs/IMPROVEMENT-ROADMAP.md.
 
 ## Surfaces
 
-- `index.html` + `app.js` — Crypto Decision Terminal (primary)
-- `stocks.html` + `stocks.js` + `stock-release2.js` — ASX Stocks Terminal (demo feed)
+- `index.html` + `today.js` — Today, the daily home (primary)
+- `stocks.html` + `stocks.js` — Scan and trade planner (ASX delayed feed)
+- `crypto.html` + `app.js` — Crypto Terminal (labelled unproven)
+- `sq-core.js` — pure maths, data-age rules, trade lifecycle, backup (tested by `scripts/test_core.mjs`)
+- `sq-store.js` — browser layer shared by Today and Scan
 - `journal.html`, `alerts.html`, `logs.html`, `reports.html`, `guide.html`, `settings.html`
 
 ## Styling
@@ -28,9 +31,10 @@ GitHub Actions generate and commit JSON snapshots (no client-side API keys):
   `data/crypto-snapshot.json` (schema `sixquant.crypto.snapshot.v1`), 3×/day,
   CoinGecko key in GitHub Secrets.
 - `asx-feed.yml` → `tools/generate-asx-feed.mjs` → `data/asx-feed.json`
-  (schema `sixquant.asx.feed.v2`), delayed ASX data.
+  (schema `sixquant.asx.feed.v2`), delayed ASX data, plus `data/asx-history.json`
+  for charts. Bars are merged per Sydney session in `tools/asx-bars.mjs`.
 - Schema strings are labels, not validated; if renamed, update generators, the
-  offline fallback in stock-release2.js, and committed data files together.
+  offline handling in sq-core.js, and committed data files together.
 
 ## localStorage namespace
 

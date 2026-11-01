@@ -36,16 +36,16 @@ const PORTAL_MODE_STORAGE_KEY = "sixquant.portalMode.v1";
 const PRIVACY_STORAGE_KEY = "sixquant.hideValues.v1";
 const PUBLIC_DEMO_MODE = "demo";
 const PRIVATE_LOCAL_MODE = "private";
-const MASTER_RULE = "If the idea did not start in SixQuant, do not execute it in CoinSpot.";
+const MASTER_RULE = "No plan recorded, no trade. Every order is yours to place.";
 const PUBLIC_PRIVACY_WARNING = "Do not enter group trade deals, private signals, real balances, or private strategy notes into the public demo site. Private data is stored only in your browser and should not be committed to GitHub.";
 const PUBLIC_SITE_RULE = "Shared GitHub Pages deployment is public. Use Public Demo Mode when sharing the portal.";
 const MARKET_PROVIDERS = {
-    currentPublicFeed: "Live Public Feed",
-    coinMarketCapProxy: "CoinGecko Snapshot",
+    currentPublicFeed: "CoinGecko",
+    coinMarketCapProxy: "CoinGecko snapshot",
     fallbackSnapshot: "Fallback Snapshot"
 };
 const dataConfidence = {
-    mode: "Live Data",
+    mode: "Loading",
     provider: MARKET_PROVIDERS.currentPublicFeed,
     lastSuccessfulLiveFetch: "",
     lastAttemptedFetch: "",
@@ -54,7 +54,7 @@ const dataConfidence = {
     retryCount: 0,
     nextRetryTime: "next refresh",
     isFallback: false,
-    dataKind: "Live"
+    dataKind: "Loading"
 };
 
 const DEMO_HOLDINGS = [
@@ -367,7 +367,7 @@ function saveGithubPat(pat) {
 }
 
 const RISK_RULES_STORAGE_KEY = "sixquant.riskRules.v1";
-const DEFAULT_RISK_RULES = { maxPositionPct: 8, cashReservePct: 20, exitAlertPct: 8 };
+const DEFAULT_RISK_RULES = { maxPositionPct: 8, cashReservePct: 20, exitAlertPct: 8, maxOpenRiskPct: 6 };
 
 function loadRiskRules() {
     if (!storageAvailable()) return { ...DEFAULT_RISK_RULES };
@@ -376,7 +376,8 @@ function loadRiskRules() {
         return {
             maxPositionPct: Math.max(0.5, finiteNumber(stored.maxPositionPct, DEFAULT_RISK_RULES.maxPositionPct)),
             cashReservePct: Math.max(0, finiteNumber(stored.cashReservePct, DEFAULT_RISK_RULES.cashReservePct)),
-            exitAlertPct: Math.max(0.5, finiteNumber(stored.exitAlertPct, DEFAULT_RISK_RULES.exitAlertPct))
+            exitAlertPct: Math.max(0.5, finiteNumber(stored.exitAlertPct, DEFAULT_RISK_RULES.exitAlertPct)),
+            maxOpenRiskPct: Math.max(0.5, finiteNumber(stored.maxOpenRiskPct, DEFAULT_RISK_RULES.maxOpenRiskPct))
         };
     } catch {
         return { ...DEFAULT_RISK_RULES };
@@ -721,27 +722,46 @@ function normalizeTrade(trade = {}) {
         mistakeType: safeText(trade.mistakeType, "Other"),
         lessonLearned: safeText(trade.lessonLearned, ""),
         status: trade.status === "closed" || cleanExitPrice !== null || safeText(trade.exitDate, "") ? "closed" : "open",
+        mode: trade.mode === "live" ? "live" : "paper",
+        stopPrice: finiteNumber(trade.stopPrice),
+        feesPaid: finiteNumber(trade.feesPaid),
+        rMultiple: Number.isFinite(trade.rMultiple) ? trade.rMultiple : null,
+        planStatus: safeText(trade.planStatus, ""),
         updatedAt: safeText(trade.updatedAt, new Date().toISOString())
     };
 }
 
 function stockPlanAsTrade(plan = {}) {
     const symbol = safeText(plan.symbol, "").toUpperCase();
+    const status = ["planned", "open", "closed", "cancelled"].includes(plan.status) ? plan.status : "planned";
     return normalizeTrade({
         id: safeText(plan.id, stockIdForSharedJournal(plan)),
         assetClass: STOCK_ASSET_CLASS,
         symbol,
         name: safeText(plan.name, symbol || "Unknown Ticker"),
-        entryDate: safeText(plan.recordedAt, new Date().toISOString()),
-        entryPrice: plan.referencePrice ?? plan.entryPrice,
+        entryDate: safeText(plan.fillDate, safeText(plan.recordedAt, new Date().toISOString())),
+        entryPrice: plan.fillPrice ?? plan.referencePrice ?? plan.entryPrice,
         positionSize: plan.positionSize ?? plan.allocation,
         signalState: safeText(plan.state, "Watch"),
-        agentConsensus: "Stocks Workspace",
+        agentConsensus: status === "planned" ? "Planned, not entered" : "Stocks plan",
         reasonEntry: safeText(plan.whyNow ?? plan.thesis, "Manual stock plan"),
         plannedInvalidation: safeText(plan.invalidation, "Manual invalidation required"),
-        notes: safeText(plan.notes ?? plan.brokerNote, "Broker execution not connected."),
+        notes: safeText(plan.notes ?? plan.brokerNote, ""),
         fromSixQuant: plan.fromSixQuant !== false,
-        status: "open",
+        status: status === "closed" ? "closed" : "open",
+        planStatus: status,
+        mode: plan.mode,
+        stopPrice: plan.invalidationPrice,
+        exitDate: plan.exitDate,
+        exitPrice: plan.exitPrice,
+        exitReason: plan.exitReason,
+        feesPaid: plan.feesPaid,
+        resultAud: plan.resultAud,
+        resultPercent: plan.resultPercent,
+        rMultiple: plan.rMultiple,
+        ruleFollowed: plan.ruleFollowed,
+        mistakeType: plan.mistakeType,
+        lessonLearned: plan.lessonLearned,
         updatedAt: safeText(plan.recordedAt, new Date().toISOString())
     });
 }
@@ -752,7 +772,7 @@ function stockIdForSharedJournal(plan = {}) {
 }
 
 function loadStockWorkspaceTrades() {
-    return loadCollection(STOCK_JOURNAL_STORAGE_KEY).map(stockPlanAsTrade);
+    return loadCollection(STOCK_JOURNAL_STORAGE_KEY).filter(plan => plan.status !== "cancelled").map(stockPlanAsTrade);
 }
 
 function normalizeStockPosition(position = {}) {
@@ -769,9 +789,23 @@ function normalizeStockPosition(position = {}) {
     };
 }
 
+// Open trades are the source of truth for stock positions. Hand-entered legacy
+// holdings still show unless a trade already covers the ticker.
 function loadStockWorkspacePositions() {
-    return loadCollection(STOCK_HOLDINGS_STORAGE_KEY).map(normalizeStockPosition);
+    const open = loadCollection(STOCK_JOURNAL_STORAGE_KEY).filter(plan => plan.status === "open").map(plan => normalizeStockPosition({
+        symbol: plan.symbol,
+        name: plan.name,
+        market: plan.market,
+        units: plan.units,
+        avgEntryPrice: plan.fillPrice,
+        referencePrice: reportStockPrices[String(plan.symbol).toUpperCase()] ?? plan.fillPrice,
+        note: plan.mode === "live" ? "Live" : "Paper"
+    }));
+    const covered = new Set(open.map(row => row.symbol));
+    return [...open, ...loadCollection(STOCK_HOLDINGS_STORAGE_KEY).map(normalizeStockPosition).filter(row => !covered.has(row.symbol))];
 }
+
+let reportStockPrices = {};
 
 function sharedJournalTrades() {
     return [
@@ -850,16 +884,31 @@ function closeTrade(id, exitPrice, exitReason) {
     const cleanExit = Number(exitPrice);
     if (!Number.isFinite(cleanExit) || cleanExit < 0 || trade.entryPrice <= 0) return;
     const units = trade.positionSize / Math.max(trade.entryPrice, 0.000001);
-    const resultAud = (cleanExit - trade.entryPrice) * units;
-    const resultPercent = ((cleanExit - trade.entryPrice) / trade.entryPrice) * 100;
+    // Crypto results are net of the assumed exchange fee on both sides.
+    const feesPaid = (trade.positionSize + cleanExit * units) * (loadCryptoFeePercent() / 100);
+    const result = SQ.closeResult({ entry: trade.entryPrice, units, exit: cleanExit, fees: feesPaid, stop: trade.stopPrice });
     updateTrade(id, {
         status: "closed",
         exitDate: new Date().toISOString(),
         exitPrice: cleanExit,
         exitReason,
-        resultAud,
-        resultPercent
+        feesPaid,
+        resultAud: result.resultAud,
+        resultPercent: result.resultPercent,
+        rMultiple: result.rMultiple
     });
+}
+
+// Assumed crypto fee per side. Third-party reviews put CoinSpot instant buys at
+// about 1%. Set it to your own rate in Settings.
+const CRYPTO_FEE_KEY = "sixquant.cryptoFeePct.v1";
+function loadCryptoFeePercent() {
+    try {
+        const stored = window.localStorage.getItem(CRYPTO_FEE_KEY);
+        return stored === null ? 1 : Math.max(0, finiteNumber(stored, 1));
+    } catch {
+        return 1;
+    }
 }
 
 function normalizeWatchItem(item = {}) {
@@ -981,7 +1030,7 @@ function fallbackMarkets() {
 function warnFallbackOnce() {
     if (fallbackWarningShown) return;
     fallbackWarningShown = true;
-    console.warn("Live API unavailable; rendering fallback snapshot.");
+    console.warn("Snapshot unavailable; rendering fallback data.");
 }
 
 function classifyFetchFailure(error, response) {
@@ -1017,9 +1066,10 @@ function compactConfidenceMessage() {
         const lastLive = dataConfidence.lastSuccessfulLiveFetch
             ? new Date(dataConfidence.lastSuccessfulLiveFetch).toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit" })
             : "none";
-        return `Fallback Snapshot — review/planning only. ${dataConfidence.failureReason}. Last live: ${lastLive}`;
+        if (dataConfidence.freshnessLabel) return `${dataConfidence.freshnessLabel}. Review only.`;
+        return `Fallback Snapshot — review/planning only. ${dataConfidence.failureReason}. Last snapshot: ${lastLive}`;
     }
-    return `${dataConfidence.mode} · ${dataConfidence.provider}`;
+    return `${dataConfidence.freshnessLabel || dataConfidence.mode} · ${dataConfidence.provider}`;
 }
 
 function renderDataConfidence() {
@@ -1034,7 +1084,7 @@ function renderDataConfidence() {
             failureReason: dataConfidence.failureReason || "None",
             retryCount: String(dataConfidence.retryCount),
             nextRetryTime: dataConfidence.nextRetryTime || "next refresh",
-            dataKind: dataConfidence.dataKind || (dataConfidence.isFallback ? "Fallback" : "Live")
+            dataKind: dataConfidence.dataKind || (dataConfidence.isFallback ? "Fallback" : "Snapshot")
         };
         el.textContent = valueMap[field] || "Not recorded";
     });
@@ -1119,7 +1169,7 @@ function initMasterRuleFooter() {
     if (document.querySelector(".master-rule-footer")) return;
     const footer = document.createElement("footer");
     footer.className = "master-rule-footer";
-    footer.innerHTML = `<strong>${MASTER_RULE}</strong><span>SixQuant decides. CoinSpot executes. SixQuant records and reviews.</span><span>${PUBLIC_PRIVACY_WARNING}</span><span>${PUBLIC_SITE_RULE}</span>`;
+    footer.innerHTML = `<strong>${MASTER_RULE}</strong><span>SixQuant plans, records and reviews. You decide and you place orders at your broker or exchange.</span><span>${PUBLIC_PRIVACY_WARNING}</span><span>${PUBLIC_SITE_RULE}</span>`;
     document.body.appendChild(footer);
 }
 
@@ -1137,7 +1187,7 @@ function setStatus(message = compactConfidenceMessage(), isLive = true) {
 function setLastUpdatedLabel() {
     const el = document.getElementById("last-updated");
     if (!el) return;
-    el.textContent = new Date().toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit" });
+    el.textContent = dataConfidence.lastSuccessfulLiveFetch ? formatTimestamp(dataConfidence.lastSuccessfulLiveFetch) : "None";
 }
 
 async function getMarkets() {
@@ -1194,17 +1244,22 @@ async function getMarkets() {
             error.failureReason = "Empty API response";
             throw error;
         }
-        dataConfidence.mode = "Live Data";
+        // The snapshot's own timestamp decides how far it can be trusted. Page-load
+        // time must never be presented as data time.
+        const freshness = SQ.cryptoFreshness(data?.lastUpdated);
+        dataConfidence.mode = freshness.label;
+        dataConfidence.freshnessLabel = freshness.label;
         dataConfidence.provider = provider;
-        dataConfidence.lastSuccessfulLiveFetch = new Date().toISOString();
-        dataConfidence.failureReason = "None";
+        dataConfidence.lastSuccessfulLiveFetch = data?.lastUpdated || "";
+        dataConfidence.failureReason = freshness.blocks ? freshness.detail : "None";
         dataConfidence.retryCount = 0;
-        dataConfidence.isFallback = false;
-        dataConfidence.dataKind = "Live";
-        setStatus(compactConfidenceMessage(), true);
+        dataConfidence.isFallback = freshness.blocks;
+        dataConfidence.dataKind = freshness.state === "current" ? "Snapshot" : freshness.state === "behind" ? "Snapshot, overdue" : "Stale";
+        setStatus(compactConfidenceMessage(), freshness.state === "current");
         setLastUpdatedLabel();
         return normalizeMarkets(rows, provider);
     } catch (error) {
+        dataConfidence.freshnessLabel = "";
         dataConfidence.mode = "Fallback Snapshot";
         dataConfidence.provider = MARKET_PROVIDERS.fallbackSnapshot;
         dataConfidence.failureReason = error.failureReason || classifyFetchFailure(error);
@@ -1476,7 +1531,7 @@ function renderMarketRegime(model) {
             <span><small>24h breadth</small><strong>${avgMove >= 0 ? "+" : ""}${avgMove.toFixed(2)}%</strong></span>
             <span><small>Alt rotation</small><strong>${altAvg > avgMove + 1 ? "Rotation watch" : "Not confirmed"}</strong></span>
             <span><small>Source</small><strong>${escapeHtml(model.dataConfidence?.provider || "Current Feed")}</strong></span>
-            <span><small>Updated</small><strong>${formatTimestamp(model.dataConfidence?.lastStatusUpdate || new Date().toISOString())}</strong></span>
+            <span><small>Snapshot taken</small><strong>${model.dataConfidence?.lastSuccessfulLiveFetch ? formatTimestamp(model.dataConfidence.lastSuccessfulLiveFetch) : "None"}</strong></span>
         </div>
     `;
 }
@@ -1550,12 +1605,12 @@ function analysisHtml(selected, portfolioValue) {
     const state = guideStateFor(selected);
     const confirmed = planConfirmedAssetId === selected.coin.id;
     const fallbackLocked = Boolean(dataConfidence.isFallback);
-    const selectedCoinspotUrl = confirmed && !fallbackLocked ? coinspotUrl(selected.coin) : null;
-    const defaultSize = Math.max(0, portfolioValue * 0.1);
+    const rules = loadRiskRules();
+    const defaultSize = Math.max(0, portfolioValue * Math.min(0.05, rules.maxPositionPct / 100));
     const consensus = agentConsensusFor(selected, portfolioValue);
     const handoffText = fallbackLocked
-        ? "Live data unavailable. Review only."
-        : confirmed ? "Checklist complete. Execution handoff is available for this asset." : "Complete the checklist before execution handoff.";
+        ? "Data is stale or unavailable. Review only."
+        : confirmed ? "Checks complete. Record the plan, then place any order yourself at your exchange." : "Complete the plan and the checks to record it.";
     return `
         <div class="analysis-heading">
             ${coinCell(selected.coin)}
@@ -1574,7 +1629,7 @@ function analysisHtml(selected, portfolioValue) {
             <span>${invalidationSentence(state.label)}</span>
         </div>
         <div class="agent-consensus">
-            <div class="mini-title">Agent Consensus <span class="badge wait">${consensus.label}</span></div>
+            <div class="mini-title">Rule checks <span class="badge wait">${consensus.label}</span></div>
             <div class="consensus-grid">
                 ${consensus.agents.map(agent => `
                     <span><small>${agent.name}</small><strong>${agent.result}</strong><em>${agent.reason}</em></span>
@@ -1583,19 +1638,14 @@ function analysisHtml(selected, portfolioValue) {
         </div>
         <div class="trade-plan-box">
             <div class="mini-title">Trade Plan</div>
-            <label>Why now?<textarea id="plan-reason">${escapeHtml(swingReasonFor(selected))}</textarea></label>
-            <label>Entry trigger<input id="plan-trigger" type="text" value="${escapeHtml(state.label)} confirmation"></label>
-            <label>Invalidation<input id="plan-invalidation" type="text" value="${escapeHtml(invalidationSentence(state.label))}"></label>
+            <label>Why now, in your own words<textarea id="plan-reason" placeholder="What has to be true for this to work?"></textarea></label>
+            <label>Entry trigger<input id="plan-trigger" type="text" placeholder="What must happen before you enter?"></label>
+            <label>Stop price (required)<input id="risk-invalid-price" type="number" min="0" step="any" placeholder="Below entry"></label>
+            <label>Other invalidation notes<input id="plan-invalidation" type="text" placeholder="Optional"></label>
             <label>Target review time<input id="plan-review" type="datetime-local" value="${formatDateTimeLocal(Date.now() + 86400000)}"></label>
             <label>Expected holding window<input id="plan-window" type="text" value="1-7 days"></label>
             <label>Intended position size<input id="plan-size" type="${hideValues ? "password" : "number"}" min="0" step="any" value="${hideValues ? maskMoney() : defaultSize.toFixed(2)}" ${hideValues ? "disabled" : ""}></label>
             <label>Notes<textarea id="plan-notes" placeholder="Manual notes"></textarea></label>
-            <div class="form-actions">
-                <button class="table-action" type="button" id="confirm-plan">Confirm Checklist</button>
-                <button class="table-action" type="button" id="save-plan-journal">Save to Journal</button>
-                <button class="table-action" type="button" id="add-analysis-watch">Add to Watch</button>
-            </div>
-            <p class="form-message" id="plan-risk-message" aria-live="polite"></p>
         </div>
         <div class="position-helper">
             <div class="mini-title">Risk Per Trade</div>
@@ -1603,9 +1653,8 @@ function analysisHtml(selected, portfolioValue) {
                 <label>Account value<input id="size-portfolio" type="${hideValues ? "password" : "number"}" min="0" step="any" value="${hideValues ? maskMoney() : portfolioValue.toFixed(2)}" ${hideValues ? "disabled" : ""}></label>
                 <label>Risk per trade %<input id="risk-percent" type="number" min="0" step="any" value="2"></label>
                 <label>Entry price<input id="risk-entry" type="number" min="0" step="any" value="${selected.coin.current_price}"></label>
-                <label>Invalidation price<input id="risk-invalid-price" type="number" min="0" step="any" value="${Math.max(0, selected.coin.current_price * 0.95).toFixed(6)}"></label>
-                <label>Max risk AUD<input id="size-risk-amount" type="${hideValues ? "password" : "number"}" min="0" step="any" value="${hideValues ? maskMoney() : Math.max(0, portfolioValue * 0.02).toFixed(2)}" ${hideValues ? "disabled" : ""}></label>
-                <label>Allocation %<input id="size-allocation" type="number" min="0" step="any" value="10"></label>
+                                <label>Max risk AUD<input id="size-risk-amount" type="${hideValues ? "password" : "number"}" min="0" step="any" value="${hideValues ? maskMoney() : Math.max(0, portfolioValue * 0.02).toFixed(2)}" ${hideValues ? "disabled" : ""}></label>
+                <label>Allocation %<input id="size-allocation" type="number" min="0" step="any" value="${Math.min(5, rules.maxPositionPct)}"></label>
             </div>
             <div class="helper-output" id="size-output">Sizing helper only. Final trade decision is external.</div>
         </div>
@@ -1615,18 +1664,21 @@ function analysisHtml(selected, portfolioValue) {
                 "Cash checked — free funds cover this position without breaking the reserve",
                 `Existing positions reviewed — no unintended concentration with ${escapeHtml(selected.coin.symbol.toUpperCase())}`,
                 `Recent news checked for ${escapeHtml(selected.coin.symbol.toUpperCase())}`,
-                "Trend checked — price versus 20-day and 50-day averages",
+                "Trend checked on my exchange chart — this page has no chart for crypto",
                 "Downside defined — loss at invalidation is acceptable"
             ].map((label, index) => `
                 <label class="check-row"><input type="checkbox" data-handoff-check="${index}" ${confirmed ? "checked" : ""}><span>${label}</span></label>
             `).join("")}
         </div>
+        <div class="form-actions">
+            <button class="table-action" type="button" id="confirm-plan">Run checks</button>
+            <button class="button-primary" type="button" id="save-plan-journal">Record plan</button>
+            <button class="table-action" type="button" id="add-analysis-watch">Add to Watch</button>
+        </div>
+        <p class="form-message" id="plan-risk-message" aria-live="polite"></p>
         <div class="execution-bar">
             <span>${handoffText}<small>${MASTER_RULE}</small></span>
-            ${selectedCoinspotUrl
-                ? `<a class="button-primary" href="${selectedCoinspotUrl}" target="_blank" rel="noopener noreferrer">Open CoinSpot</a>`
-                : fallbackLocked ? `<span class="watch-only handoff-locked">Live data unavailable. Review only.</span>`
-                    : confirmed ? `<span class="watch-only">Manual CoinSpot execution only</span>` : `<span class="watch-only">Plan required</span>`}
+            <span class="watch-only${fallbackLocked ? " handoff-locked" : ""}">${fallbackLocked ? "Review only" : "Manual only"}</span>
         </div>
     `;
 }
@@ -1687,7 +1739,11 @@ function attachAnalysisControls(selected, portfolioValue) {
         const size = finiteNumber(document.getElementById("plan-size")?.value);
         const accountValue = Math.max(0, finiteNumber(document.getElementById("size-portfolio")?.value, portfolioValue));
         if (!(size > 0)) errors.push("Set an intended position size.");
-        if (!safeText(document.getElementById("plan-invalidation")?.value, "")) errors.push("Set an invalidation level.");
+        const stopValue = finiteNumber(document.getElementById("risk-invalid-price")?.value);
+        const entryValue = finiteNumber(document.getElementById("risk-entry")?.value, selected.coin.current_price);
+        if (dataConfidence.isFallback) errors.push("Data is stale or unavailable, so plans are blocked.");
+        if (!(stopValue > 0 && stopValue < entryValue)) errors.push("Set a stop price below entry.");
+        if (safeText(document.getElementById("plan-reason")?.value, "").length < 10) errors.push("Write why now in your own words.");
         if (size > 0 && accountValue > 0 && size > accountValue * (rules.maxPositionPct / 100)) {
             errors.push(`Position ${formatPrice(size)} exceeds the ${rules.maxPositionPct}% cap (${formatPrice(accountValue * rules.maxPositionPct / 100)} of account value).`);
         }
@@ -1757,7 +1813,10 @@ function planTradeFromSelection(selected, portfolioValue = 0) {
         positionSize: Math.max(0, finiteNumber(document.getElementById("plan-size")?.value)),
         signalState: state,
         reasonEntry: safeText(document.getElementById("plan-reason")?.value, swingReasonFor(selected)),
-        plannedInvalidation: safeText(document.getElementById("plan-invalidation")?.value, invalidationSentence(state)),
+        entryTrigger: safeText(document.getElementById("plan-trigger")?.value, ""),
+        stopPrice: finiteNumber(document.getElementById("risk-invalid-price")?.value),
+        mode: "paper",
+        plannedInvalidation: `Stop ${formatPrice(finiteNumber(document.getElementById("risk-invalid-price")?.value))}. ${safeText(document.getElementById("plan-invalidation")?.value, "")}`.trim(),
         agentConsensus: agentConsensusFor(selected, portfolioValue).label,
         fromSixQuant: true,
         notes: safeText(document.getElementById("plan-notes")?.value, ""),
@@ -1774,22 +1833,22 @@ function agentConsensusFor(item, portfolioValue = 0) {
     const volume = finiteNumber(item.coin.volume24hAud ?? item.coin.total_volume);
     const agents = [
         {
-            name: "Momentum Agent",
+            name: "Momentum",
             result: state === "Sell Risk" ? "Reject" : day > 2 && oneHour >= 0 ? "Support" : day > 0 ? "Watch" : "Reject",
             reason: `${formatPercent(day)} 24h / ${formatPercent(oneHour)} 1h`
         },
         {
-            name: "Liquidity Agent",
+            name: "Liquidity",
             result: liquidity === "Suitable" ? "Support" : liquidity === "Caution" ? "Watch" : "Reject",
             reason: volume > 0 ? formatBig(volume) : "Insufficient Data"
         },
         {
-            name: "Risk Agent",
+            name: "Risk",
             result: state === "Sell Risk" || risk === "High" ? "Reject" : risk === "Low" ? "Support" : "Watch",
             reason: risk
         },
         {
-            name: "Portfolio Agent",
+            name: "Portfolio",
             result: portfolioValue > 0 ? "Support" : "Insufficient Data",
             reason: portfolioValue > 0 ? "Portfolio value available" : "Portfolio value unavailable"
         }
@@ -1898,7 +1957,7 @@ function renderHighestExitRisk(items, holdingRows) {
     }
     const { item } = candidate;
     const state = guideStateFor(item);
-    const reason = state.label === "Sell Risk" ? "Risk state triggered; review position." : "Held asset structure has weakened.";
+    const reason = state.label === "Sell Risk" ? "Risk state triggered; review position." : "Weakest 24hr move among your holdings. No risk signal is active.";
     el.innerHTML = `
         <div class="swing-header">
             <span>Highest Exit Risk</span>
@@ -2018,6 +2077,7 @@ function performanceMetrics(trades = tradeJournal.map(normalizeTrade)) {
     return {
         trades, open, closed, enough: true,
         winRate: (wins.length / closed.length) * 100,
+        rStats: SQ.tradeStats(closed),
         avgGain: gains.length ? gains.reduce((a, b) => a + b, 0) / gains.length : 0,
         avgLoss: losses.length ? losses.reduce((a, b) => a + b, 0) / losses.length : 0,
         best,
@@ -2446,7 +2506,7 @@ function eventForState(item) {
     const eventMap = {
         breakout_event: { type: "Breakout Event", klass: "strong", value: item.coin.price_change_percentage_24h, rule: "24hr above 5% with positive 1hr", triggerState: "breakout_event" },
         risk_threshold_breach: { type: "Sell Risk", klass: "risk", value: item.coin.price_change_percentage_24h, rule: "24hr below -3%", triggerState: "risk_threshold_breach" },
-        volume_spike: { type: "Volume Spike", klass: "volume", value: item.coin.total_volume, rule: "Top live AUD volume band", triggerState: "volume_spike" }
+        volume_spike: { type: "Volume Spike", klass: "volume", value: item.coin.total_volume, rule: "Top AUD volume band", triggerState: "volume_spike" }
     };
     if (item.state.trendState === "trend_positive") {
         return { type: "Watch Event", klass: "watch", value: item.coin.price_change_percentage_24h, rule: "24hr above 2%", triggerState: "trend_positive" };
@@ -2484,7 +2544,7 @@ function observationFor(item) {
         trend_neutral: { label: "Neutral", klass: "wait", note: "No threshold state transition." }
     };
     if (item.state.alertTrigger === "volume_spike" && item.state.trendState === "trend_neutral") {
-        return { label: "Volume Spike", klass: "volume", note: "Asset is inside the top live AUD volume band." };
+        return { label: "Volume Spike", klass: "volume", note: "Asset is inside the top AUD volume band." };
     }
     return signalMap[item.state.trendState] || signalMap.trend_neutral;
 }
@@ -2504,7 +2564,7 @@ function renderLogs(model) {
                 <td class="num">-</td>
                 <td class="num">-</td>
                 <td><span class="badge wait">Fallback Snapshot</span></td>
-                <td>Live API unavailable. Rendering fallback snapshot. Reason: ${escapeHtml(model.dataConfidence.failureReason)}.</td>
+                <td>Data unavailable or stale. Review only. Reason: ${escapeHtml(model.dataConfidence.failureReason)}.</td>
             </tr>` : "";
         const cryptoAssets = model.assets.slice(0, 16);
         const rows = cryptoAssets.map(item => {
@@ -2740,7 +2800,7 @@ function renderAlerts(model) {
     if (unifiedBody) {
         const html = allRows.map(r => {
             const cls = [r.isNew ? "alert-row-new" : "", r.isRisk ? "alert-row-risk" : ""].filter(Boolean).join(" ");
-            const workspace = r.market === "crypto" ? "index.html" : "stocks.html";
+            const workspace = r.market === "crypto" ? "crypto.html" : "stocks.html";
             return `<tr class="${cls}" data-market="${r.market}" data-klass="${r.klass}">
                 <td><span class="badge ${r.klass}">${escapeHtml(r.badge)}</span></td>
                 <td>${r.assetHtml}</td>
@@ -2898,16 +2958,17 @@ function renderWeeklyReport(trades = sharedJournalTrades()) {
         ["Stock records", metrics.trades.filter(trade => trade.assetClass === STOCK_ASSET_CLASS).length],
         ["Open trades", metrics.open.length],
         ["Closed trades", metrics.closed.length],
+        ["Followed the plan", `${metrics.rStats.adherencePct.toFixed(0)}%`],
+        ["Expectancy per trade", metrics.rStats.rCount ? `${metrics.rStats.expectancyR.toFixed(2)}R` : "No stops recorded"],
+        ["Average win / loss", metrics.rStats.rCount ? `${metrics.rStats.avgWinR.toFixed(2)}R / ${metrics.rStats.avgLossR.toFixed(2)}R` : "No stops recorded"],
+        ["Largest drawdown", metrics.rStats.rCount ? `${metrics.rStats.maxDrawdownR.toFixed(2)}R` : "No stops recorded"],
         ["Win rate", `${metrics.winRate.toFixed(1)}%`],
-        ["Average gain", `${metrics.avgGain.toFixed(2)}%`],
-        ["Average loss", `${metrics.avgLoss.toFixed(2)}%`],
-        ["Net AUD result", displayMoneyText(metrics.net, formatSignedMoney)],
-        ["Best signal type", metrics.bestSignal],
-        ["Worst signal type", metrics.worstSignal],
-        ["Most traded asset", metrics.mostTraded],
-        ["Trades by consensus", metrics.consensusCounts],
-        ["Best consensus state", metrics.bestConsensus],
-        ["Worst consensus state", metrics.worstConsensus]
+        ["Net AUD after fees", displayMoneyText(metrics.net, formatSignedMoney)],
+        ["Fees paid", displayMoneyText(metrics.rStats.feesAud, formatPrice)],
+        ["Sample size", metrics.rStats.reliable ? `${metrics.closed.length} trades` : `${metrics.closed.length} of 30: too few to judge`],
+        ["Best signal type", metrics.rStats.reliable ? metrics.bestSignal : "Needs 30 trades"],
+        ["Worst signal type", metrics.rStats.reliable ? metrics.worstSignal : "Needs 30 trades"],
+        ["Most traded asset", metrics.mostTraded]
     ].map(([label, value]) => reportMetric(label, value)).join("");
 }
 
@@ -2951,11 +3012,16 @@ function renderTradeReviewReport(trades) {
     body.querySelectorAll("[data-save-review]").forEach(button => {
         button.addEventListener("click", event => {
             const id = event.currentTarget.dataset.saveReview;
-            updateTrade(id, {
+            const review = {
                 ruleFollowed: Boolean(document.querySelector(`[data-review-rule="${id}"]`)?.checked),
                 mistakeType: document.querySelector(`[data-review-mistake="${id}"]`)?.value || "Other",
                 lessonLearned: document.querySelector(`[data-review-lesson="${id}"]`)?.value || ""
-            });
+            };
+            if (id.startsWith("STOCK-")) {
+                saveCollection(STOCK_JOURNAL_STORAGE_KEY, loadCollection(STOCK_JOURNAL_STORAGE_KEY).map(plan => plan.id === id ? { ...plan, ...review } : plan));
+            } else {
+                updateTrade(id, review);
+            }
             if (currentReportModel) renderReports(currentReportModel);
         });
     });
@@ -3070,7 +3136,8 @@ let currentReportModel = null;
 
 function renderReports(model) {
     currentReportModel = model;
-    const trades = filterTradesByAssetClass(sharedJournalTrades(), currentReportAssetFilter());
+    const modeFilter = document.getElementById("report-mode-filter")?.value || "all";
+    const trades = filterTradesByAssetClass(sharedJournalTrades(), currentReportAssetFilter()).filter(trade => modeFilter === "all" || trade.mode === modeFilter);
     renderDailyReport(trades);
     renderWeeklyReport(trades);
     renderTradeReviewReport(trades);
@@ -3095,9 +3162,9 @@ function initReportsControls() {
     dateInput?.addEventListener("change", () => {
         if (currentReportModel) renderReports(currentReportModel);
     });
-    document.getElementById("report-asset-filter")?.addEventListener("change", () => {
+    ["report-asset-filter", "report-mode-filter"].forEach(id => document.getElementById(id)?.addEventListener("change", () => {
         if (currentReportModel) renderReports(currentReportModel);
-    });
+    }));
 }
 
 function renderJournal() {
@@ -3140,7 +3207,7 @@ function renderJournal() {
             <td>${escapeHtml(trade.id)}</td>
             <td>${assetClassBadge(trade.assetClass)}</td>
             <td>${escapeHtml(trade.symbol)} / ${escapeHtml(trade.name)}</td>
-            <td>${formatTimestamp(trade.entryDate)}</td>
+            <td>${formatTimestamp(trade.entryDate)}${trade.planStatus === "planned" ? " (planned)" : ""}</td>
             <td class="num">${displayTradeValue(trade.entryPrice)}</td>
             <td class="num">${displayTradeValue(trade.positionSize)}</td>
             <td>${escapeHtml(trade.signalState)}</td>
@@ -3148,7 +3215,7 @@ function renderJournal() {
             <td>${escapeHtml(trade.plannedInvalidation)}</td>
             <td>
                 ${isStockWorkspaceRecord(trade)
-                    ? `<span class="watch-only">Managed in Stocks Workspace</span>`
+                    ? `<a class="table-action" href="index.html">Manage on Today</a>`
                     : `<input class="inline-balance close-price" type="number" min="0" step="any" placeholder="Exit price" data-close-price="${escapeHtml(trade.id)}">
                         <input class="inline-note close-reason" type="text" placeholder="Exit reason" data-close-reason="${escapeHtml(trade.id)}">
                         <button class="table-action" type="button" data-close-trade="${escapeHtml(trade.id)}">Close</button>`}
@@ -3314,23 +3381,71 @@ function migrateAssetClassTags() {
     if (unknownCount) console.warn(`SixQuant migration: ${unknownCount} record(s) tagged "unknown" — review asset class in Journal.`);
 }
 
+function initDataCard() {
+    const msg = document.getElementById("data-message");
+    const say = text => { if (msg) msg.textContent = text; };
+    const download = (name, content, type) => {
+        const url = URL.createObjectURL(new Blob([content], { type }));
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = name;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+    };
+    const stamp = SQ.sydneyParts(new Date()).key;
+    document.getElementById("data-backup")?.addEventListener("click", () => {
+        download(`sixquant-backup-${stamp}.json`, JSON.stringify(SQ.buildBackup(window.localStorage), null, 2), "application/json");
+        try {
+            const account = JSON.parse(window.localStorage.getItem(SQ.KEYS.account) || "{}");
+            window.localStorage.setItem(SQ.KEYS.account, JSON.stringify({ ...account, lastBackupAt: new Date().toISOString() }));
+        } catch { /* a missed reminder reset is harmless */ }
+        say("Backup downloaded. Keep it somewhere safe, and out of any public repository.");
+    });
+    document.getElementById("data-csv")?.addEventListener("click", () => {
+        const stockRows = loadCollection(STOCK_JOURNAL_STORAGE_KEY);
+        const cryptoRows = tradeJournal.map(trade => ({ ...trade, recordedAt: trade.entryDate, fillDate: trade.entryDate, fillPrice: trade.entryPrice, state: trade.signalState, whyNow: trade.reasonEntry, invalidationPrice: trade.stopPrice }));
+        download(`sixquant-trades-${stamp}.csv`, SQ.tradesToCsv([...stockRows, ...cryptoRows]), "text/csv");
+        say("Trades downloaded.");
+    });
+    let pending = null;
+    const confirmBtn = document.getElementById("data-import-confirm");
+    document.getElementById("data-import")?.addEventListener("change", async event => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        const parsed = SQ.parseBackup(await file.text());
+        pending = parsed.error ? null : parsed;
+        if (confirmBtn) confirmBtn.hidden = !pending;
+        say(parsed.error || `Backup from ${formatTimestamp(parsed.exportedAt)}: ${parsed.stockTrades} stock and ${parsed.cryptoTrades} crypto records. This replaces those records in this browser. Your current data is kept as a restore point.`);
+    });
+    confirmBtn?.addEventListener("click", () => {
+        if (!pending) return;
+        SQ.restoreBackup(window.localStorage, pending.entries);
+        window.location.reload();
+    });
+}
+
 function initRiskRulesCard() {
     const maxInput = document.getElementById("risk-max-position");
     const reserveInput = document.getElementById("risk-cash-reserve");
     const exitInput = document.getElementById("risk-exit-alert");
     const msg = document.getElementById("risk-rules-message");
+    const openInput = document.getElementById("risk-max-open");
     if (!maxInput || !reserveInput || !exitInput) return;
     const fill = (rules) => {
         maxInput.value = rules.maxPositionPct;
         reserveInput.value = rules.cashReservePct;
         exitInput.value = rules.exitAlertPct;
+        if (openInput) openInput.value = rules.maxOpenRiskPct;
     };
     fill(loadRiskRules());
     document.getElementById("risk-rules-save")?.addEventListener("click", () => {
         const rules = {
             maxPositionPct: Math.max(0.5, finiteNumber(maxInput.value, DEFAULT_RISK_RULES.maxPositionPct)),
             cashReservePct: Math.max(0, finiteNumber(reserveInput.value, DEFAULT_RISK_RULES.cashReservePct)),
-            exitAlertPct: Math.max(0.5, finiteNumber(exitInput.value, DEFAULT_RISK_RULES.exitAlertPct))
+            exitAlertPct: Math.max(0.5, finiteNumber(exitInput.value, DEFAULT_RISK_RULES.exitAlertPct)),
+            maxOpenRiskPct: Math.max(0.5, finiteNumber(openInput?.value, DEFAULT_RISK_RULES.maxOpenRiskPct))
         };
         const saved = saveRiskRules(rules);
         fill(rules);
@@ -3413,6 +3528,7 @@ function initSettingsPage() {
     initRiskRulesCard();
     initDeviceModeCard();
     initBrokerFeeCard();
+    initDataCard();
     const patInput = document.getElementById("github-pat-input");
     const patMsg = document.getElementById("github-pat-message");
     const patSave = document.getElementById("github-pat-save");
@@ -3641,7 +3757,13 @@ async function boot() {
         }
         if (page === "logs") renderLogs(model);
         if (page === "alerts") renderAlerts(model);
-        if (page === "reports") renderReports(model);
+        if (page === "reports") {
+            try {
+                const feed = await (await fetch("data/asx-feed.json", { cache: "no-cache" })).json();
+                reportStockPrices = Object.fromEntries((feed.assets || []).map(asset => [asset.symbol, asset.price]));
+            } catch { /* positions fall back to their fill price */ }
+            renderReports(model);
+        }
     } catch (error) {
         console.error("SixQuant refresh failed", error);
         setStatus("Refresh failed — data may be stale. Retrying shortly.", false);

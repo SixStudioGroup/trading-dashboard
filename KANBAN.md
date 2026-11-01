@@ -19,6 +19,7 @@
 | ASX realism: universe, fees, fee-aware sizing | 1.1 | Code complete | Universe expanded to ~65 liquid ASX names (documented, version-stamped); brokerage/spread/fees feed both the displayed plan and fee-aware position sizing; ASX broker-fee defaults in Settings. Awaiting human UAT (`docs/UAT-EVIDENCE-RELEASE-1.1.md`). |
 | ASX delayed-feed production controls (#6) | 1.1 | Code complete | Holiday-aware session flag + DST, feed validation (fail-loud), workflow-failure alerting, delayed/unlicensed UI labelling, provider-boundary docs, calculation tests. Human UAT outstanding. |
 | ASX licensed LIVE feed (#3) | 1.1 | Blocked (external) | Production-grade licensed live feed needs a paid data-provider account + business decision. Delayed feed accepted for layout/UAT only. Code-side controls done. |
+| Monday-ready: Today, planner, trade lifecycle, data truth | 1.2 | Completed | Unit tests, local browser run and live verifier; see `docs/CHANGELOG.md`. |
 | Ultrawide day-trading tier | Next | Parked | Build when full-day trading begins: density toggle, status strip, ≥1800px third column for 57" half-window. |
 | Research-brief Action (X1) | Next | Backlog | Server-side 20/50-day MAs committed as data/research-brief.json. |
 

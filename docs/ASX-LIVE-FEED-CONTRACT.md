@@ -105,8 +105,8 @@ The Stocks platform is not functionally complete until the queue is populated by
 
 | Threshold | Value | Meaning |
 |---|---|---|
-| Feed freshness SLA | **36 hours** (`freshnessSLAHours` in the feed; `MAX_FEED_AGE_HOURS` in `stock-release2.js`) | Beyond 36h the delayed feed is treated as a stale `fallback`, not healthy `delayed`. The 36h window spans a normal overnight + safety margin between weekday capture windows. |
-| Heartbeat freshness | **76 hours** (`HEARTBEAT_MAX_AGE_HOURS` in `stock-release2.js`) | The pipeline runs weekdays only; the allowed heartbeat age must span the weekend gap (Friday 16:15 capture to Monday 10:00 open ≈ 66h), so 76h avoids false weekend alarms. |
+| Feed freshness | **Trading sessions, not hours** (`asxFreshness` in `sq-core.js`) | Current, or one session behind with a warning. Two or more sessions behind blocks new plans. Weekends and ASX holidays do not count. |
+| Heartbeat | `data/heartbeat-asx.json` status | A non-ok status shows a warning on Today and Scan. |
 | Snapshot staleness (Stooq fallback) | **24 hours** (`isSnapshotStale` in `stocks.js`) | The daily-close Stooq snapshot is flagged stale after a day. |
 
 ## ASX Holiday & DST Handling
