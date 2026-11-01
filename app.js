@@ -1329,7 +1329,7 @@ function renderDashboard(model) {
 
     document.getElementById("analysis-panel").innerHTML = selected
         ? analysisHtml(selected, portfolioValue)
-        : `<div class="empty-analysis">Select an asset from the Opportunity Queue to inspect structure, plan the trade, and unlock execution handoff.</div>`;
+        : `<div class="empty-analysis">Pick a coin from the list to plan a trade. You set the stop, and you place any order yourself.</div>`;
 
     if (selected && savedPlanInputs[selected.coin.id]) {
         const snap = savedPlanInputs[selected.coin.id];
@@ -3215,7 +3215,7 @@ function renderJournal() {
             <td>${escapeHtml(trade.plannedInvalidation)}</td>
             <td>
                 ${isStockWorkspaceRecord(trade)
-                    ? `<a class="table-action" href="index.html">Manage on Today</a>`
+                    ? `<a class="table-action" href="today.html">Manage on Today</a>`
                     : `<input class="inline-balance close-price" type="number" min="0" step="any" placeholder="Exit price" data-close-price="${escapeHtml(trade.id)}">
                         <input class="inline-note close-reason" type="text" placeholder="Exit reason" data-close-reason="${escapeHtml(trade.id)}">
                         <button class="table-action" type="button" data-close-trade="${escapeHtml(trade.id)}">Close</button>`}

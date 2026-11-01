@@ -112,7 +112,7 @@
         const el = byId("sq-planned");
         byId("sq-planned-count").textContent = rows.length;
         if (!rows.length) {
-            el.innerHTML = `<p class="compact-empty">No plans waiting. Find a candidate in <a href="stocks.html">Scan</a>.</p>`;
+            el.innerHTML = `<p class="compact-empty">No plans waiting. Find a candidate in <a href="planner.html">the planner</a>.</p>`;
             return;
         }
         el.innerHTML = rows.map(t => `<article class="sq-trade">
@@ -146,7 +146,7 @@
             .sort((a, b) => order[a.signalState] - order[b.signalState] || b.relativeVolume - a.relativeVolume)
             .slice(0, 6);
         el.innerHTML = rows.length
-            ? `<ul class="sq-candidate-list">${rows.map(a => `<li><a href="stocks.html?symbol=${encodeURIComponent(a.symbol)}"><strong>${e(a.symbol)}</strong> <span class="muted">${e(a.name)}</span></a><span class="sq-cand-meta">${S.price(a.price)} · ${a.change1d > 0 ? "+" : ""}${Number(a.change1d).toFixed(1)}% · ${e(a.trend)} trend</span><span class="badge ${a.signalState === "Breakout" ? "strong" : "volume"}">${e(a.signalState)}</span></li>`).join("")}</ul>`
+            ? `<ul class="sq-candidate-list">${rows.map(a => `<li><a href="planner.html?symbol=${encodeURIComponent(a.symbol)}"><strong>${e(a.symbol)}</strong> <span class="muted">${e(a.name)}</span></a><span class="sq-cand-meta">${S.price(a.price)} · ${a.change1d > 0 ? "+" : ""}${Number(a.change1d).toFixed(1)}% · ${e(a.trend)} trend</span><span class="badge ${a.signalState === "Breakout" ? "strong" : "volume"}">${e(a.signalState)}</span></li>`).join("")}</ul>`
             : `<p class="compact-empty">No setups at the last close. Doing nothing is a valid result.</p>`;
     }
 

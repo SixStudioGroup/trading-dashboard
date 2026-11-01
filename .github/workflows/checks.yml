@@ -29,6 +29,8 @@ jobs:
           python -c "import glob,yaml;[yaml.safe_load(open(f)) for f in glob.glob('.github/workflows/*.yml')];print('workflow YAML ok')"
       - name: Core tests
         run: node scripts/test_core.mjs
+      - name: Stocks calculation tests
+        run: node scripts/test_calculations.mjs
       - name: Signal tests
         run: |
           pip install requests tzdata

@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-02 — Original layout restored (1.3)
+
+- The Crypto Terminal is the home page again. The Stocks table and cockpit and the original eight-item menu are back.
+- Today moved to `today.html` and the planner to `planner.html`. Both are optional and linked from the footer.
+- Kept: crypto and ASX data fixes, freshness labels, the stale-data lock.
+- Text and layout scale up on large monitors. Stocks table columns fold so Analyse stays visible on smaller desktops.
+- Saving a plan on the Stocks page no longer overwrites open or closed trades for that ticker.
+
 ## 2026-11-01 — Monday-ready (1.2)
 
 ### Data truth

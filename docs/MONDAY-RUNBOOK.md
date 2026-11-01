@@ -11,7 +11,7 @@ SixQuant plans, records and reviews. Every order is placed by you at your broker
 
 1. Read the data bar. It must not say STALE.
 2. Review open trades against the last close.
-3. In Scan, plan at most a few setups. Write the thesis and set the stop and target yourself.
+3. In the Trade planner, plan at most a few setups. Write the thesis and set the stop and target yourself.
 4. Record the plan as Paper.
 
 ## Before the open

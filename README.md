@@ -46,8 +46,10 @@ in `scripts/fetch_stocks.py` and `tools/generate-asx-feed.mjs` and documented in
 
 Key paths:
 
-- `index.html`, `today.js` — Today, the daily home.
-- `stocks.html`, `stocks.js`, `data/asx-feed.json`, `data/asx-history.json` — Scan and trade planner.
+- `index.html`, `app.js` — Crypto Terminal, the home page.
+- `today.html`, `today.js` — Today, an optional extra.
+- `stocks.html`, `stocks.js`, `stock-release2.js`, `data/asx-feed.json` — Stocks table and cockpit.
+- `planner.html`, `planner.js`, `data/asx-history.json` — Trade planner, an optional extra.
 - `crypto.html`, `app.js`, `data/crypto-snapshot.json` — Crypto Terminal.
 - `sq-core.js`, `sq-store.js` — shared trading maths and records.
 - `docs/MONDAY-RUNBOOK.md`, `docs/SIGNAL-EVIDENCE.md` — daily routine and what the signals can and cannot do.

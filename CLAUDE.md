@@ -7,11 +7,12 @@ trading-capable credentials. See SECURITY.md and docs/IMPROVEMENT-ROADMAP.md.
 
 ## Surfaces
 
-- `index.html` + `today.js` — Today, the daily home (primary)
-- `stocks.html` + `stocks.js` — Scan and trade planner (ASX delayed feed)
-- `crypto.html` + `app.js` — Crypto Terminal (labelled unproven)
+- `index.html` + `app.js` — Crypto Terminal, the home page (labelled unproven)
+- `stocks.html` + `stocks.js` + `stock-release2.js` — Stocks table and cockpit (ASX delayed feed)
+- `today.html` + `today.js`, `planner.html` + `planner.js` — optional extras, linked from the footer
+- `crypto.html` — redirect to `index.html`
 - `sq-core.js` — pure maths, data-age rules, trade lifecycle, backup (tested by `scripts/test_core.mjs`)
-- `sq-store.js` — browser layer shared by Today and Scan
+- `sq-store.js` — browser layer shared by Today, the planner and the Stocks data bar
 - `journal.html`, `alerts.html`, `logs.html`, `reports.html`, `guide.html`, `settings.html`
 
 ## Styling

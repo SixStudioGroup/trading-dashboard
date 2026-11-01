@@ -350,7 +350,8 @@ a {
 }
 
 html[data-device="desktop"] .six-cockpit-panel {
-    max-height: calc(100vh - 92px);
+    /* vh is not scaled by zoom, so divide to stay inside the visible window. */
+    max-height: calc((100vh / var(--sq-zoom, 1)) - 92px);
     overflow-y: auto;
 }
 
@@ -907,27 +908,45 @@ html[data-device="phone"] .six-focus-table .coin {
     gap: 6px;
 }
 
-/* Scan on phone: ticker, last, 1D, signal, plan. */
-html[data-device="phone"] body[data-page="stocks"] .six-focus-table th:nth-child(4),
-html[data-device="phone"] body[data-page="stocks"] .six-focus-table td:nth-child(4),
-html[data-device="phone"] body[data-page="stocks"] .six-focus-table th:nth-child(5),
-html[data-device="phone"] body[data-page="stocks"] .six-focus-table td:nth-child(5),
-html[data-device="phone"] body[data-page="stocks"] .six-focus-table th:nth-child(6),
-html[data-device="phone"] body[data-page="stocks"] .six-focus-table td:nth-child(6) {
+/* Planner on phone: ticker, last, 1D, signal, plan. */
+html[data-device="phone"] body[data-view="planner"] .six-focus-table th:nth-child(4),
+html[data-device="phone"] body[data-view="planner"] .six-focus-table td:nth-child(4),
+html[data-device="phone"] body[data-view="planner"] .six-focus-table th:nth-child(5),
+html[data-device="phone"] body[data-view="planner"] .six-focus-table td:nth-child(5),
+html[data-device="phone"] body[data-view="planner"] .six-focus-table th:nth-child(6),
+html[data-device="phone"] body[data-view="planner"] .six-focus-table td:nth-child(6) {
     display: none;
 }
 
-html[data-device="phone"] body[data-page="stocks"] .six-focus-table abbr,
-html[data-device="phone"] body[data-page="stocks"] .sq-company {
+html[data-device="phone"] body[data-view="planner"] .six-focus-table abbr,
+html[data-device="phone"] body[data-view="planner"] .sq-company {
     display: none;
 }
 
-html[data-device="phone"] body[data-page="stocks"] .six-focus-table .badge {
+html[data-device="phone"] body[data-view="planner"] .six-focus-table .badge {
     font-size: 10px;
     padding: 3px 6px;
     letter-spacing: 0;
     white-space: nowrap;
 }
+
+/* Stocks table on phone: Rank / Ticker / Price / 1D / State / Analyse. */
+html[data-device="phone"] body[data-page="stocks"]:not([data-view="planner"]) .six-focus-table th:nth-child(1),
+html[data-device="phone"] body[data-page="stocks"]:not([data-view="planner"]) .six-focus-table td:nth-child(1),
+html[data-device="phone"] body[data-page="stocks"]:not([data-view="planner"]) .six-focus-table th:nth-child(3),
+html[data-device="phone"] body[data-page="stocks"]:not([data-view="planner"]) .six-focus-table td:nth-child(3),
+html[data-device="phone"] body[data-page="stocks"]:not([data-view="planner"]) .six-focus-table th:nth-child(4),
+html[data-device="phone"] body[data-page="stocks"]:not([data-view="planner"]) .six-focus-table td:nth-child(4),
+html[data-device="phone"] body[data-page="stocks"]:not([data-view="planner"]) .six-focus-table th:nth-child(7),
+html[data-device="phone"] body[data-page="stocks"]:not([data-view="planner"]) .six-focus-table td:nth-child(7),
+html[data-device="phone"] body[data-page="stocks"]:not([data-view="planner"]) .six-focus-table th:nth-child(8),
+html[data-device="phone"] body[data-page="stocks"]:not([data-view="planner"]) .six-focus-table td:nth-child(8),
+html[data-device="phone"] body[data-page="stocks"]:not([data-view="planner"]) .six-focus-table th:nth-child(10),
+html[data-device="phone"] body[data-page="stocks"]:not([data-view="planner"]) .six-focus-table td:nth-child(10) {
+    display: none;
+}
+
+
 
 html[data-device="phone"] .six-focus-table .table-action {
     padding-left: 8px;
@@ -1093,3 +1112,81 @@ html[data-device="phone"] body[data-page="dashboard"] .six-focus-table .table-ac
 /* Long data-state labels must wrap, not push the page wider on phones. */
 .six-feed-state { min-width: 0; max-width: 100%; }
 .six-feed-state span { white-space: normal; overflow-wrap: anywhere; min-width: 0; }
+
+/* ==========================================================================
+   Legibility on large monitors. Every size in this system is in px, so a wide
+   window showed a small strip of small text. Scale the whole page with the
+   window, and let the content use the width it gets.
+   ========================================================================== */
+@media (min-width: 1700px) { :root { --sq-zoom: 1.15; } body { zoom: 1.15; } }
+@media (min-width: 2200px) { :root { --sq-zoom: 1.35; } body { zoom: 1.35; } }
+@media (min-width: 2800px) { :root { --sq-zoom: 1.6; } body { zoom: 1.6; } }
+@media (min-width: 3200px) { :root { --sq-zoom: 1.75; } body { zoom: 1.75; } }
+@media (min-width: 4600px) { :root { --sq-zoom: 2.4; } body { zoom: 2.4; } }
+
+@media (min-width: 1700px) {
+    .six-shell, .sq-footer { max-width: 1800px; }
+}
+
+/* Smallest text on tablet and desktop. Phone keeps its tuned sizes. */
+html:not([data-device="phone"]) .panel-subtitle,
+html:not([data-device="phone"]) .sq-note,
+html:not([data-device="phone"]) .sq-check,
+html:not([data-device="phone"]) .sq-cand-meta,
+html:not([data-device="phone"]) .sq-company,
+html:not([data-device="phone"]) .sq-data-bar span { font-size: 14px; }
+html:not([data-device="phone"]) .six-focus-table th,
+html:not([data-device="phone"]) .sq-meter span,
+html:not([data-device="phone"]) .sq-meter small,
+html:not([data-device="phone"]) .sq-trade-grid dt,
+html:not([data-device="phone"]) .sq-facts dt,
+html:not([data-device="phone"]) .sq-size dt,
+html:not([data-device="phone"]) .sq-setup-form label,
+html:not([data-device="phone"]) .sq-inline-form label,
+html:not([data-device="phone"]) .sq-step label,
+html:not([data-device="phone"]) .six-strip-item span { font-size: 13px; }
+html:not([data-device="phone"]) .six-focus-table td,
+html:not([data-device="phone"]) .sq-trade-grid dd,
+html:not([data-device="phone"]) .sq-facts dd,
+html:not([data-device="phone"]) .sq-size dd { font-size: 15px; }
+html:not([data-device="phone"]) .badge,
+html:not([data-device="phone"]) .table-action { font-size: 13px; }
+
+/* Menu: the main way around, so it has to read as one. */
+html:not([data-device="phone"]) .navlinks a { font-size: 16px; font-weight: 600; padding: 10px 14px; }
+
+/* Form fields were close to invisible against the panel. */
+.sq-setup-form input, .sq-inline-form input, .sq-inline-form select, .sq-step input, .sq-step textarea {
+    min-height: 40px;
+    padding: 8px 10px;
+    font-size: 15px;
+    color: var(--text);
+    background: var(--page);
+    border: 1px solid rgba(160, 175, 200, 0.5);
+    border-radius: var(--radius);
+}
+.sq-setup-form input:focus, .sq-inline-form input:focus, .sq-inline-form select:focus, .sq-step input:focus, .sq-step textarea:focus {
+    outline: 2px solid var(--brand-blue);
+    outline-offset: 1px;
+}
+
+/* Today: one obvious next step. */
+.sq-page-head.sq-head-action { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+.sq-head-action .button-primary { display: inline-block; padding: 12px 20px; font-size: 16px; font-weight: 700; text-decoration: none; }
+
+/* An unset warning must not show as an empty banner. */
+#stock-heartbeat-warning[hidden], #stock-staleness-warning[hidden] { display: none; }
+
+/* Stocks table: Analyse must stay on screen at every desktop width. */
+html:not([data-device="phone"]) body[data-page="stocks"]:not([data-view="planner"]) .opportunity-panel { container-type: inline-size; overflow-x: auto; }
+html:not([data-device="phone"]) body[data-page="stocks"]:not([data-view="planner"]) .six-focus-table td { font-size: 14px; }
+@container (max-width: 1180px) {
+    body[data-page="stocks"]:not([data-view="planner"]) .six-focus-table th:nth-child(4),
+    body[data-page="stocks"]:not([data-view="planner"]) .six-focus-table td:nth-child(4) { display: none; }
+}
+@container (max-width: 1000px) {
+    body[data-page="stocks"]:not([data-view="planner"]) .six-focus-table th:nth-child(1),
+    body[data-page="stocks"]:not([data-view="planner"]) .six-focus-table td:nth-child(1),
+    body[data-page="stocks"]:not([data-view="planner"]) .six-focus-table th:nth-child(8),
+    body[data-page="stocks"]:not([data-view="planner"]) .six-focus-table td:nth-child(8) { display: none; }
+}
