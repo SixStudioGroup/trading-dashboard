@@ -11,8 +11,9 @@ on:
 permissions:
   contents: write
 
+# Both data workflows push to main, so they queue rather than race each other.
 concurrency:
-  group: crypto-snapshot
+  group: data-commits
   cancel-in-progress: false
 
 jobs:
