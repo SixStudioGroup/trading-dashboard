@@ -826,19 +826,6 @@ html[data-device="phone"] body[data-page="dashboard"] .six-focus-table td:nth-ch
 
 /* Stocks queue: Rank / Ticker / Price / 1D / State / Analyse
    (drop Company 3, Sector 4, 5D 7, Rel Vol 8, Risk 10) */
-html[data-device="phone"] body[data-page="stocks"] .six-focus-table th:nth-child(3),
-html[data-device="phone"] body[data-page="stocks"] .six-focus-table td:nth-child(3),
-html[data-device="phone"] body[data-page="stocks"] .six-focus-table th:nth-child(4),
-html[data-device="phone"] body[data-page="stocks"] .six-focus-table td:nth-child(4),
-html[data-device="phone"] body[data-page="stocks"] .six-focus-table th:nth-child(7),
-html[data-device="phone"] body[data-page="stocks"] .six-focus-table td:nth-child(7),
-html[data-device="phone"] body[data-page="stocks"] .six-focus-table th:nth-child(8),
-html[data-device="phone"] body[data-page="stocks"] .six-focus-table td:nth-child(8),
-html[data-device="phone"] body[data-page="stocks"] .six-focus-table th:nth-child(10),
-html[data-device="phone"] body[data-page="stocks"] .six-focus-table td:nth-child(10) {
-    display: none;
-}
-
 /* Phone: the "(delayed)" abbr makes the Price header ~141px and pushes the
    Analyse column off a 390px screen; the delayed-data disclosure stays in the
    reality-check panel above the queue. */
