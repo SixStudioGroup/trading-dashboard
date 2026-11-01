@@ -20,7 +20,7 @@ import { join } from "node:path";
 const BASE = (process.argv[2] || "https://sixstudiogroup.github.io/trading-dashboard").replace(/\/$/, "");
 const PORT = Number(process.env.CDP_PORT || 9444);
 const CHROME = process.env.CHROME_PATH || defaultChrome();
-const PAGES = ["index.html", "stocks.html", "journal.html", "alerts.html", "logs.html", "reports.html", "guide.html", "settings.html"];
+const PAGES = ["index.html", "crypto.html", "stocks.html", "journal.html", "alerts.html", "logs.html", "reports.html", "guide.html", "settings.html"];
 
 function defaultChrome() {
   if (process.platform === "win32") {
@@ -111,7 +111,7 @@ async function run() {
   }
 
   // --- Console error capture on the two terminals (load with Log domain) ---
-  for (const p of ["index.html", "stocks.html"]) {
+  for (const p of ["index.html", "crypto.html", "stocks.html"]) {
     const created = await (await fetch(`http://127.0.0.1:${PORT}/json/new?about:blank`, { method: "PUT" })).json();
     await sleep(500);
     const list = await (await fetch(`http://127.0.0.1:${PORT}/json/list`)).json();
@@ -138,7 +138,7 @@ async function run() {
   {
     let s;
     try {
-      s = await open(`${BASE}/index.html`, { width: 1440, mobile: false });
+      s = await open(`${BASE}/crypto.html`, { width: 1440, mobile: false });
       const data = JSON.parse(await s.evaluate(`(() => {
         const clip = [];
         const clipAnc = (el) => { let n = el.parentElement; while (n && n !== document.documentElement) { const cs = getComputedStyle(n); if (cs.overflowX === 'hidden' || cs.overflow === 'hidden') return n; n = n.parentElement; } return null; };
@@ -155,7 +155,7 @@ async function run() {
   }
 
   // --- Phone layout: no overflow, queues fit, check strip, Analyse visible ---
-  for (const p of ["index.html", "stocks.html"]) {
+  for (const p of ["crypto.html", "stocks.html"]) {
     let s;
     try {
       s = await open(`${BASE}/${p}`, { width: 390, mobile: true });
@@ -176,17 +176,109 @@ async function run() {
       record(`phone:${p}:no-overflow`, data.scrollW <= 392, `scrollW=${data.scrollW}`);
       record(`phone:${p}:queue-fits`, data.queueW > 0 && data.queueW <= 392, `queueW=${data.queueW}`);
       record(`phone:${p}:analyse-visible`, data.analyseFits, `analyseFits=${data.analyseFits}`);
-      if (p === "index.html") record("phone:check-strip", data.checkVisible === "grid", `display=${data.checkVisible}`);
+      if (p === "crypto.html") record("phone:check-strip", data.checkVisible === "grid", `display=${data.checkVisible}`);
     } catch (e) { record(`phone:${p}`, false, e.message); } finally { s && s.close(); }
+  }
+
+  // --- Data truth: a page that renders is not enough, the data must be usable ---
+  {
+    const feed = await (await fetch(`${BASE}/data/asx-feed.json`, { cache: "no-store" })).json();
+    const crypto = await (await fetch(`${BASE}/data/crypto-snapshot.json`, { cache: "no-store" })).json();
+    const beat = await (await fetch(`${BASE}/data/heartbeat-crypto.json`, { cache: "no-store" })).json();
+    const cryptoAge = (Date.now() - new Date(crypto.lastUpdated).getTime()) / 36e5;
+    const SQ = (await import("node:module")).createRequire(import.meta.url)("../sq-core.js");
+    const asx = SQ.asxFreshness(feed);
+    const flat = feed.assets.filter(a => a.change1d === 0).length;
+    record("data:crypto-snapshot-fresh", cryptoAge <= 24, `${cryptoAge.toFixed(1)}h old`);
+    record("data:crypto-heartbeat-ok", beat.status === "ok", `status=${beat.status}`);
+    record("data:asx-not-stale", !asx.blocks, asx.label);
+    record("data:asx-daily-moves-real", flat / feed.assets.length < 0.9, `${flat}/${feed.assets.length} flat`);
+    record("data:asx-history-present", (await fetch(`${BASE}/data/asx-history.json`, { cache: "no-store" })).ok);
+  }
+
+  // --- Full trade workflow in a throwaway profile: setup, plan, fill, close, review ---
+  {
+    let s;
+    try {
+      s = await open(`${BASE}/index.html`, { settle: 5000 });
+      await s.evaluate(`(() => {
+        document.getElementById('setup-account').value = '50000';
+        document.getElementById('sq-setup-form').requestSubmit();
+      })()`);
+      await sleep(4000);
+      const home = await s.evaluate(`JSON.stringify({ mode: localStorage.getItem('sixquant.portalMode.v1'), setupHidden: document.getElementById('sq-setup').hidden, bar: document.getElementById('sq-asx-bar').textContent })`);
+      const homeData = JSON.parse(home);
+      record("flow:setup-enters-private", homeData.mode === "private" && homeData.setupHidden, home.slice(0, 80));
+      s.close();
+      s = await open(`${BASE}/stocks.html`, { settle: 5000 });
+      const plan = JSON.parse(await s.evaluate(`(async () => {
+        const wait = ms => new Promise(r => setTimeout(r, ms));
+        document.querySelector('[data-stock-filter="all"]').click();
+        await wait(200);
+        document.querySelector('[data-analyse-stock]').click();
+        await wait(300);
+        const set = (id, v) => { const el = document.getElementById(id); el.value = v; el.dispatchEvent(new Event('input', { bubbles: true })); };
+        const entry = Number(document.getElementById('plan-entry').value);
+        const disabledBlank = document.getElementById('plan-save').disabled;
+        const chart = Boolean(document.querySelector('.sq-chart'));
+        set('plan-why', 'Verifier test thesis for the workflow');
+        set('plan-trigger', 'Verifier trigger');
+        set('plan-stop', String(entry * 0.95));
+        set('plan-target', String(entry * 1.15));
+        await wait(100);
+        for (const id of [...document.querySelectorAll('[data-manual-check]')].map(c => c.dataset.manualCheck)) document.querySelector('[data-manual-check="' + id + '"]').click();
+        await wait(100);
+        const enabled = !document.getElementById('plan-save').disabled;
+        document.getElementById('stock-plan-form').requestSubmit();
+        await wait(300);
+        return JSON.stringify({ disabledBlank, chart, enabled, saved: JSON.parse(localStorage.getItem('sixquant.stocks.tradeJournal.v1') || '[]').length });
+      })()`));
+      record("flow:plan-blocked-when-blank", plan.disabledBlank === true);
+      record("flow:plan-chart-renders", plan.chart === true);
+      record("flow:plan-records", plan.enabled && plan.saved === 1, JSON.stringify(plan));
+      s.close();
+      s = await open(`${BASE}/index.html`, { settle: 5000 });
+      const closed = JSON.parse(await s.evaluate(`(async () => {
+        const wait = ms => new Promise(r => setTimeout(r, ms));
+        document.querySelector('[data-toggle-form^="enter-"]').click();
+        await wait(150);
+        document.querySelector('[data-enter-form]').requestSubmit();
+        await wait(150);
+        document.querySelector('[data-toggle-form^="close-"]').click();
+        await wait(150);
+        const f = document.querySelector('[data-close-form]');
+        f.exitPrice.value = String(Number(f.closest('.sq-trade').querySelector('dd').textContent.replace('$', '')) * 1.1);
+        f.ruleFollowed.value = 'true';
+        f.requestSubmit();
+        await wait(200);
+        const t = JSON.parse(localStorage.getItem('sixquant.stocks.tradeJournal.v1'))[0];
+        return JSON.stringify({ status: t.status, r: t.rMultiple, fees: t.feesPaid, mode: t.mode });
+      })()`));
+      record("flow:close-computes-net-R", closed.status === "closed" && closed.r > 0 && closed.fees > 0 && closed.mode === "paper", JSON.stringify(closed));
+      s.close();
+      s = await open(`${BASE}/reports.html`, { settle: 6000 });
+      const review = await s.evaluate(`document.getElementById('weekly-report-summary')?.textContent || ''`);
+      record("flow:review-shows-expectancy", /Expectancy per trade/.test(review) && /too few to judge/.test(review), review.slice(0, 60));
+    } catch (e) { record("flow", false, e.message); } finally { s && s.close(); }
+  }
+
+  // --- Phone: Today fits ---
+  {
+    let s;
+    try {
+      s = await open(`${BASE}/index.html`, { width: 390, mobile: true });
+      const w = await s.evaluate(`document.documentElement.scrollWidth`);
+      record("phone:today:no-overflow", w <= 392, `scrollW=${w}`);
+    } catch (e) { record("phone:today", false, e.message); } finally { s && s.close(); }
   }
 
   // --- Functional: risk gate blocks, heartbeat present (crypto) ---
   {
     let s;
     try {
-      s = await open(`${BASE}/index.html`, { settle: 9000 });
+      s = await open(`${BASE}/crypto.html`, { settle: 9000 });
       const hb = await s.evaluate(`document.getElementById('feed-heartbeat')?.textContent || ''`);
-      record("func:heartbeat-present", /OK|MISSED|ago|h /.test(hb), `heartbeat="${hb.slice(0,40)}"`);
+      record("func:heartbeat-ok", /^OK/.test(hb), `heartbeat="${hb.slice(0,40)}"`);
       const blockMsg = await s.evaluate(`(async () => {
         const btn = document.querySelector('#opportunities-body .table-action');
         if (!btn) return 'NO-ANALYSE';

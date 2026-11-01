@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SixQuant — Review</title>
     <link rel="stylesheet" href="styles.css?v=ui-20260526">
-    <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="sixquant.css?v=ssg-3"><script src="sixquant-mode.js?v=ssg-1"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="sixquant.css?v=mon-1"><script src="sixquant-mode.js?v=ssg-1"></script>
     <link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png"><link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png"><link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png"><link rel="manifest" href="site.webmanifest"><meta name="theme-color" content="#0A0F1C"><meta name="description" content="SixQuant review centre — performance and discipline review from manual records. Decision support only; no order execution."><meta property="og:type" content="website"><meta property="og:site_name" content="SixQuant Terminal"><meta property="og:url" content="https://sixstudiogroup.github.io/trading-dashboard/reports.html"><meta property="og:title" content="SixQuant — Review"><meta property="og:description" content="SixQuant review centre — performance and discipline review from manual records. Decision support only; no order execution."><meta property="og:image" content="https://sixstudiogroup.github.io/trading-dashboard/assets/icon-512.png"><meta name="twitter:card" content="summary"><meta name="twitter:title" content="SixQuant — Review"><meta name="twitter:description" content="SixQuant review centre — performance and discipline review from manual records. Decision support only; no order execution."><meta name="twitter:image" content="https://sixstudiogroup.github.io/trading-dashboard/assets/icon-512.png">
     <script src="https://unpkg.com/lucide@0.441.0/dist/umd/lucide.min.js"></script>
 </head>
@@ -16,19 +16,10 @@
             <span class="brand-mark six-mark" aria-hidden="true"><img src="assets/logo.svg" alt="" width="22" height="22"></span>
             <span><strong>SixQuant</strong><small>by Six Studio Group</small></span>
         </a>
-        <nav class="navlinks" aria-label="Main navigation">
-            <a href="index.html"><i aria-hidden="true" data-lucide="activity"></i> Crypto</a>
-            <a href="stocks.html"><i aria-hidden="true" data-lucide="bar-chart"></i> Stocks</a>
-            <a href="journal.html"><i aria-hidden="true" data-lucide="book-open"></i> Journal</a>
-            <a href="alerts.html"><i aria-hidden="true" data-lucide="bell"></i> Alerts</a>
-            <a href="logs.html"><i aria-hidden="true" data-lucide="file-text"></i> Evidence</a>
-            <a class="active" href="reports.html"><i aria-hidden="true" data-lucide="pie-chart"></i> Review</a>
-            <a href="guide.html"><i aria-hidden="true" data-lucide="help-circle"></i> Guide</a>
-            <a href="settings.html"><i aria-hidden="true" data-lucide="settings"></i> Settings</a>
-        </nav>
+        <nav class="navlinks" aria-label="Main navigation"><a href="index.html"><i aria-hidden="true" data-lucide="layout-dashboard"></i> Today</a><a href="stocks.html"><i aria-hidden="true" data-lucide="bar-chart"></i> Scan</a><a class="active" aria-current="page" href="journal.html"><i aria-hidden="true" data-lucide="book-open"></i> Journal</a><a href="settings.html"><i aria-hidden="true" data-lucide="settings"></i> Settings</a></nav>
     </header>
 
-    <main id="main-content" class="shell command-shell reports-shell six-shell">
+    <main id="main-content" class="shell command-shell reports-shell six-shell"><nav class="sq-subnav" aria-label="Journal views"><a href="journal.html">Records</a><a class="active" aria-current="page" href="reports.html">Review</a></nav>
         <section class="six-command-bar">
             <div class="six-title-block">
                 <span class="six-kicker">Review Centre</span>
@@ -45,11 +36,11 @@
                 <summary>Data feed diagnostics</summary>
                 <div class="data-source-card">
                     <span>Provider: <strong data-confidence-field="provider">Current Feed</strong></span>
-                    <span>Status: <strong data-confidence-field="mode">Live Data</strong></span>
-                    <span>Last live: <strong data-confidence-field="lastSuccessfulLiveFetch">Not recorded</strong></span>
+                    <span>Status: <strong data-confidence-field="mode">Loading</strong></span>
+                    <span>Snapshot taken: <strong data-confidence-field="lastSuccessfulLiveFetch">Not recorded</strong></span>
                     <span>Attempted: <strong data-confidence-field="lastAttemptedFetch">Not recorded</strong></span>
                     <span>Failure: <strong data-confidence-field="failureReason">None</strong></span>
-                    <span>Live/fallback: <strong data-confidence-field="dataKind">Live</strong></span>
+                    <span>Data state: <strong data-confidence-field="dataKind">Loading</strong></span>
                     <span>Retry: <strong data-confidence-field="retryCount">0</strong></span>
                 </div>
             </details>
@@ -71,7 +62,7 @@
                 <button class="tab-button" type="button" role="tab" aria-selected="false" data-report-target="daily-report-tab">Daily</button>
             </div>
             <div class="report-filter-bar">
-                <label class="report-date-control"><span>Asset class</span><select id="report-asset-filter"><option value="all">All assets</option><option value="crypto">Crypto only</option><option value="stock">Stocks only</option></select></label>
+                <label class="report-date-control"><span>Trade type</span><select id="report-mode-filter"><option value="all">Paper and live</option><option value="paper">Paper only</option><option value="live">Live only</option></select></label><label class="report-date-control"><span>Asset class</span><select id="report-asset-filter"><option value="all">All assets</option><option value="crypto">Crypto only</option><option value="stock">Stocks only</option></select></label>
             </div>
 
             <section class="tab-panel" id="daily-report-tab">
@@ -104,9 +95,9 @@
                 <table class="compact-table report-table"><thead><tr><th>Consensus</th><th class="num">Trades</th><th class="num">Wins</th><th class="num">Losses</th><th class="num">Net result</th><th>Most common asset class</th></tr></thead><tbody id="consensus-outcomes-body"><tr><td colspan="6" class="loading-cell">No consensus outcomes yet.</td></tr></tbody></table>
             </section>
         </section>
-    </main><footer class="sq-footer"><span><strong>Decision support only</strong> — no order execution</span><span class="sq-footer-sep">·</span><span>A Six Studio Group product</span></footer>
+    </main><footer class="sq-footer"><span><strong>Decision support only</strong>. No order execution. Not financial advice.</span><span class="sq-footer-links"><a href="crypto.html">Crypto (unproven)</a><a href="alerts.html">Alerts</a><a href="logs.html">Evidence log</a><a href="guide.html">Guide</a></span><span>A Six Studio Group product</span></footer>
 
-    <script src="app.js?v=ssg-4"></script>
+    <script src="sq-core.js?v=mon-1"></script><script src="app.js?v=mon-1"></script>
 <script>if(typeof lucide!=="undefined")lucide.createIcons();</script>
 </body>
 </html>

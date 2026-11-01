@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-11-01 — Monday-ready (1.2)
+
+### Data truth
+
+- Fixed the crypto workflow's invalid YAML, which had stopped the snapshot for 131 days without any alert.
+- Fixed Yahoo's duplicate session bar, which showed a 0% daily move for every ASX stock after each close.
+- Page-load time is no longer shown as data time. Stale data blocks new plans. "Live" wording removed.
+- ASX freshness counts trading sessions, so weekends no longer raise a false stale warning.
+- Generator validation fails when nearly every stock shows no move. New `checks.yml` parses workflow YAML and runs tests.
+
+### Product
+
+- New home: Today (`index.html`). The crypto terminal moved to `crypto.html` and is labelled unproven.
+- Navigation reduced to Today, Scan, Journal and Settings.
+- Scan has a one-ticker planner: chart, thesis, numeric levels, automatic fee-aware size and rule checks.
+- Trades now run planned, open, closed or cancelled, in paper or live mode, with net result and R. Plans for the same ticker no longer overwrite each other.
+- Paper criteria before live: 30 closed trades, positive expectancy after costs, 90% plan-following.
+- Review adds expectancy, drawdown and fees, with a sample-size guard. Crypto close now deducts an assumed fee.
+- Settings adds backup, CSV export and restore with a restore point.
+
+### Removed
+
+- `stock-release2.js` and its patch layer, replaced by `sq-core.js` and `sq-store.js`. `scripts/test_calculations.mjs` replaced by `scripts/test_core.mjs`.
+- Queue ranking, agent consensus, prefilled trade reasons, and the rule that execution had to start in SixQuant.
+- The scheduled Stooq snapshot, which was timing out while reporting success.
+
+Evidence: `docs/SIGNAL-EVIDENCE.md`.
+
 ## 2026-06-13 — SixQuant 1.0
 
 Platform rebadged **SixSignal → SixQuant** and hardened into a working

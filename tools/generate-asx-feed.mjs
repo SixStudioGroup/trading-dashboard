@@ -1,8 +1,11 @@
 import { writeFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
+import { dailyBarsFromYahoo, barMetrics, sessionDateOf } from './asx-bars.mjs';
 
 const OUTPUT_PATH = path.join(process.cwd(), 'data', 'asx-feed.json');
 const HEARTBEAT_PATH = path.join(process.cwd(), 'data', 'heartbeat-asx.json');
+const HISTORY_PATH = path.join(process.cwd(), 'data', 'asx-history.json');
+const HISTORY_SESSIONS = 140; // enough for 90 charted sessions plus their 50-day average
 const USER_AGENT = 'SixQuant-Terminal-ASX-Feed/2.0';
 
 // ===========================================================================
@@ -248,35 +251,14 @@ function riskState(change1d, change5d, relativeVolume, signal) {
 
 async function fetchYahooChart(symbol) {
   const yahooSymbol = `${symbol}.AX`;
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSymbol)}?range=10d&interval=1d`;
+  // 1y gives the 20-session volume baseline and the 200-day average.
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSymbol)}?range=1y&interval=1d`;
   const response = await fetch(url, { headers: { 'User-Agent': USER_AGENT, Accept: 'application/json' } });
   if (!response.ok) throw new Error(`${symbol}: provider HTTP ${response.status}`);
   const payload = await response.json();
-  const result = payload?.chart?.result?.[0];
-  const quote = result?.indicators?.quote?.[0];
-  const closes = (quote?.close || []).filter(Number.isFinite);
-  const volumes = (quote?.volume || []).filter(Number.isFinite);
-  if (closes.length < 2) throw new Error(`${symbol}: insufficient provider history`);
-  const price = closes.at(-1);
-  const prior = closes.at(-2);
-  // change5d is only a true 5-session change when we have >= 6 closes.
-  // With fewer bars we fall back to the earliest close but flag the window
-  // as partial so downstream logic/UI don't treat it as a real 5-day move.
-  const hasFullFiveDay = closes.length >= 6;
-  const fivePrior = hasFullFiveDay ? closes.at(-6) : closes[0];
-  // Canonical relVol: mean of the PRIOR up-to-20 sessions, EXCLUDING the
-  // current bar, so a fresh spike isn't diluted into its own baseline.
-  const priorVolumes = volumes.slice(0, -1).slice(-20);
-  const avgVolume = priorVolumes.length ? priorVolumes.reduce((a, b) => a + b, 0) / priorVolumes.length : 0;
-  const latestVolume = volumes.at(-1) || 0;
-  const relativeVolume = avgVolume > 0 ? latestVolume / avgVolume : 1;
-  return {
-    price,
-    change1d: pctChange(price, prior),
-    change5d: pctChange(price, fivePrior),
-    change5dPartial: !hasFullFiveDay,
-    relativeVolume
-  };
+  const bars = dailyBarsFromYahoo(payload?.chart?.result?.[0]);
+  if (bars.length < 2) throw new Error(`${symbol}: insufficient provider history`);
+  return { ...barMetrics(bars), bars };
 }
 
 // ---------------------------------------------------------------------------
@@ -318,6 +300,12 @@ function validateFeed(feed) {
       problems.push(`${sym}: anomalous 1D move ${asset.change1d}% (> ${MAX_ABS_DAILY_MOVE}% — likely bad tick)`);
     }
   }
+  // Duplicate-bar guard: a real session never leaves nearly every stock unchanged.
+  const flat = assets.filter(a => a.change1d === 0).length;
+  if (pricedCount >= MIN_HEALTHY_ASSETS && flat / pricedCount >= 0.9) {
+    problems.push(`${flat} of ${pricedCount} assets show a 0% daily move (duplicate session bar?)`);
+  }
+  if (!feed.lastSessionDate) problems.push('no last session date');
   // Stale-price guard: if EVERY priced asset reports an identical price the
   // provider is almost certainly serving a frozen/cached page.
   const distinctPrices = new Set(assets.map(a => a.price).filter(p => Number.isFinite(p)));
@@ -345,6 +333,8 @@ async function writeHeartbeat(status, detail) {
 async function buildFeed() {
   const assets = [];
   const fetchErrors = [];
+  const history = {};
+  const round = (value, dp = 3) => (Number.isFinite(value) ? Number(value.toFixed(dp)) : null);
   for (const [symbol, name, sector] of ASX_UNIVERSE) {
     try {
       const data = await fetchYahooChart(symbol);
@@ -352,6 +342,7 @@ async function buildFeed() {
       const change5d = Number(data.change5d.toFixed(2));
       const relativeVolume = Number(data.relativeVolume.toFixed(2));
       const signal = signalState(change1d, change5d, relativeVolume);
+      history[symbol] = data.bars.slice(-HISTORY_SESSIONS).map(bar => [bar.date, round(bar.close)]);
       assets.push({
         symbol,
         name,
@@ -365,6 +356,14 @@ async function buildFeed() {
         // flag tells the UI/downstream not to treat it as a full window.
         change5dPartial: Boolean(data.change5dPartial),
         relativeVolume,
+        lastBarDate: data.lastBarDate,
+        ma20: round(data.ma20),
+        ma50: round(data.ma50),
+        ma200: round(data.ma200),
+        atr14: round(data.atr14),
+        high20: round(data.high20),
+        low20: round(data.low20),
+        trend: data.trend,
         marketRegime: marketRegime(change5d),
         region: 'Australia',
         currency: 'AUD',
@@ -390,6 +389,8 @@ async function buildFeed() {
     sydneyTimezone: sydney.abbr,             // "AEST" | "AEDT"
     asxSessionOpen: sydney.isOpen && !holiday, // open flag now respects ASX holidays
     asxHoliday: holiday || null,             // holiday name when today is a closure
+    asxHolidays: Object.keys(ASX_HOLIDAYS),  // lets the UI count sessions, not hours
+    lastSessionDate: sessionDateOf(assets),  // Sydney date of the latest session on the feed
     freshnessSLAHours: 36,                   // see docs/ASX-LIVE-FEED-CONTRACT.md
     universeMeta: UNIVERSE_META,             // static universe vintage shown in UI
     symbols: ASX_UNIVERSE.map(([symbol]) => symbol),
@@ -414,6 +415,7 @@ async function buildFeed() {
 
   await mkdir(path.dirname(OUTPUT_PATH), { recursive: true });
   await writeFile(OUTPUT_PATH, `${JSON.stringify(feed, null, 2)}\n`, 'utf8');
+  await writeFile(HISTORY_PATH, `${JSON.stringify({ schema: 'sixquant.asx.history.v1', lastUpdated: feed.lastUpdated, series: history })}\n`, 'utf8');
   await writeHeartbeat('ok', `${assets.length} assets, ${fetchErrors.length} fetch errors`);
   console.log(`ASX feed generated: ${assets.length} assets, ${fetchErrors.length} errors`);
 }

@@ -3,13 +3,14 @@ name: Generate ASX delayed feed
 on:
   workflow_dispatch:
   schedule:
-    # ASX market-cycle windows. GitHub cron is UTC. AEST = UTC+10.
-    # 00:00 UTC = 10:00 AEST: market open
-    # 03:00 UTC = 13:00 AEST: midday session
-    # 06:15 UTC = 16:15 AEST: post-close delayed-data capture
-    - cron: '0 0 * * 1-5'
+    # GitHub cron is UTC and has been landing hours late, so these target the
+    # end-of-day data the product is built on rather than the open.
+    # 03:00 UTC = 13:00-14:00 Sydney: part-session view
+    # 06:30 UTC = 16:30-17:30 Sydney: first post-close capture
+    # 09:30 UTC = 19:30-20:30 Sydney: final close before evening planning
     - cron: '0 3 * * 1-5'
-    - cron: '15 6 * * 1-5'
+    - cron: '30 6 * * 1-5'
+    - cron: '30 9 * * 1-5'
 
 permissions:
   contents: write
@@ -50,7 +51,7 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@b863ae1933cb653a53c021fe36dbb774e1fb9403 # v5
         with:
           commit_message: 'data: refresh ASX delayed feed'
-          file_pattern: 'data/asx-feed.json data/heartbeat-asx.json'
+          file_pattern: 'data/asx-feed.json data/asx-history.json data/heartbeat-asx.json'
 
       # Surface a scheduled-run failure as an issue using the default token only.
       # Opens a tracking issue on first failure and comments on the existing open
