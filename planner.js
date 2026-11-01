@@ -32,8 +32,8 @@
 
     function renderSummary() {
         const count = state => stocks().filter(s => s.signalState === state).length;
-        byId("stock-setups").textContent = freshness.blocks ? "Hidden: data not usable" : `${count("Breakout")} Breakout · ${count("Volume Spike")} Volume Spike · ${count("Watch")} Watch`;
-        byId("stock-source-badge").textContent = feed.source ? "Delayed, unlicensed. Yahoo via GitHub Action" : "No feed";
+        byId("stock-setups").textContent = freshness.blocks ? `Hidden: data ${freshness.dataState}` : `${count("Breakout")} Breakout · ${count("Volume Spike")} Volume Spike · ${count("Watch")} Watch (unproven)`;
+        byId("stock-source-badge").textContent = { delayed: "DELAYED, unlicensed. Yahoo via GitHub Action", stale: "STALE, unlicensed. Yahoo via GitHub Action", unavailable: "UNAVAILABLE: no feed" }[freshness.dataState];
         const universe = feed.universeMeta;
         byId("stock-queue-subtitle").textContent = universe
             ? `${stocks().length} liquid ASX names, list revision ${universe.revision}. Grouped by rule state, not ranked.`
@@ -47,7 +47,7 @@
         if (!rows.length) {
             const text = !stocks().length ? "No ASX data available."
                 : filter === "held" ? "No plans or positions yet."
-                : "No setups at the last close. Doing nothing is a valid result.";
+                : "No rule matches at the last close. Doing nothing is a valid result.";
             body.innerHTML = `<tr><td colspan="8" class="loading-cell">${text}</td></tr>`;
             return;
         }
@@ -82,7 +82,7 @@
         const size = SQ.sizePosition({ ...input, ...fees, maxPositionPct: rules.maxPositionPct });
         const trades = S.stockTrades();
         const plan = { ...input, symbol: stock?.symbol, sector: stock?.sector, size };
-        const checks = SQ.planChecks(plan, { freshness, rules, trades, stock });
+        const checks = SQ.planChecks(plan, { freshness, dataClass: feed.dataClass, rules, trades, stock });
         const grad = SQ.graduation(trades);
         if (input.mode === "live" && !grad.met) {
             checks.push({ id: "live-early", status: "manual", label: "I accept this is live money before meeting my paper criteria", detail: `${grad.stats.count} of ${SQ.GRADUATION.minTrades} paper trades closed` });
@@ -128,7 +128,7 @@
         const fails = checks.filter(c => c.status === "fail").length;
         const open = checks.filter(c => c.status === "manual" && !manualDone.has(c.id)).length;
         byId("plan-save-hint").textContent = pass
-            ? (S.isPrivate() ? `Records a ${input.mode} plan. It places no order.` : "Demo mode: shown until you leave this page. It places no order.")
+            ? (S.isPrivate() ? `Records a ${input.mode} plan. It places no order.${input.mode === "live" ? ` ${SQ.liveTradeReady({ freshness, dataClass: feed.dataClass }).reason}` : ""}` : "Demo mode: shown until you leave this page. It places no order.")
             : `${fails ? `${fails} failed check${fails > 1 ? "s" : ""}` : ""}${fails && open ? " and " : ""}${open ? `${open} to confirm` : ""} before recording.`;
     }
 
@@ -230,7 +230,7 @@
             units: size.units, positionSize: size.position, accountValue: Number(input.account), riskPercent: Number(input.riskPercent),
             brokerageFee: fees.brokerageFee, feePercent: fees.feePercent, spreadPercent: fees.spreadPercent,
             totalCosts: size.roundTripCost, netProfit: size.netReward, breakevenPrice: size.breakeven, plannedRewardRisk: size.rewardRisk,
-            feedSession: feed.lastSessionDate || "", checksAtPlan: checks.filter(c => c.status !== "manual").map(c => `${c.id}:${c.status}`).join(","),
+            feedSession: feed.lastSessionDate || "", dataStateAtPlan: freshness.dataState, liveTradeReady: SQ.liveTradeReady({ freshness, dataClass: feed.dataClass }).ready, checksAtPlan: checks.filter(c => c.status !== "manual").map(c => `${c.id}:${c.status}`).join(","),
             fromSixQuant: true, recordedAt: new Date().toISOString()
         });
         S.upsertTrade(trade);

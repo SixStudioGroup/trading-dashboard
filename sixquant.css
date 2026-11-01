@@ -1141,6 +1141,25 @@ html:not([data-device="phone"]) body[data-page="stocks"]:not([data-view="planner
     body[data-page="stocks"]:not([data-view="planner"]) .six-focus-table td:nth-child(4) { display: none; }
 }
 
+/* Stocks table: Analyse clipped whenever this panel was 874px or narrower with the
+   feed's longest name (measured 2 Nov 2026: windows 1181-1334px, and 761-934px when
+   stacked). Long names shorten only in that range; the full name stays in the cell's
+   tooltip and label. Re-measure with: node tools/verify-workflows.mjs --sweep */
+@container (min-width: 701px) and (max-width: 874px) {
+    body[data-page="stocks"]:not([data-view="planner"]) .six-focus-table .stock-company-cell {
+        width: 100%;
+        max-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+}
+/* From 747px the shortened table fits, so the scrollbar goes. This holds its 10px and
+   the page height stays put. Under 747px the scrollbar remains and needs no spacer. */
+@container (min-width: 747px) and (max-width: 874px) {
+    body[data-page="stocks"]:not([data-view="planner"]) .six-focus-table { margin-bottom: 10px; }
+}
+
 /* Price chart inside the Stocks and Crypto cockpits. */
 .stock-chart { margin: 12px 0; }
 .stock-chart .sq-chart { display: block; width: 100%; height: auto; }

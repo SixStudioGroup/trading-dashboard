@@ -111,7 +111,7 @@
     if (!asxFeed) return 'offline';
     if (asxFeed.mode === 'delayed' && Array.isArray(asxFeed.assets) && asxFeed.assets.length && (window.SQ ? !SQ.asxFreshness(asxFeed).blocks : feedAgeHours() <= MAX_FEED_AGE_HOURS)) return 'delayed';
     if (asxFeed.mode === 'delayed' && Array.isArray(asxFeed.assets) && asxFeed.assets.length) return 'fallback';
-    if (asxFeed.mode === 'snapshot' && Array.isArray(asxFeed.assets) && asxFeed.assets.length) return 'snapshot';
+    if (Array.isArray(asxFeed.assets) && asxFeed.assets.length && asxFeed.mode !== 'offline') return 'fallback';
     return asxFeed.mode || 'offline';
   }
 
@@ -168,7 +168,9 @@
     if (!form || form.dataset.release2Patched) return;
     form.dataset.release2Patched = 'true';
     form.addEventListener('submit', () => {
-      if (!isPrivateMode()) return;
+      // A plan the Stocks page refused (stale data, demo prices, a broken risk rule)
+      // must not change the fee figures on an existing record.
+      if (!isPrivateMode() || form.dataset.planSaved !== 'true') return;
       saveBrokerDefaultsFromForm();
       const data = new FormData(form);
       const fees = calculateNetOutcome({

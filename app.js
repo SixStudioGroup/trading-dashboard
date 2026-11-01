@@ -23,7 +23,7 @@ const FALLBACK_MARKETS = [
 ];
 
 const FALLBACK_SPARKLINE = [12, 12.4, 12.8, 13, 13.4, 14.2, 14.8, 15.1, 15.4];
-const FALLBACK_STATUS = "Fallback Snapshot - review/planning only.";
+const FALLBACK_STATUS = "Crypto DEMO prices: feed unavailable. Review only.";
 let fallbackWarningShown = false;
 let detailedFetchErrorLogged = false;
 
@@ -42,7 +42,7 @@ const PUBLIC_SITE_RULE = "Shared GitHub Pages deployment is public. Use Public D
 const MARKET_PROVIDERS = {
     currentPublicFeed: "CoinGecko",
     coinMarketCapProxy: "CoinGecko snapshot",
-    fallbackSnapshot: "Fallback Snapshot"
+    fallbackSnapshot: "Built-in demo prices"
 };
 const dataConfidence = {
     mode: "Loading",
@@ -627,7 +627,7 @@ function holdingDisplayCoin(markets, holding) {
         market_cap: 0,
         total_volume: 0,
         price_change_percentage_24h: 0,
-        price_change_percentage_1h_in_currency: 0,
+        price_change_percentage_1h_in_currency: null,
         image: "",
         sparkline_in_7d: { price: FALLBACK_SPARKLINE }
     };
@@ -964,7 +964,9 @@ function normalizeMarketAsset(asset = {}, index = 0, source = MARKET_PROVIDERS.c
     const priceAud = finiteNumber(asset.priceAud ?? asset.current_price);
     const marketCapAud = finiteNumber(asset.marketCapAud ?? asset.market_cap);
     const volume24hAud = finiteNumber(asset.volume24hAud ?? asset.total_volume);
-    const change1h = finiteNumber(asset.change1h ?? asset.price_change_percentage_1h_in_currency);
+    // Null stays null: "no 1hr data" must never become a real-looking 0.00%.
+    const rawChange1h = asset.change1h ?? asset.price_change_percentage_1h_in_currency;
+    const change1h = rawChange1h === null || rawChange1h === undefined || rawChange1h === "" || !Number.isFinite(Number(rawChange1h)) ? null : Number(rawChange1h);
     const change24h = finiteNumber(asset.change24h ?? asset.price_change_percentage_24h);
     const change7d = Number(asset.change7d ?? asset.price_change_percentage_7d_in_currency);
     return {
@@ -1036,7 +1038,25 @@ function normalizeMarkets(markets, provider = MARKET_PROVIDERS.currentPublicFeed
 }
 
 function fallbackMarkets() {
-    return normalizeMarkets(FALLBACK_MARKETS, MARKET_PROVIDERS.fallbackSnapshot);
+    return applyOneHourRule(normalizeMarkets(FALLBACK_MARKETS, MARKET_PROVIDERS.fallbackSnapshot), { dataState: "demo" });
+}
+
+// The single place a 1hr return becomes usable. Everything downstream (tables,
+// scores, rule states) reads the value this leaves behind.
+function applyOneHourRule(markets, context) {
+    return markets.map(coin => {
+        const result = SQ.oneHourReturn(coin.change1h, context);
+        return { ...coin, change1h: result.value, price_change_percentage_1h_in_currency: result.value, oneHourReason: result.reason };
+    });
+}
+
+function formatOneHour(coin) {
+    const value = coin?.price_change_percentage_1h_in_currency;
+    if (value === null || value === undefined) {
+        const reason = safeText(coin?.oneHourReason, "No 1hr return is available.");
+        return `<abbr title="${escapeHtml(reason)}">Unavailable</abbr>`;
+    }
+    return formatPercent(value);
 }
 
 function warnFallbackOnce() {
@@ -1079,7 +1099,7 @@ function compactConfidenceMessage() {
             ? new Date(dataConfidence.lastSuccessfulLiveFetch).toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit" })
             : "none";
         if (dataConfidence.freshnessLabel) return `${dataConfidence.freshnessLabel}. Review only.`;
-        return `Fallback Snapshot — review/planning only. ${dataConfidence.failureReason}. Last snapshot: ${lastLive}`;
+        return `${FALLBACK_STATUS} ${dataConfidence.failureReason}. Last snapshot: ${lastLive}`;
     }
     return `${dataConfidence.freshnessLabel || dataConfidence.mode} · ${dataConfidence.provider}`;
 }
@@ -1096,7 +1116,7 @@ function renderDataConfidence() {
             failureReason: dataConfidence.failureReason || "None",
             retryCount: String(dataConfidence.retryCount),
             nextRetryTime: dataConfidence.nextRetryTime || "next refresh",
-            dataKind: dataConfidence.dataKind || (dataConfidence.isFallback ? "Fallback" : "Snapshot")
+            dataKind: dataConfidence.dataKind || "Loading"
         };
         el.textContent = valueMap[field] || "Not recorded";
     });
@@ -1147,7 +1167,7 @@ function initPortalModeControls() {
     status.className = "privacy-status-line";
     status.innerHTML = `
         <span><strong data-portal-mode-label>${isPublicDemoMode() ? "Public Demo" : "Private Local"}</strong>: Public GitHub Pages files are visible to anyone. Private data stays in this browser.</span>
-        <span data-demo-message>Demo data — not real trading data.</span>
+        <span data-demo-message>Demo holdings and records — not real. Prices follow the data state shown.</span>
     `;
     document.querySelector(".topbar")?.insertAdjacentElement("afterend", status);
     document.getElementById("portal-mode-select")?.addEventListener("change", event => {
@@ -1266,18 +1286,22 @@ async function getMarkets() {
         dataConfidence.failureReason = freshness.blocks ? freshness.detail : "None";
         dataConfidence.retryCount = 0;
         dataConfidence.isFallback = freshness.blocks;
-        dataConfidence.dataKind = freshness.state === "current" ? "Snapshot" : freshness.state === "behind" ? "Snapshot, overdue" : "Stale";
+        dataConfidence.dataKind = { delayed: freshness.state === "behind" ? "Delayed, refresh overdue" : "Delayed", stale: "Stale", unavailable: "Unavailable" }[freshness.dataState];
+        dataConfidence.freshness = freshness;
+        dataConfidence.dataClass = data?.dataClass || "";
         setStatus(compactConfidenceMessage(), freshness.state === "current");
         setLastUpdatedLabel();
-        return normalizeMarkets(rows, provider);
+        return applyOneHourRule(normalizeMarkets(rows, provider), { dataState: freshness.dataState, lastUpdated: data?.lastUpdated });
     } catch (error) {
         dataConfidence.freshnessLabel = "";
-        dataConfidence.mode = "Fallback Snapshot";
+        dataConfidence.freshness = SQ.demoFreshness("Crypto");
+        dataConfidence.dataClass = "";
+        dataConfidence.mode = dataConfidence.freshness.label;
         dataConfidence.provider = MARKET_PROVIDERS.fallbackSnapshot;
         dataConfidence.failureReason = error.failureReason || classifyFetchFailure(error);
         dataConfidence.retryCount += 1;
         dataConfidence.isFallback = true;
-        dataConfidence.dataKind = "Fallback";
+        dataConfidence.dataKind = "Demo";
         logDetailedFetchErrorOnce(error);
         warnFallbackOnce();
         setStatus(compactConfidenceMessage() || FALLBACK_STATUS, false);
@@ -1314,7 +1338,7 @@ function renderDashboard(model) {
             <td><span class="badge ${item.decision.klass}">${item.decision.label}</span></td>
             <td class="num">${item.decision.score}</td>
             <td class="num">${formatPrice(item.coin.current_price)}</td>
-            <td class="num ${percentClass(item.coin.price_change_percentage_1h_in_currency)}">${formatPercent(item.coin.price_change_percentage_1h_in_currency)}</td>
+            <td class="num ${percentClass(item.coin.price_change_percentage_1h_in_currency)}">${formatOneHour(item.coin)}</td>
             <td class="num ${percentClass(item.coin.price_change_percentage_24h)}">${formatPercent(item.coin.price_change_percentage_24h)}</td>
             <td><button class="table-action" type="button" data-asset-id="${item.coin.id}">Analyse</button></td>
         </tr>
@@ -1403,15 +1427,15 @@ function renderDashboard(model) {
 
     renderMarketAttention(markets);
 
-    const recent = [...markets].sort((a, b) =>
-        Math.abs(b.price_change_percentage_1h_in_currency || 0) - Math.abs(a.price_change_percentage_1h_in_currency || 0)
+    const recent = markets.filter(coin => coin.price_change_percentage_1h_in_currency !== null).sort((a, b) =>
+        Math.abs(b.price_change_percentage_1h_in_currency) - Math.abs(a.price_change_percentage_1h_in_currency)
     ).slice(0, 6);
     const recentMoversBody = document.getElementById("recent-movers-body");
-    if (recentMoversBody) recentMoversBody.innerHTML = recent.map(coin => `
+    if (recentMoversBody) recentMoversBody.innerHTML = !recent.length ? `<tr><td colspan="3" class="loading-cell">1hr returns unavailable. ${escapeHtml(safeText(markets[0]?.oneHourReason, ""))}</td></tr>` : recent.map(coin => `
         <tr>
             <td>${coinCell(coin)}</td>
             <td class="num">${formatPrice(coin.current_price)}</td>
-            <td class="num ${percentClass(coin.price_change_percentage_1h_in_currency)}">${formatPercent(coin.price_change_percentage_1h_in_currency)}</td>
+            <td class="num ${percentClass(coin.price_change_percentage_1h_in_currency)}">${formatOneHour(coin)}</td>
         </tr>
     `).join("");
 
@@ -1462,7 +1486,7 @@ function renderCheckSummary(holdingRows, portfolioValue) {
     const regimeEl = document.getElementById("cs-regime");
     if (regimeEl) {
         const regimeText = safeText(document.querySelector("#market-regime-panel .regime-header strong")?.textContent, "Unavailable");
-        regimeEl.textContent = dataConfidence.isFallback ? `${regimeText} · fallback data` : regimeText;
+        regimeEl.textContent = dataConfidence.isFallback ? `${regimeText} · ${dataConfidence.dataKind.toLowerCase()} data` : regimeText;
         regimeEl.classList.toggle("is-fallback", Boolean(dataConfidence.isFallback));
     }
 }
@@ -1613,6 +1637,12 @@ function renderPositionMonitor(items, holdingRows) {
     }).join("") : `<tr><td colspan="10" class="loading-cell">No active holdings.</td></tr>`;
 }
 
+function dataLockText() {
+    return dataConfidence.dataKind === "Demo"
+        ? "Demo prices only because the feed is unavailable. Review only."
+        : `Data is ${dataConfidence.dataKind === "Stale" ? "stale" : "unavailable"}. Review only.`;
+}
+
 function analysisHtml(selected, portfolioValue) {
     const state = guideStateFor(selected);
     const confirmed = planConfirmedAssetId === selected.coin.id;
@@ -1620,9 +1650,10 @@ function analysisHtml(selected, portfolioValue) {
     const rules = loadRiskRules();
     const defaultSize = Math.max(0, portfolioValue * Math.min(0.05, rules.maxPositionPct / 100));
     const consensus = agentConsensusFor(selected, portfolioValue);
+    const liveStatus = SQ.liveTradeReady({ freshness: dataConfidence.freshness, dataClass: dataConfidence.dataClass });
     const handoffText = fallbackLocked
-        ? "Data is stale or unavailable. Review only."
-        : confirmed ? "Checks complete. Record the plan, then place any order yourself at your exchange." : "Complete the plan and the checks to record it.";
+        ? dataLockText()
+        : confirmed ? `Checks complete. Record the plan. ${liveStatus.reason}` : `Complete the plan and the checks to record it. ${liveStatus.reason}`;
     return `
         <div class="analysis-heading">
             ${coinCell(selected.coin)}
@@ -1632,7 +1663,7 @@ function analysisHtml(selected, portfolioValue) {
         <dl class="metric-grid">
             <div><dt>Score</dt><dd>${selected.decision.score}</dd></div>
             <div><dt>Price</dt><dd>${formatPrice(selected.coin.current_price)}</dd></div>
-            <div><dt>1hr</dt><dd class="${percentClass(selected.coin.price_change_percentage_1h_in_currency)}">${formatPercent(selected.coin.price_change_percentage_1h_in_currency)}</dd></div>
+            <div><dt>1hr</dt><dd class="${percentClass(selected.coin.price_change_percentage_1h_in_currency)}">${formatOneHour(selected.coin)}</dd></div>
             <div><dt>24hr</dt><dd class="${percentClass(selected.coin.price_change_percentage_24h)}">${formatPercent(selected.coin.price_change_percentage_24h)}</dd></div>
             <div><dt>Volume</dt><dd>${formatBig(selected.coin.total_volume)}</dd></div>
             <div><dt>Risk</dt><dd>${riskFor(selected)}</dd></div>
@@ -1642,7 +1673,7 @@ function analysisHtml(selected, portfolioValue) {
             <span>${invalidationSentence(state.label)}</span>
         </div>
         <div class="agent-consensus">
-            <div class="mini-title">Rule checks <span class="badge wait">${consensus.label}</span></div>
+            <div class="mini-title">Rule checks, unproven <span class="badge wait">${SQ.consensusLabel(consensus.label)}</span></div>
             <div class="consensus-grid">
                 ${consensus.agents.map(agent => `
                     <span><small>${agent.name}</small><strong>${agent.result}</strong><em>${agent.reason}</em></span>
@@ -1754,7 +1785,7 @@ function attachAnalysisControls(selected, portfolioValue) {
         if (!(size > 0)) errors.push("Set an intended position size.");
         const stopValue = finiteNumber(document.getElementById("risk-invalid-price")?.value);
         const entryValue = finiteNumber(document.getElementById("risk-entry")?.value, selected.coin.current_price);
-        if (dataConfidence.isFallback) errors.push("Data is stale or unavailable, so plans are blocked.");
+        if (dataConfidence.isFallback) errors.push(`${dataLockText()} Plans are blocked.`);
         if (!(stopValue > 0 && stopValue < entryValue)) errors.push("Set a stop price below entry.");
         if (safeText(document.getElementById("plan-reason")?.value, "").length < 10) errors.push("Write why now in your own words.");
         if (size > 0 && accountValue > 0 && size > accountValue * (rules.maxPositionPct / 100)) {
@@ -1841,14 +1872,14 @@ function agentConsensusFor(item, portfolioValue = 0) {
     const state = guideStateFor(item).label;
     const liquidity = liquidityFor(item);
     const risk = riskFor(item);
-    const oneHour = finiteNumber(item.coin.change1h ?? item.coin.price_change_percentage_1h_in_currency);
+    const oneHour = item.coin.price_change_percentage_1h_in_currency;
     const day = finiteNumber(item.coin.change24h ?? item.coin.price_change_percentage_24h);
     const volume = finiteNumber(item.coin.volume24hAud ?? item.coin.total_volume);
     const agents = [
         {
             name: "Momentum",
-            result: state === "Sell Risk" ? "Reject" : day > 2 && oneHour >= 0 ? "Support" : day > 0 ? "Watch" : "Reject",
-            reason: `${formatPercent(day)} 24h / ${formatPercent(oneHour)} 1h`
+            result: state === "Sell Risk" ? "Reject" : day > 2 && oneHour !== null && oneHour >= 0 ? "Support" : day > 0 ? "Watch" : "Reject",
+            reason: `${formatPercent(day)} 24h / ${oneHour === null ? "1h unavailable" : `${formatPercent(oneHour)} 1h`}`
         },
         {
             name: "Liquidity",
@@ -1878,7 +1909,7 @@ function swingReasonFor(item) {
     const liquidity = liquidityFor(item);
     if (state === "Breakout") return "Positive 24hr move with 1hr confirmation.";
     if (state === "Volume Spike") return "Volume expansion with tradable liquidity.";
-    if (liquidity === "Suitable") return "Momentum and liquidity are aligned.";
+    if (liquidity === "Suitable") return "24hr move and liquidity meet the rule.";
     return "Early positive state with controlled risk.";
 }
 
@@ -1909,10 +1940,10 @@ function renderBestSwingMover(items) {
     if (!candidate) {
         el.innerHTML = `
             <div class="swing-header">
-                <span>Best Swing Mover</span>
+                <span>Research watch: swing rule (unproven)</span>
                 <span class="badge wait">No Action</span>
             </div>
-            <div class="swing-empty">No clear swing candidate right now.</div>
+            <div class="swing-empty">No coin meets the swing rule right now.</div>
         `;
         return;
     }
@@ -1921,14 +1952,14 @@ function renderBestSwingMover(items) {
     const liquidity = liquidityFor(candidate);
     el.innerHTML = `
         <div class="swing-header">
-            <span>Best Swing Mover</span>
+            <span>Research watch: swing rule (unproven)</span>
             <button class="table-action" type="button" data-asset-id="${candidate.coin.id}">Analyse</button>
         </div>
         <div class="swing-body">
             <div class="swing-asset">${coinCell(candidate.coin)} <span class="badge ${state.klass}">${state.label}</span></div>
             <div class="swing-metrics">
-                <span><small>Swing score</small><strong>${candidate.decision.score}</strong></span>
-                <span><small>1hr</small><strong class="${percentClass(candidate.coin.price_change_percentage_1h_in_currency)}">${formatPercent(candidate.coin.price_change_percentage_1h_in_currency)}</strong></span>
+                <span><small>Rule score</small><strong>${candidate.decision.score}</strong></span>
+                <span><small>1hr</small><strong class="${percentClass(candidate.coin.price_change_percentage_1h_in_currency)}">${formatOneHour(candidate.coin)}</strong></span>
                 <span><small>24hr</small><strong class="${percentClass(candidate.coin.price_change_percentage_24h)}">${formatPercent(candidate.coin.price_change_percentage_24h)}</strong></span>
                 <span><small>Liquidity</small><strong>${liquidity}</strong></span>
                 <span><small>Risk</small><strong>${risk}</strong></span>
@@ -1979,7 +2010,7 @@ function renderHighestExitRisk(items, holdingRows) {
         <div class="swing-body">
             <div class="swing-asset">${coinCell(item.coin)} <span class="badge ${state.klass}">${state.label}</span></div>
             <div class="swing-metrics">
-                <span><small>1hr</small><strong class="${percentClass(item.coin.price_change_percentage_1h_in_currency)}">${formatPercent(item.coin.price_change_percentage_1h_in_currency)}</strong></span>
+                <span><small>1hr</small><strong class="${percentClass(item.coin.price_change_percentage_1h_in_currency)}">${formatOneHour(item.coin)}</strong></span>
                 <span><small>24hr</small><strong class="${percentClass(item.coin.price_change_percentage_24h)}">${formatPercent(item.coin.price_change_percentage_24h)}</strong></span>
                 <span><small>Risk</small><strong>${riskFor(item)}</strong></span>
             </div>
@@ -2124,10 +2155,10 @@ function renderPerformanceSummary(targetId, trades = tradeJournal.map(normalizeT
         ["Worst", displayMoneyText(metrics.worst.resultAud, formatSignedMoney)],
         ["Net AUD", displayMoneyText(metrics.net, formatSignedMoney)],
         ["Most traded", metrics.mostTraded],
-        ["Best signal", metrics.bestSignal],
+        ["Top signal in your trades", metrics.bestSignal],
         ["Worst signal", metrics.worstSignal],
         ["Consensus", metrics.consensusCounts],
-        ["Best consensus", metrics.bestConsensus],
+        ["Top consensus in your trades", metrics.bestConsensus],
         ["Worst consensus", metrics.worstConsensus]
     ];
     el.innerHTML = cells.map(([label, value]) => `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(String(value))}</strong></div>`).join("");
@@ -2151,9 +2182,9 @@ function confirmationFor(item, stateLabel) {
     if (volume > 1000000000) score += 1;
     if (stateLabel === "Breakout") score += 1;
     if (stateLabel === "Sell Risk") score += 1;
-    if (score >= 3) return "Strong";
-    if (score >= 2) return "Medium";
-    return "Weak";
+    if (score >= 3) return "Most rules met";
+    if (score >= 2) return "Some rules met";
+    return "Few rules met";
 }
 
 function riskFor(item) {
@@ -2172,7 +2203,13 @@ function liquidityFor(item) {
 }
 
 function signalAgeFor(stateLabel) {
-    return stateLabel === "No Action" ? "Unknown" : "Fresh";
+    if (stateLabel === "No Action") return "Unknown";
+    const freshness = dataConfidence.freshness;
+    if (!freshness) return "Unknown";
+    if (freshness.dataState === "demo") return "Demo";
+    if (freshness.dataState === "unavailable") return "Unavailable";
+    const age = SQ.formatAge(freshness.ageHours);
+    return freshness.dataState === "stale" ? `Stale, ${age}` : `Snapshot ${age}`;
 }
 
 function invalidationFor(stateLabel) {
@@ -2247,7 +2284,7 @@ function renderTradeGuide(items) {
         const fallbackLocked = Boolean(dataConfidence.isFallback);
         const handoffUrl = analysed && planConfirmedAssetId === item.coin.id && !fallbackLocked ? coinspotUrl(item.coin) : null;
         const action = handoffUrl
-            ? `<a class="table-action" href="${handoffUrl}" target="_blank" rel="noopener noreferrer">CoinSpot</a>`
+            ? `<a class="table-action" href="${handoffUrl}" target="_blank" rel="noopener noreferrer" title="Opens CoinSpot's page for this coin. No order details are sent.">CoinSpot</a>`
             : fallbackLocked && analysed
                 ? `<span class="watch-only">Review only</span>`
             : supported === "Supported" && !analysed
@@ -2517,7 +2554,7 @@ function decisionForState(state) {
 
 function eventForState(item) {
     const eventMap = {
-        breakout_event: { type: "Breakout Event", klass: "strong", value: item.coin.price_change_percentage_24h, rule: "24hr above 5% with positive 1hr", triggerState: "breakout_event" },
+        breakout_event: { type: "Breakout Event", klass: "strong", value: item.coin.price_change_percentage_24h, rule: "24hr above 5% with positive 1hr from a snapshot under 1h old", triggerState: "breakout_event" },
         risk_threshold_breach: { type: "Sell Risk", klass: "risk", value: item.coin.price_change_percentage_24h, rule: "24hr below -3%", triggerState: "risk_threshold_breach" },
         volume_spike: { type: "Volume Spike", klass: "volume", value: item.coin.total_volume, rule: "Top AUD volume band", triggerState: "volume_spike" }
     };
@@ -2576,8 +2613,8 @@ function renderLogs(model) {
                 <td class="num">-</td>
                 <td class="num">-</td>
                 <td class="num">-</td>
-                <td><span class="badge wait">Fallback Snapshot</span></td>
-                <td>Data unavailable or stale. Review only. Reason: ${escapeHtml(model.dataConfidence.failureReason)}.</td>
+                <td><span class="badge wait">${escapeHtml(model.dataConfidence.dataKind)}</span></td>
+                <td>${escapeHtml(dataLockText())} Reason: ${escapeHtml(model.dataConfidence.failureReason)}.</td>
             </tr>` : "";
         const cryptoAssets = model.assets.slice(0, 16);
         const rows = cryptoAssets.map(item => {
@@ -2586,7 +2623,7 @@ function renderLogs(model) {
                 <td>${now}</td>
                 <td>${coinCell(item.coin)}</td>
                 <td class="num">${formatPrice(item.coin.current_price)}</td>
-                <td class="num ${percentClass(item.coin.price_change_percentage_1h_in_currency)}">${formatPercent(item.coin.price_change_percentage_1h_in_currency)}</td>
+                <td class="num ${percentClass(item.coin.price_change_percentage_1h_in_currency)}">${formatOneHour(item.coin)}</td>
                 <td class="num ${percentClass(item.coin.price_change_percentage_24h)}">${formatPercent(item.coin.price_change_percentage_24h)}</td>
                 <td><span class="badge ${observation.klass}">${observation.label}</span></td>
                 <td>${observation.note}</td>
@@ -2979,7 +3016,7 @@ function renderWeeklyReport(trades = sharedJournalTrades()) {
         ["Net AUD after fees", displayMoneyText(metrics.net, formatSignedMoney)],
         ["Fees paid", displayMoneyText(metrics.rStats.feesAud, formatPrice)],
         ["Sample size", metrics.rStats.reliable ? `${metrics.closed.length} trades` : `${metrics.closed.length} of 30: too few to judge`],
-        ["Best signal type", metrics.rStats.reliable ? metrics.bestSignal : "Needs 30 trades"],
+        ["Top signal in your trades", metrics.rStats.reliable ? metrics.bestSignal : "Needs 30 trades"],
         ["Worst signal type", metrics.rStats.reliable ? metrics.worstSignal : "Needs 30 trades"],
         ["Most traded asset", metrics.mostTraded]
     ].map(([label, value]) => reportMetric(label, value)).join("");
@@ -3762,7 +3799,7 @@ async function boot() {
         checkFeedHeartbeat();
         const markets = await getMarkets();
         const model = buildDecisionPipeline(markets);
-        recordSignalHistory(model.assets);
+        if (!dataConfidence.isFallback) recordSignalHistory(model.assets);
         if (page === "dashboard") {
             renderDashboard(model);
             renderLogs(model);

@@ -6,7 +6,7 @@ const STOCK_JOURNAL_STORAGE_KEY = "sixquant.stocks.tradeJournal.v1";
 const STOCK_HOLDINGS_STORAGE_KEY = "sixquant.stocks.holdings.v1";
 const STOCK_ASSET_CLASS = "stock";
 const MASTER_STOCK_RULE = "If the idea did not start in SixQuant, do not proceed to broker handoff.";
-const STOCK_PUBLIC_WARNING = "Public Demo Mode uses demo-only stock data. Private Local Mode stores stock records only in this browser.";
+const STOCK_PUBLIC_WARNING = "Public Demo Mode shows sample plans and positions. Private Local Mode stores stock records only in this browser.";
 
 const DEMO_STOCKS = [
     { symbol: "BHP", name: "BHP Group", market: "ASX", sector: "Materials", signalState: "Breakout", riskState: "Controlled", price: 43.2, oneDayChange: 1.4, fiveDayChange: 4.8, relativeVolume: 1.7, marketRegime: "Constructive", reason: "Demo resources setup with price strength and elevated participation", invalidation: "Review if price loses the recorded support level" },
@@ -341,7 +341,7 @@ function normalizeSnapshotAsset(asset) {
         low20: finiteNumber(asset.low20),
         atr14: finiteNumber(asset.atr14),
         currency: safeText(asset.currency, "USD"),
-        reason: "From the delayed ASX feed. Review only. Not a buy/sell recommendation.",
+        reason: "From the delayed ASX feed. An unproven rule state, for review only. Not a buy/sell recommendation.",
         invalidation: "Review if price action or sector context changes materially.",
         source: "snapshot"
     };
@@ -364,25 +364,6 @@ function isSnapshotStale(lastUpdated) {
     if (!lastUpdated) return false;
     const updated = new Date(lastUpdated);
     return !Number.isNaN(updated.getTime()) && (Date.now() - updated.getTime()) > 24 * 60 * 60 * 1000;
-}
-
-async function loadSnapshotData() {
-    try {
-        const resp = await fetch("data/stocks-snapshot.json", { cache: "no-cache" });
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        const data = await resp.json();
-        if (data && Array.isArray(data.assets) && data.assets.length > 0) {
-            if (!snapshotData || snapshotSource !== "snapshot") {
-                snapshotData = data;
-                snapshotSource = "snapshot";
-            }
-        } else {
-            if (!snapshotData) snapshotSource = "demo";
-        }
-    } catch (_e) {
-        if (!snapshotData) snapshotSource = "demo";
-    }
-    renderAll();
 }
 
 function findSelectedStock() {
@@ -455,7 +436,7 @@ function initModeControls() {
     status.className = "privacy-status-line";
     status.innerHTML = `
         <span><strong data-portal-mode-label>${isPublicDemoMode() ? "Public Demo" : "Private Local"}</strong>: ${STOCK_PUBLIC_WARNING}</span>
-        <span data-demo-message>Demo stock data - not real trading data.</span>
+        <span data-demo-message>Demo plans and positions — not real. Prices follow the data state shown.</span>
     `;
     topbar.insertAdjacentElement("afterend", status);
     mode.querySelector("select").addEventListener("change", event => {
@@ -610,20 +591,28 @@ function agentOutputClass(output) {
     }[output] || "wait";
 }
 
+// Names no single ticker: no signal has shown an edge, so none is "best".
+function researchWatchText(stocks) {
+    if (snapshotSource !== "snapshot") return "Demo prices only";
+    const freshness = window.SQ ? SQ.asxFreshness(snapshotData) : null;
+    if (freshness && freshness.blocks) return `Paused: data ${freshness.dataState}`;
+    const matches = stocks.filter(stock => stock.signalState === "Breakout" || stock.signalState === "Volume Spike").length;
+    return `${matches} rule ${matches === 1 ? "match" : "matches"}, unproven`;
+}
+
 function renderOpportunityQueue() {
     const body = document.getElementById("stock-opportunities-body");
     if (!body) return;
     const stocks = rankedStocks();
-    const bestSetup = stocks.find(stock => stock.signalState === "Breakout" || stock.signalState === "Volume Spike");
-    const bestSetupEl = document.getElementById("stock-best-setup");
-    if (bestSetupEl) bestSetupEl.textContent = bestSetup ? `${bestSetup.symbol} / ${bestSetup.signalState}` : "No setup";
+    const watchEl = document.getElementById("stock-research-watch");
+    if (watchEl) watchEl.textContent = researchWatchText(stocks);
     body.innerHTML = stocks.map((stock, index) => {
         const action = stockActionFor(stock);
         return `
         <tr>
             <td class="num">${index + 1}</td>
             <td><strong>${escapeHtml(stock.symbol)}</strong><br><span class="muted">${escapeHtml(stock.market)}</span></td>
-            <td>${escapeHtml(stock.name)}</td>
+            <td class="stock-company-cell" title="${escapeHtml(stock.name)}" aria-label="${escapeHtml(stock.name)}">${escapeHtml(stock.name)}</td>
             <td>${escapeHtml(stock.sector)}</td>
             <td class="num">${formatMoney(stock.price)}</td>
             <td class="num ${stock.oneDayChange > 0 ? "positive" : stock.oneDayChange < 0 ? "negative" : "neutral"}">${formatSignedChange(stock.oneDayChange)}</td>
@@ -697,7 +686,7 @@ function renderAnalysis() {
                 <div class="rule-card ${stock.oneDayChange > 0 ? "strong" : stock.oneDayChange < 0 ? "risk" : "watch"}">1D Change<span>${formatSignedChange(stock.oneDayChange)}</span></div>
                 <div class="rule-card ${stock.fiveDayChange > 0 ? "strong" : stock.fiveDayChange < 0 ? "risk" : "watch"}">5D Change${stock.fiveDayPartial ? " (partial)" : ""}<span>${formatSignedChange(stock.fiveDayChange)}${stock.fiveDayPartial ? "*" : ""}</span></div>
                 <div class="rule-card volume">Relative Volume<span>${finiteNumber(stock.relativeVolume).toFixed(1)}x</span></div>
-                <div class="rule-card ${signalBadgeClass(stock.signalState)}">Signal State<span>${escapeHtml(stock.signalState)}</span></div>
+                <div class="rule-card ${signalBadgeClass(stock.signalState)}">Signal state (unproven)<span>${escapeHtml(stock.signalState)}</span></div>
                 <div class="rule-card risk">Risk State<span>${escapeHtml(stock.riskState)}</span></div>
                 <div class="rule-card">Market Regime<span>${escapeHtml(stock.marketRegime)}</span></div>
                 <div class="rule-card risk">Invalidation<span>${escapeHtml(stock.invalidation)}</span></div>
@@ -707,7 +696,7 @@ function renderAnalysis() {
                 <div class="rule-card">Average daily range (ATR 14)<span>${referenceLevel(stock.atr14)}</span></div>
             </div>
             <div class="agent-consensus stock-agent-consensus">
-                <div class="mini-title">Stock Agent Consensus <span class="badge ${consensusBadgeClass(consensus.consensus)}">${escapeHtml(consensus.consensus)}</span></div>
+                <div class="mini-title">Rule checks, unproven <span class="badge ${consensusBadgeClass(consensus.consensus)}">${escapeHtml(SQ.consensusLabel(consensus.consensus))}</span></div>
                 <div class="consensus-grid">
                     ${consensus.agents.map(agent => `
                         <span>
@@ -861,7 +850,7 @@ function renderBrokerReview() {
                 <div class="rule-card ${planSaved ? "strong" : "watch"}">Plan<span>${planSaved ? "Saved in SixQuant" : "Save plan first"}</span></div>
                 <div class="rule-card ${checklistComplete ? "strong" : "watch"}">Checklist<span>${completedBrokerChecks.size} / ${brokerChecklistItems.length}</span></div>
                 <div class="rule-card">Broker handoff<span>Broker execution not connected.</span></div>
-                <div class="rule-card risk">Status<span>${ready ? "Placeholder only" : "Locked"}</span></div>
+                <div class="rule-card risk">Status<span>${ready ? "Not live-trade-ready" : "Locked"}</span></div>
             </div>
             ${savedPlan ? `<p class="broker-lock-note">Saved plan: ${escapeHtml(savedPlan.symbol)} / ${escapeHtml(savedPlan.state)} / ${escapeHtml(savedPlan.entryTrigger)}. Broker execution not connected.</p>` : ""}
             <p class="broker-lock-note">Broker execution not connected. SixQuant does not open, prefill, or link to a broker.</p>
@@ -928,14 +917,19 @@ function initPlanForm() {
     if (!form) return;
     form.addEventListener("submit", event => {
         event.preventDefault();
+        form.dataset.planSaved = "";
         const data = new FormData(form);
         const message = document.getElementById("stock-plan-message");
         const rules = loadRiskRules();
         const size = finiteNumber(data.get("positionSize"));
         const accountValue = finiteNumber(data.get("accountValue"));
-        const freshness = window.SQ && snapshotSource === "snapshot" ? SQ.asxFreshness(snapshotData) : null;
-        if (freshness && freshness.blocks) {
-            if (message) message.textContent = `Plan not recorded: ${freshness.label}. Wait for fresh data.`;
+        const gate = SQ.stockPlanGate({
+            source: snapshotSource,
+            freshness: snapshotSource === "snapshot" ? SQ.asxFreshness(snapshotData) : null,
+            isPrivate: !isPublicDemoMode()
+        });
+        if (!gate.allowed) {
+            if (message) message.textContent = gate.message;
             return;
         }
         const stopPrice = finiteNumber(data.get("invalidationPrice"));
@@ -973,6 +967,7 @@ function initPlanForm() {
             recordedAt: new Date().toISOString()
         });
         stockJournal = saveCollection(STOCK_JOURNAL_STORAGE_KEY, [plan, ...stockJournal.map(normalizePlan).filter(row => row.symbol !== plan.symbol || PLANNER_MANAGED(row))]);
+        form.dataset.planSaved = "true";
         selectedStockSymbol = plan.symbol;
         document.getElementById("stock-plan-message").textContent = isPublicDemoMode()
             ? "Demo Mode: plan shown in this page only. Switch to Private Local Mode to save browser-local stock data."
@@ -1011,13 +1006,12 @@ function renderSourceBadge() {
     if (!badge) return;
     const subtitle = document.getElementById("stock-queue-subtitle");
     if (snapshotSource === "snapshot" && snapshotData) {
-        const mode = snapshotData.displayMode || snapshotData.mode || "snapshot";
+        const mode = snapshotData.displayMode || snapshotData.mode || "offline";
         const label = {
             delayed: "ASX DELAYED feed (unlicensed)",
-            fallback: "ASX delayed — STALE fallback",
-            offline: "ASX offline",
-            snapshot: "ASX daily snapshot"
-        }[mode] || "ASX daily snapshot";
+            fallback: "ASX STALE feed (unlicensed)",
+            offline: "ASX feed UNAVAILABLE"
+        }[mode] || "ASX STALE feed (unlicensed)";
         badge.textContent = label;
         if (subtitle) {
             const src = snapshotData.source || "snapshot";
@@ -1026,13 +1020,13 @@ function renderSourceBadge() {
             const universe = snapshotData.universeMeta && snapshotData.universeMeta.asOf
                 ? ` | Universe: ${escapeHtml(snapshotData.universeMeta.name || "ASX list")} rev ${escapeHtml(String(snapshotData.universeMeta.revision ?? "?"))} (${escapeHtml(snapshotData.universeMeta.asOf)})`
                 : "";
-            subtitle.textContent = (mode === "delayed" || mode === "fallback")
-                ? `DELAYED, unlicensed data — not real-time. Source: ${src} | Mode: ${mode} | As at: ${updated} | Errors: ${errors}${universe}`
-                : "Ranked from a daily SNAPSHOT — delayed, review only. Not real-time and not buy/sell recommendations.";
+            subtitle.textContent = mode === "delayed"
+                ? `DELAYED, unlicensed data, not real-time. States are unproven rules and rank is a rule score, not merit. Source: ${src} | As at: ${updated} | Errors: ${errors}${universe}`
+                : `STALE, unlicensed data, review only. States are unproven rules. New plans are blocked. Source: ${src} | As at: ${updated} | Errors: ${errors}${universe}`;
         }
     } else {
         badge.textContent = "DEMO data (not real)";
-        if (subtitle) subtitle.textContent = "Demo-only ranked review list. No live feed, no licensed data, no paid API.";
+        if (subtitle) subtitle.textContent = "DEMO prices because the ASX feed is unavailable. Not real, and states here are unproven rules. Saved plans are blocked.";
     }
 }
 
@@ -1050,7 +1044,9 @@ function renderStalenessWarning() {
             // but the operator must never mistake it for licensed real-time data.
             warning.innerHTML = `<span><strong>DELAYED ASX data — not licensed real-time.</strong> Review-only prices from an unlicensed delayed provider; confirm live price, spread and liquidity in your broker before any execution.${holidayNote} As at: ${asAt}.</span>`;
         } else {
-            warning.innerHTML = `<span><strong>ASX feed mode: ${escapeHtml(mode)}</strong> — ${escapeHtml(mode === "offline" ? "provider feed not populated yet; run the GitHub Action before any stock use." : "data may be STALE; confirm price in broker before execution.")}${holidayNote} As at: ${asAt}.</span>`;
+            warning.innerHTML = mode === "offline"
+                ? `<span><strong>ASX feed UNAVAILABLE.</strong> Do not plan from this page.${holidayNote} As at: ${asAt}.</span>`
+                : `<span><strong>ASX data STALE.</strong> New plans are blocked until the feed refreshes.${holidayNote} As at: ${asAt}.</span>`;
         }
     } else {
         warning.hidden = !(snapshotSource === "snapshot" && snapshotData && isSnapshotStale(snapshotData.lastUpdated));
@@ -1100,5 +1096,4 @@ initMasterRuleFooter();
 initPlanForm();
 initTabs();
 renderAll();
-loadSnapshotData();
 loadStockHistory();

@@ -147,7 +147,7 @@
             .slice(0, 6);
         el.innerHTML = rows.length
             ? `<ul class="sq-candidate-list">${rows.map(a => `<li><a href="planner.html?symbol=${encodeURIComponent(a.symbol)}"><strong>${e(a.symbol)}</strong> <span class="muted">${e(a.name)}</span></a><span class="sq-cand-meta">${S.price(a.price)} · ${a.change1d > 0 ? "+" : ""}${Number(a.change1d).toFixed(1)}% · ${e(a.trend)} trend</span><span class="badge ${a.signalState === "Breakout" ? "strong" : "volume"}">${e(a.signalState)}</span></li>`).join("")}</ul>`
-            : `<p class="compact-empty">No setups at the last close. Doing nothing is a valid result.</p>`;
+            : `<p class="compact-empty">No rule matches at the last close. Doing nothing is a valid result.</p>`;
     }
 
     function renderProgress(trades) {
@@ -163,7 +163,7 @@
             <div class="sq-meter"><span>Paper expectancy</span><strong>${grad.stats.rCount ? S.rText(grad.stats.expectancyR) : "No data"}</strong><small>${grad.stats.count} closed${grad.stats.reliable ? "" : ", too few to judge"}</small></div>
             <div class="sq-meter"><span>Live result</span><strong>${live.count ? S.money(live.netAud, { signed: true }) : "None"}</strong><small>${live.count} closed</small></div>`;
         byId("sq-graduation").innerHTML = `
-            <p class="sq-grad-verdict ${grad.met ? "positive" : ""}">${grad.met ? "Paper criteria met. That is a process milestone, not proof of an edge." : "Stay on paper until all three are met."}</p>
+            <p class="sq-grad-verdict ${grad.met ? "positive" : ""}">${grad.met ? "Paper criteria met. That is a process milestone, not proof of an edge, and this data is not live-trade-ready." : "Stay on paper until all three are met."}</p>
             <ul class="sq-checks">${grad.criteria.map(c => `<li class="sq-check ${c.met ? "pass" : "manual"}"><span class="sq-check-mark">${c.met ? "Met" : "Open"}</span><span>${e(c.label)}</span><small>${e(c.value)}</small></li>`).join("")}</ul>`;
     }
 
@@ -242,7 +242,7 @@
             byId("sq-crypto-line").textContent = c.label;
             byId("sq-crypto-line").classList.toggle("negative", c.blocks);
         } catch {
-            byId("sq-crypto-line").textContent = "Crypto data offline";
+            byId("sq-crypto-line").textContent = "Crypto data UNAVAILABLE";
         }
     }
     init();
