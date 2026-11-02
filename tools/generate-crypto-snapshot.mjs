@@ -1,5 +1,6 @@
 import { writeFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
+import { snapshotRow } from './crypto-row.mjs';
 
 const OUTPUT_PATH = path.join(process.cwd(), 'data', 'crypto-snapshot.json');
 const USER_AGENT = 'SixQuant-Terminal-Crypto-Snapshot/1.0';
@@ -28,19 +29,7 @@ async function fetchMarkets() {
 async function buildSnapshot() {
   const coins = await fetchMarkets();
 
-  const assets = coins.map(coin => ({
-    id: coin.id,
-    symbol: coin.symbol,
-    name: coin.name,
-    priceAud: coin.current_price,
-    marketCapAud: coin.market_cap,
-    volume24hAud: coin.total_volume,
-    change1h: coin.price_change_percentage_1h_in_currency ?? 0,
-    change24h: coin.price_change_percentage_24h ?? 0,
-    rank: coin.market_cap_rank,
-    image: coin.image || '',
-    sparkline_in_7d: coin.sparkline_in_7d || { price: [] }
-  }));
+  const assets = coins.map(snapshotRow);
 
   const snapshot = {
     schema: 'sixquant.crypto.snapshot.v1',

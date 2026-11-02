@@ -24,6 +24,9 @@
     const SYDNEY = "Australia/Sydney";
     // Data for a session is expected on the feed from this Sydney hour onward.
     const SESSION_DATA_READY_HOUR = 17;
+    const ONE_HOUR_MAX_AGE_HOURS = 1;
+    const CLOCK_SKEW_HOURS = 5 / 60;
+    const LICENSED_DATA_CLASS = "licensed-realtime";
 
     const num = (value, fallback = 0) => {
         const n = Number(value);
@@ -81,11 +84,13 @@
     }
 
     // ---- Data trust -------------------------------------------------------
-    // state: current | behind | stale | offline. Only stale/offline block plans.
+    // state: current | behind | stale | offline | demo (drives styling and blocks).
+    // dataState: the one word every page shows: delayed | stale | unavailable | demo.
+    // Only stale and unavailable block plans. Demo is handled by stockPlanGate.
     function asxFreshness(feed, now = new Date()) {
         const assets = Array.isArray(feed?.assets) ? feed.assets : [];
         if (!assets.length || feed?.mode === "offline") {
-            return { state: "offline", blocks: true, label: "ASX data offline", detail: "No feed is available. Do not plan from this page." };
+            return { state: "offline", dataState: "unavailable", blocks: true, label: "ASX data UNAVAILABLE", detail: "No feed is available. Do not plan from this page." };
         }
         const holidays = Array.isArray(feed.asxHolidays) ? feed.asxHolidays : [];
         const lastSession = feed.lastSessionDate || "";
@@ -95,26 +100,77 @@
         const intraday = lastSession === todayKey && hour < SESSION_DATA_READY_HOUR;
         const when = formatSessionDate(lastSession);
         if (!lastSession || behind >= 2) {
-            return { state: "stale", blocks: true, lastSession, behind, label: `ASX data STALE: last close ${when}`, detail: `The feed is ${Number.isFinite(behind) ? behind : "several"} sessions behind. New plans are blocked until it refreshes.` };
+            return { state: "stale", dataState: "stale", blocks: true, lastSession, behind, label: `ASX data STALE: last close ${when}`, detail: `The feed is ${Number.isFinite(behind) ? behind : "several"} sessions behind. New plans are blocked until it refreshes.` };
         }
         if (behind === 1) {
-            return { state: "behind", blocks: false, lastSession, behind, label: `ASX last close ${when}: next update pending`, detail: "Today's close has not reached the feed yet. Levels may be one session old." };
+            return { state: "behind", dataState: "delayed", blocks: false, lastSession, behind, label: `ASX DELAYED: last close ${when}, next update pending`, detail: "Today's close has not reached the feed yet. Levels may be one session old." };
         }
         if (intraday) {
-            return { state: "current", blocks: false, intraday: true, lastSession, behind: 0, label: `ASX part-session ${when}, delayed`, detail: "Today's bar is incomplete, so volume and signals are provisional until the close." };
+            return { state: "current", dataState: "delayed", blocks: false, intraday: true, lastSession, behind: 0, label: `ASX DELAYED: part-session ${when}`, detail: "Today's bar is incomplete, so volume and signals are provisional until the close." };
         }
-        return { state: "current", blocks: false, lastSession, behind: 0, label: `ASX last close ${when}, delayed`, detail: "End-of-day data. Confirm live price and spread at your broker before any order." };
+        return { state: "current", dataState: "delayed", blocks: false, lastSession, behind: 0, label: `ASX DELAYED: last close ${when}`, detail: "End-of-day data. Confirm live price and spread at your broker before any order." };
     }
     function cryptoFreshness(lastUpdated, now = new Date()) {
         const at = new Date(lastUpdated);
         if (!lastUpdated || Number.isNaN(at.getTime())) {
-            return { state: "offline", blocks: true, ageHours: Infinity, label: "Crypto data offline", detail: "The snapshot has no timestamp." };
+            return { state: "offline", dataState: "unavailable", blocks: true, ageHours: Infinity, label: "Crypto data UNAVAILABLE", detail: "The snapshot has no timestamp." };
         }
         const ageHours = (now.getTime() - at.getTime()) / 36e5;
+        if (ageHours < -CLOCK_SKEW_HOURS) {
+            return { state: "offline", dataState: "unavailable", blocks: true, ageHours: Infinity, label: "Crypto data UNAVAILABLE", detail: "The snapshot timestamp is in the future." };
+        }
         const age = formatAge(ageHours);
-        if (ageHours > 24) return { state: "stale", blocks: true, ageHours, label: `Crypto snapshot STALE: ${age}`, detail: "Prices are too old to plan from. New plans are blocked." };
-        if (ageHours > 12) return { state: "behind", blocks: false, ageHours, label: `Crypto snapshot ${age}: refresh overdue`, detail: "Expected a refresh within 12 hours." };
-        return { state: "current", blocks: false, ageHours, label: `Crypto snapshot ${age}`, detail: "Refreshed about three times a day. This is never a live price." };
+        if (ageHours > 24) return { state: "stale", dataState: "stale", blocks: true, ageHours, label: `Crypto snapshot STALE: ${age}`, detail: "Prices are too old to plan from. New plans are blocked." };
+        if (ageHours > 12) return { state: "behind", dataState: "delayed", blocks: false, ageHours, label: `Crypto DELAYED: snapshot ${age}, refresh overdue`, detail: "Expected a refresh within 12 hours." };
+        return { state: "current", dataState: "delayed", blocks: false, ageHours, label: `Crypto DELAYED: snapshot ${age}`, detail: "Refreshed about three times a day. This is never a live price." };
+    }
+    function demoFreshness(market) {
+        return { state: "demo", dataState: "demo", blocks: false, label: `${market} DEMO prices: feed unavailable`, detail: "Built-in sample prices, not real. Do not plan real or paper trades from them." };
+    }
+
+    // A live-trade-ready status needs a licensed real-time feed AND current data.
+    // No SixQuant feed is licensed today, so this returns ready: false everywhere.
+    function liveTradeReady({ freshness, dataClass } = {}) {
+        const state = freshness?.dataState;
+        if (state === "demo") return { ready: false, reason: "Not live-trade-ready: demo prices are not real." };
+        if (state === "stale") return { ready: false, reason: "Not live-trade-ready: the data is stale." };
+        if (state !== "delayed" && state !== "licensed") return { ready: false, reason: "Not live-trade-ready: the data is unavailable." };
+        if (dataClass !== LICENSED_DATA_CLASS) return { ready: false, reason: "Not live-trade-ready: the data is delayed and unlicensed." };
+        if (freshness.state !== "current") return { ready: false, reason: "Not live-trade-ready: the licensed feed is behind." };
+        return { ready: true, reason: "Licensed feed with current data." };
+    }
+
+    // A 1hr return describes the hour before the snapshot, so it only means "the
+    // last hour" while the snapshot itself is under an hour old.
+    function oneHourReturn(value, { dataState, lastUpdated } = {}, now = new Date()) {
+        const unavailable = reason => ({ available: false, value: null, reason });
+        if (dataState === "demo") return unavailable("Demo prices have no real 1hr return.");
+        const at = new Date(lastUpdated);
+        if (!lastUpdated || Number.isNaN(at.getTime())) return unavailable("The snapshot has no valid timestamp.");
+        const ageHours = (now.getTime() - at.getTime()) / 36e5;
+        if (ageHours < -CLOCK_SKEW_HOURS) return unavailable("The snapshot timestamp is in the future.");
+        if (ageHours > ONE_HOUR_MAX_AGE_HOURS) return unavailable(`The snapshot is ${formatAge(ageHours)}. A 1hr return needs a snapshot under 1h old.`);
+        const numeric = value === null || value === undefined || value === "" ? NaN : Number(value);
+        if (!Number.isFinite(numeric)) return unavailable("The snapshot has no 1hr value for this coin.");
+        return { available: true, value: numeric, reason: "" };
+    }
+
+    // Stocks page plan gate. Demo prices can be tried out in Public Demo Mode, where
+    // nothing is saved, but they must never reach saved records.
+    function stockPlanGate({ source, freshness, isPrivate } = {}) {
+        if (source !== "snapshot") {
+            return isPrivate
+                ? { allowed: false, message: "Plan not recorded: these are DEMO prices because the ASX feed is unavailable. Wait for real data." }
+                : { allowed: true, message: "" };
+        }
+        if (freshness?.blocks) return { allowed: false, message: `Plan not recorded: ${freshness.label}. Wait for fresh data.` };
+        return { allowed: true, message: "" };
+    }
+
+    // Signal wording shown on screen. Saved records keep their original labels so
+    // existing journal entries and groupings do not change.
+    function consensusLabel(label) {
+        return { "High Consensus": "Rules agree (unproven)", "Analyse Candidate": "Research candidate" }[label] || label;
     }
 
     // ---- Sizing -----------------------------------------------------------
@@ -280,6 +336,10 @@
 
         add("data", ctx.freshness?.blocks ? "fail" : ctx.freshness?.state === "behind" ? "warn" : "pass",
             "Data is recent enough", ctx.freshness?.label || "Unknown data state");
+        if (plan.mode === "live") {
+            const live = liveTradeReady({ freshness: ctx.freshness, dataClass: ctx.dataClass });
+            add("live-ready", live.ready ? "pass" : "warn", "Data feed for a live trade", live.reason);
+        }
         add("thesis", String(plan.whyNow || "").trim().length >= 10 ? "pass" : "fail", "Thesis written in your own words", "At least a short sentence.");
         add("trigger", String(plan.trigger || "").trim() ? "pass" : "fail", "Entry trigger defined");
         add("stop", stop > 0 && entry > stop ? "pass" : "fail", "Stop is a price below entry");
@@ -455,7 +515,7 @@
     return {
         KEYS, DEFAULT_RULES, DEFAULT_FEES, DEFAULT_ACCOUNT, GRADUATION,
         sydneyParts, expectedSession, sessionsBehind, isTradingDay, formatSessionDate, formatAge,
-        asxFreshness, cryptoFreshness,
+        asxFreshness, cryptoFreshness, demoFreshness, liveTradeReady, oneHourReturn, stockPlanGate, consensusLabel,
         sizePosition, estimatedFees,
         tradeId, normalizeStockTrade, markEntered, closeResult, closeTrade, positionStatus, openExposure,
         planChecks, checksPass, tradeStats, graduation,

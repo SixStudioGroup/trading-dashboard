@@ -2,6 +2,7 @@
 // Run: node scripts/test_core.mjs   (exit 0 = pass, non-zero = fail)
 import { createRequire } from 'node:module';
 import { dailyBarsFromYahoo, barMetrics, sessionDateOf } from '../tools/asx-bars.mjs';
+import { snapshotRow } from '../tools/crypto-row.mjs';
 
 const require = createRequire(import.meta.url);
 const SQ = require('../sq-core.js');
@@ -219,6 +220,63 @@ const near = (a, b, tol = 0.005) => Math.abs(a - b) <= tol;
   ok('csv: quotes commas', csv.includes('"a, ""b"""'));
   ok('csv: negative numbers stay numeric', csv.includes(',-12.5,'));
   ok('csv: neutralises spreadsheet formulas', csv.includes("'=HYPERLINK") && !/,=HYPERLINK/.test(csv));
+}
+
+// --- 1hr return: only from valid, fresh 1-hour data ---
+{
+  const now = new Date('2026-11-02T00:00:00Z');
+  const ago = hours => new Date(now.getTime() - hours * 36e5).toISOString();
+  const real = { dataState: 'delayed' };
+  const seven = SQ.oneHourReturn(-0.0572, { ...real, lastUpdated: ago(7) }, now);
+  ok('1hr: 7h-old snapshot gives no value', seven.available === false && seven.value === null);
+  ok('1hr: 7h-old snapshot says why', /7h old/.test(seven.reason) && /under 1h/.test(seven.reason), seven.reason);
+  ok('1hr: 61 minutes is too old', SQ.oneHourReturn(1, { ...real, lastUpdated: ago(61 / 60) }, now).available === false);
+  const fresh = SQ.oneHourReturn(-0.0572, { ...real, lastUpdated: ago(0.5) }, now);
+  ok('1hr: 30-minute snapshot keeps the value', fresh.available && fresh.value === -0.0572);
+  ok('1hr: real zero from a fresh snapshot stays zero', SQ.oneHourReturn(0, { ...real, lastUpdated: ago(0.5) }, now).value === 0);
+  ok('1hr: missing value is not zero', SQ.oneHourReturn(null, { ...real, lastUpdated: ago(0.5) }, now).value === null);
+  ok('1hr: text value is rejected', SQ.oneHourReturn('n/a', { ...real, lastUpdated: ago(0.5) }, now).available === false);
+  ok('1hr: demo prices give no value', SQ.oneHourReturn(0.16, { dataState: 'demo' }, now).available === false);
+  ok('1hr: no timestamp gives no value', SQ.oneHourReturn(0.16, real, now).available === false);
+  ok('1hr: future timestamp gives no value', SQ.oneHourReturn(0.16, { ...real, lastUpdated: ago(-2) }, now).available === false);
+  ok('snapshot row: missing 1hr stays null', snapshotRow({ id: 'x' }).change1h === null);
+  ok('snapshot row: real 1hr is kept', snapshotRow({ price_change_percentage_1h_in_currency: -0.5 }).change1h === -0.5);
+}
+
+// --- Data states stay distinct, and none of them is live-trade-ready today ---
+{
+  const at = s => new Date(s);
+  const feed = { mode: 'delayed', dataClass: 'delayed-unlicensed', assets: [{ symbol: 'A' }], lastSessionDate: '2026-10-30', asxHolidays: [] };
+  const now = at('2026-11-01T06:00:00Z');
+  const delayed = SQ.asxFreshness(feed, now);
+  const stale = SQ.asxFreshness({ ...feed, lastSessionDate: '2026-10-20' }, now);
+  const gone = SQ.asxFreshness({ mode: 'offline', assets: [] }, now);
+  const demo = SQ.demoFreshness('ASX');
+  ok('states: delayed / stale / unavailable / demo', [delayed, stale, gone, demo].map(f => f.dataState).join() === 'delayed,stale,unavailable,demo');
+  ok('labels: each names its state', /DELAYED/.test(delayed.label) && /STALE/.test(stale.label) && /UNAVAILABLE/.test(gone.label) && /DEMO/.test(demo.label));
+  const c = SQ.cryptoFreshness('2026-11-01T05:00:00Z', now);
+  ok('crypto: fresh snapshot is delayed, never live', c.dataState === 'delayed' && /DELAYED/.test(c.label));
+  ok('crypto: future timestamp is unavailable', SQ.cryptoFreshness('2026-11-01T09:00:00Z', now).dataState === 'unavailable');
+
+  ok('live-ready: delayed unlicensed is not', !SQ.liveTradeReady({ freshness: delayed, dataClass: feed.dataClass }).ready);
+  ok('live-ready: stale is not, even licensed', !SQ.liveTradeReady({ freshness: stale, dataClass: 'licensed-realtime' }).ready);
+  ok('live-ready: demo is not, even licensed', !SQ.liveTradeReady({ freshness: demo, dataClass: 'licensed-realtime' }).ready);
+  ok('live-ready: unavailable is not', !SQ.liveTradeReady({ freshness: gone }).ready);
+  ok('live-ready: no data class is not', !SQ.liveTradeReady({ freshness: delayed }).ready);
+  ok('live-ready: licensed but behind is not', !SQ.liveTradeReady({ freshness: { ...delayed, state: 'behind' }, dataClass: 'licensed-realtime' }).ready);
+  ok('live-ready: licensed and current is the only yes', SQ.liveTradeReady({ freshness: delayed, dataClass: 'licensed-realtime' }).ready);
+
+  const plan = { mode: 'live', entry: 10, stop: 9, target: 13, account: 10000, whyNow: 'A long enough thesis', trigger: 'x', size: { units: 10 } };
+  const live = SQ.planChecks(plan, { freshness: delayed, dataClass: feed.dataClass, trades: [] }).find(x => x.id === 'live-ready');
+  ok('plan check: live on delayed data warns', live?.status === 'warn' && /Not live-trade-ready/.test(live.detail));
+  ok('plan check: paper plan has no live check', !SQ.planChecks({ ...plan, mode: 'paper' }, { freshness: delayed, trades: [] }).some(x => x.id === 'live-ready'));
+
+  ok('stocks gate: demo prices never reach saved records', SQ.stockPlanGate({ source: 'demo', isPrivate: true }).allowed === false);
+  ok('stocks gate: demo mode may try the form', SQ.stockPlanGate({ source: 'demo', isPrivate: false }).allowed === true);
+  ok('stocks gate: stale blocks', SQ.stockPlanGate({ source: 'snapshot', freshness: stale, isPrivate: true }).allowed === false);
+  ok('stocks gate: delayed allows', SQ.stockPlanGate({ source: 'snapshot', freshness: delayed, isPrivate: true }).allowed === true);
+
+  ok('wording: no consensus claim on screen', SQ.consensusLabel('High Consensus') === 'Rules agree (unproven)' && SQ.consensusLabel('Watch Only') === 'Watch Only');
 }
 
 console.log(`core tests: ${passed} passed, ${failures.length} failed`);
