@@ -1166,6 +1166,7 @@ html:not([data-device="phone"]) body[data-page="stocks"]:not([data-view="planner
 
 /* Copilot */
 .sq-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+#cp-clear[hidden] { display: none; }
 #cp-status { margin: 12px 0 14px; }
 .cp-grid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 14px; align-items: start; margin-bottom: 14px; }
 .cp-chat-head, .cp-list-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
