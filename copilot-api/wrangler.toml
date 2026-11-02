@@ -1,0 +1,9 @@
+name = "sixquant-copilot"
+main = "src/worker.js"
+compatibility_date = "2026-10-01"
+compatibility_flags = ["nodejs_compat"]
+account_id = "a4487004c52cd5a94231362f75039efc"
+
+[[kv_namespaces]]
+binding = "COPILOT"
+id = "26889d30f9244436880b36beb3ad5e2e"

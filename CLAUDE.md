@@ -7,10 +7,11 @@ trading-capable credentials. See SECURITY.md and docs/IMPROVEMENT-ROADMAP.md.
 
 ## Surfaces
 
-- `index.html` + `app.js` — Crypto Terminal, the home page (labelled unproven)
+- `index.html` + `copilot.js` — Copilot, the home page: AI chat, ranked shortlist, per-symbol brief
+- `crypto.html` + `app.js` — Crypto Terminal (labelled unproven)
 - `stocks.html` + `stocks.js` + `stock-release2.js` — Stocks table and cockpit (ASX delayed feed)
 - `today.html` + `today.js`, `planner.html` + `planner.js` — optional extras, linked from the footer
-- `crypto.html` — redirect to `index.html`
+- `copilot-api/` — Cloudflare Worker for AI chat (`wrangler deploy` from that folder, not deployed by the Pages push). Holds the Anthropic key in KV; access code in a Worker secret; no broker connection
 - `sq-core.js` — pure maths, data-age rules, trade lifecycle, backup (tested by `scripts/test_core.mjs`)
 - `sq-store.js` — browser layer shared by Today, the planner and the Stocks data bar
 - `journal.html`, `alerts.html`, `logs.html`, `reports.html`, `guide.html`, `settings.html`
@@ -36,6 +37,10 @@ GitHub Actions generate and commit JSON snapshots (no client-side API keys):
   for charts. Bars are merged per Sydney session in `tools/asx-bars.mjs`.
 - Schema strings are labels, not validated; if renamed, update generators, the
   offline handling in sq-core.js, and committed data files together.
+
+- `copilot-feed.yml` → `tools/copilot/generate.py` → `data/copilot.json` (schema
+  `sixquant.copilot.v1`), analysis from vendored MIT `tools/copilot/trading_skills`, no broker code.
+  `tools/copilot/backtest.py` → `data/copilot-evidence.json`, run by hand, shown on the page.
 
 ## localStorage namespace
 

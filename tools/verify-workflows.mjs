@@ -198,7 +198,7 @@ const selectEth = `document.querySelector('#opportunities-body [data-asset-id="e
 
 async function scenarioStaleOneHour() {
   const c = await openContext("sevenHours");
-  await c.go("index.html");
+  await c.go("crypto.html");
   await c.until(`document.querySelector("#opportunities-body tr td:nth-child(5)")?.textContent.trim() && !document.querySelector("#opportunities-body .skeleton-row")`, "crypto rows");
   const rows = await c.evaluate(oneHourCells);
   check("7h snapshot: every 1hr cell reads Unavailable", rows.length > 0 && rows.every(r => r.hour === "Unavailable"), JSON.stringify(rows.map(r => r.hour)));
@@ -221,7 +221,7 @@ async function scenarioStaleOneHour() {
 
 async function scenarioFreshOneHour() {
   const c = await openContext("fresh");
-  await c.go("index.html");
+  await c.go("crypto.html");
   await c.until(`document.querySelector("#opportunities-body tr td:nth-child(5)") && !document.querySelector("#opportunities-body .skeleton-row")`, "crypto rows");
   const rows = await c.evaluate(oneHourCells);
   const eth = rows.find(r => /ETH/.test(r.coin));
@@ -233,7 +233,7 @@ async function scenarioFreshOneHour() {
   check("fresh snapshot: Breakout can appear", eth?.signal === "Breakout", eth?.signal);
 
   // Crypto plan and the CoinSpot link, in Private Local mode with fresh data.
-  await c.setPrivate("index.html");
+  await c.setPrivate("crypto.html");
   await c.until(`document.querySelector('#opportunities-body [data-asset-id="ethereum"]')`, "crypto rows");
   const hrefs = `[...document.querySelectorAll("#trade-guide-body a")].map(a => a.href)`;
   check("before the gate: no CoinSpot link", !(await c.evaluate(hrefs)).length);
@@ -266,7 +266,7 @@ async function scenarioFreshOneHour() {
 async function scenarioDemoAndStaleCrypto() {
   for (const [scenario, word, kind] of [["missing", "DEMO", "Demo"], ["stale", "STALE", "Stale"]]) {
     const c = await openContext(scenario);
-    await c.setPrivate("index.html");
+    await c.setPrivate("crypto.html");
     await c.until(`document.querySelector('#opportunities-body [data-asset-id]') && /${word}/.test(document.getElementById("market-status").textContent)`, `${word} status`);
     const status = await c.evaluate(text("#market-status"));
     check(`${word} crypto: status says ${word}`, new RegExp(word).test(status), status);
@@ -612,7 +612,7 @@ async function sweep() {
 async function shots() {
   mkdirSync(SHOTS, { recursive: true });
   const report = {};
-  for (const [page, ready] of [["index.html", `document.querySelector('#opportunities-body [data-asset-id]')`], ["stocks.html", `document.querySelector('[data-analyse-stock="ZZA"]')`]]) {
+  for (const [page, ready] of [["crypto.html", `document.querySelector('#opportunities-body [data-asset-id]')`], ["stocks.html", `document.querySelector('[data-analyse-stock="ZZA"]')`]]) {
     for (const width of [1280, 1440, 1920, 3413]) {
       const c = await openContext("sevenHours", { width, height: 1000 });
       await c.go(page);

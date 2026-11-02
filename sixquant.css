@@ -1163,3 +1163,44 @@ html:not([data-device="phone"]) body[data-page="stocks"]:not([data-view="planner
 /* Price chart inside the Stocks and Crypto cockpits. */
 .stock-chart { margin: 12px 0; }
 .stock-chart .sq-chart { display: block; width: 100%; height: auto; }
+
+/* Copilot */
+.sq-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+#cp-status { margin: 12px 0 14px; }
+.cp-grid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 14px; align-items: start; margin-bottom: 14px; }
+.cp-chat-head, .cp-list-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.cp-messages { height: 520px; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.cp-msg { max-width: 88%; padding: 10px 13px; border-radius: 8px; line-height: 1.5; font-size: 14px; overflow-wrap: anywhere; }
+.cp-msg p { margin: 0 0 8px; } .cp-msg p:last-child { margin-bottom: 0; }
+.cp-msg ul { margin: 0 0 8px; padding-left: 18px; } .cp-msg h4 { margin: 8px 0 4px; font-size: 14px; }
+.cp-msg.user { align-self: flex-end; background: var(--cyan-bg); border: 1px solid var(--brand-blue); }
+.cp-msg.assistant { align-self: flex-start; background: var(--panel-soft); border: 1px solid var(--line); }
+.cp-msg a { color: var(--brand-blue); }
+.cp-thinking { color: var(--muted); }
+.cp-empty { margin: auto; max-width: 560px; text-align: center; color: var(--muted); }
+.cp-suggestions { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.cp-suggestions .table-action { white-space: normal; height: auto; padding: 8px 12px; }
+.cp-form { display: flex; gap: 10px; padding: 12px 14px; border-top: 1px solid var(--line); align-items: stretch; }
+.cp-form textarea { flex: 1; min-width: 0; resize: vertical; background: var(--panel-soft); color: var(--text); border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 10px; font: inherit; font-size: 14px; }
+#cp-chat-message { padding: 0 14px 10px; margin: 0; }
+.cp-gate-form { display: flex; flex-direction: column; gap: 10px; max-width: 460px; margin: 40px auto; }
+.cp-gate-form h3 { margin: 0; } .cp-gate-form p { margin: 0; color: var(--muted); }
+.cp-gate-form label, .cp-size-inputs label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
+.cp-gate-form input, .cp-size-inputs input, .cp-list-tools input { background: var(--panel-soft); color: var(--text); border: 1px solid var(--line); border-radius: var(--radius); padding: 7px 9px; font: inherit; font-size: 14px; min-width: 0; width: 100%; box-sizing: border-box; }
+.cp-brief-body { max-height: 590px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+.cp-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.cp-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0; }
+.cp-facts dt { font-size: 11px; color: var(--muted); } .cp-facts dd { margin: 2px 0 0; font-family: "IBM Plex Mono", monospace; font-size: 13px; }
+.cp-size-inputs { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; }
+.cp-signals, .cp-news { margin: 0; padding-left: 16px; font-size: 13px; line-height: 1.45; }
+.cp-news li { margin-bottom: 6px; } .cp-news a { color: var(--text); } .cp-news small { display: block; color: var(--muted); }
+.cp-call { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap; vertical-align: middle; }
+.cp-call.strong { background: var(--green-bg); color: var(--green); } .cp-call.building { background: var(--amber-bg); color: var(--amber); } .cp-call.weak { background: var(--red-bg); color: var(--red); }
+.cp-list-tools { display: flex; gap: 10px; align-items: center; }
+.cp-tabs { display: flex; gap: 6px; } .cp-tabs .active { border-color: var(--brand-blue); color: var(--brand-blue); }
+.cp-evidence { margin: 0; padding: 10px 14px; font-size: 13px; line-height: 1.5; border-bottom: 1px solid var(--line); background: var(--amber-bg); }
+.cp-table-wrap { overflow-x: auto; }
+.cp-symbol { background: none; border: 0; padding: 0; color: var(--brand-blue); font: inherit; font-weight: 700; cursor: pointer; }
+.cp-selected td { background: var(--cyan-bg); }
+.cp-name { max-width: 280px; }
+@media (max-width: 980px) { .cp-grid { grid-template-columns: minmax(0, 1fr); } .cp-messages { height: 420px; } .cp-brief-body { max-height: none; } .cp-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

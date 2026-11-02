@@ -506,7 +506,7 @@
     // ---- Backup -----------------------------------------------------------
     const BACKUP_SCHEMA = "sixquant.backup.v1";
     function backupKeyAllowed(key) {
-        return key.startsWith("sixquant.") && key !== KEYS.githubPat && key !== KEYS.preImport && !key.includes("__");
+        return key.startsWith("sixquant.") && key !== KEYS.githubPat && key !== KEYS.preImport && key !== "sixquant.copilot.code.v1" && !key.includes("__");
     }
     function buildBackup(storage, now = new Date()) {
         const data = {};

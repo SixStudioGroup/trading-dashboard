@@ -1,0 +1,274 @@
+{
+ "generatedAt": "2026-11-02T23:31:26.962259+00:00",
+ "method": "Next-open long, stop 2 ATR, target 4 ATR, 20-session limit. Sampled every 5 sessions. Costs per round trip: ASX 0.70% (nabtrade on about $5,000 plus spread), crypto 2.5% (1% a side plus spread). Today's surviving symbols, which flatters results.",
+ "asx": {
+  "all": {
+   "trades": 15275,
+   "avgReturnPct": -0.16,
+   "winRatePct": 42.5,
+   "avgR": -0.06,
+   "low95": -0.62,
+   "high95": 0.31
+  },
+  "from": "2022-02-15",
+  "to": "2026-09-30",
+  "symbols": 65,
+  "thresholds": {
+   "3": {
+    "trades": 8086,
+    "avgReturnPct": -0.28,
+    "winRatePct": 41.8,
+    "avgR": -0.09,
+    "low95": -0.7,
+    "high95": 0.14,
+    "first": {
+     "trades": 4083,
+     "avgReturnPct": -0.31,
+     "winRatePct": 41.0,
+     "avgR": -0.11,
+     "low95": -0.92,
+     "high95": 0.32
+    },
+    "second": {
+     "trades": 4003,
+     "avgReturnPct": -0.25,
+     "winRatePct": 42.6,
+     "avgR": -0.07,
+     "low95": -0.78,
+     "high95": 0.34
+    }
+   },
+   "4": {
+    "trades": 7044,
+    "avgReturnPct": -0.3,
+    "winRatePct": 41.7,
+    "avgR": -0.09,
+    "low95": -0.71,
+    "high95": 0.14,
+    "first": {
+     "trades": 3546,
+     "avgReturnPct": -0.31,
+     "winRatePct": 41.0,
+     "avgR": -0.11,
+     "low95": -0.95,
+     "high95": 0.32
+    },
+    "second": {
+     "trades": 3498,
+     "avgReturnPct": -0.28,
+     "winRatePct": 42.4,
+     "avgR": -0.07,
+     "low95": -0.82,
+     "high95": 0.32
+    }
+   },
+   "5": {
+    "trades": 5826,
+    "avgReturnPct": -0.31,
+    "winRatePct": 41.6,
+    "avgR": -0.09,
+    "low95": -0.73,
+    "high95": 0.15,
+    "first": {
+     "trades": 2934,
+     "avgReturnPct": -0.28,
+     "winRatePct": 41.3,
+     "avgR": -0.1,
+     "low95": -0.91,
+     "high95": 0.34
+    },
+    "second": {
+     "trades": 2892,
+     "avgReturnPct": -0.33,
+     "winRatePct": 41.8,
+     "avgR": -0.09,
+     "low95": -0.9,
+     "high95": 0.33
+    }
+   },
+   "6": {
+    "trades": 3842,
+    "avgReturnPct": -0.24,
+    "winRatePct": 41.9,
+    "avgR": -0.08,
+    "low95": -0.73,
+    "high95": 0.26,
+    "first": {
+     "trades": 1912,
+     "avgReturnPct": -0.32,
+     "winRatePct": 40.8,
+     "avgR": -0.11,
+     "low95": -0.97,
+     "high95": 0.31
+    },
+    "second": {
+     "trades": 1930,
+     "avgReturnPct": -0.16,
+     "winRatePct": 42.9,
+     "avgR": -0.05,
+     "low95": -0.9,
+     "high95": 0.65
+    }
+   },
+   "7": {
+    "trades": 1213,
+    "avgReturnPct": 0.14,
+    "winRatePct": 45.2,
+    "avgR": 0.0,
+    "low95": -0.69,
+    "high95": 0.96,
+    "first": {
+     "trades": 594,
+     "avgReturnPct": 0.23,
+     "winRatePct": 46.3,
+     "avgR": 0.01,
+     "low95": -0.73,
+     "high95": 1.14
+    },
+    "second": {
+     "trades": 619,
+     "avgReturnPct": 0.05,
+     "winRatePct": 44.1,
+     "avgR": -0.0,
+     "low95": -1.32,
+     "high95": 1.51
+    }
+   }
+  }
+ },
+ "crypto": {
+  "all": {
+   "trades": 3480,
+   "avgReturnPct": -3.08,
+   "winRatePct": 34.2,
+   "avgR": -0.29,
+   "low95": -4.62,
+   "high95": -1.32
+  },
+  "from": "2022-01-11",
+  "to": "2026-10-12",
+  "symbols": 11,
+  "thresholds": {
+   "3": {
+    "trades": 1471,
+    "avgReturnPct": -2.97,
+    "winRatePct": 34.1,
+    "avgR": -0.3,
+    "low95": -5.35,
+    "high95": -0.53,
+    "first": {
+     "trades": 780,
+     "avgReturnPct": -2.32,
+     "winRatePct": 36.3,
+     "avgR": -0.25,
+     "low95": -5.37,
+     "high95": 0.59
+    },
+    "second": {
+     "trades": 691,
+     "avgReturnPct": -3.7,
+     "winRatePct": 31.5,
+     "avgR": -0.36,
+     "low95": -7.35,
+     "high95": -0.03
+    }
+   },
+   "4": {
+    "trades": 1294,
+    "avgReturnPct": -3.04,
+    "winRatePct": 34.2,
+    "avgR": -0.31,
+    "low95": -5.56,
+    "high95": -0.48,
+    "first": {
+     "trades": 695,
+     "avgReturnPct": -2.07,
+     "winRatePct": 37.6,
+     "avgR": -0.23,
+     "low95": -5.14,
+     "high95": 1.0
+    },
+    "second": {
+     "trades": 599,
+     "avgReturnPct": -4.17,
+     "winRatePct": 30.2,
+     "avgR": -0.4,
+     "low95": -8.17,
+     "high95": -0.18
+    }
+   },
+   "5": {
+    "trades": 1087,
+    "avgReturnPct": -3.19,
+    "winRatePct": 33.9,
+    "avgR": -0.32,
+    "low95": -5.9,
+    "high95": -0.59,
+    "first": {
+     "trades": 589,
+     "avgReturnPct": -2.19,
+     "winRatePct": 37.5,
+     "avgR": -0.23,
+     "low95": -5.35,
+     "high95": 0.85
+    },
+    "second": {
+     "trades": 498,
+     "avgReturnPct": -4.37,
+     "winRatePct": 29.7,
+     "avgR": -0.42,
+     "low95": -8.94,
+     "high95": -0.16
+    }
+   },
+   "6": {
+    "trades": 798,
+    "avgReturnPct": -3.57,
+    "winRatePct": 33.7,
+    "avgR": -0.33,
+    "low95": -6.53,
+    "high95": -0.6,
+    "first": {
+     "trades": 435,
+     "avgReturnPct": -2.99,
+     "winRatePct": 35.9,
+     "avgR": -0.29,
+     "low95": -6.38,
+     "high95": 0.23
+    },
+    "second": {
+     "trades": 363,
+     "avgReturnPct": -4.27,
+     "winRatePct": 31.1,
+     "avgR": -0.39,
+     "low95": -9.43,
+     "high95": 0.79
+    }
+   },
+   "7": {
+    "trades": 459,
+    "avgReturnPct": -3.41,
+    "winRatePct": 33.8,
+    "avgR": -0.3,
+    "low95": -7.36,
+    "high95": 0.8,
+    "first": {
+     "trades": 245,
+     "avgReturnPct": -2.44,
+     "winRatePct": 38.8,
+     "avgR": -0.19,
+     "low95": -6.52,
+     "high95": 1.85
+    },
+    "second": {
+     "trades": 214,
+     "avgReturnPct": -4.53,
+     "winRatePct": 28.0,
+     "avgR": -0.42,
+     "low95": -10.88,
+     "high95": 2.54
+    }
+   }
+  }
+ }
+}

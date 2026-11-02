@@ -46,7 +46,7 @@ in `scripts/fetch_stocks.py` and `tools/generate-asx-feed.mjs` and documented in
 
 Key paths:
 
-- `index.html`, `app.js` — Crypto Terminal, the home page.
+- `index.html`, `copilot.js` — Copilot, the home page: AI chat, shortlist and briefs. `copilot-api/` is its AI server.
 - `today.html`, `today.js` — Today, an optional extra.
 - `stocks.html`, `stocks.js`, `stock-release2.js`, `data/asx-feed.json` — Stocks table and cockpit.
 - `planner.html`, `planner.js`, `data/asx-history.json` — Trade planner, an optional extra.

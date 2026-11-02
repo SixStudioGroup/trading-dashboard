@@ -23,3 +23,7 @@ Workflows must use least-privilege permissions, pinned or reviewed actions and n
 ## Reporting
 
 Report security concerns privately to the repository owner. Do not post credentials, personal trading records or exploitable details in public issues.
+
+## Copilot AI server
+
+`copilot-api/` is a Cloudflare Worker that holds the operator's Anthropic API key in KV, never in the page or this repository. It accepts requests only from the site's origin with an access code held as a Worker secret, caps questions per day and message sizes, and has no broker connection. Questions, the account value, the risk setting and open trades in private mode go to Anthropic to answer them. Market data, news and web results are passed to the AI as untrusted reference material, and replies are escaped before display. The access code is excluded from backup files.

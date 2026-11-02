@@ -20,7 +20,7 @@ import { join } from "node:path";
 const BASE = (process.argv[2] || "https://sixstudiogroup.github.io/trading-dashboard").replace(/\/$/, "");
 const PORT = Number(process.env.CDP_PORT || 9444);
 const CHROME = process.env.CHROME_PATH || defaultChrome();
-const PAGES = ["index.html", "today.html", "planner.html", "stocks.html", "journal.html", "alerts.html", "logs.html", "reports.html", "guide.html", "settings.html"];
+const PAGES = ["index.html", "crypto.html", "today.html", "planner.html", "stocks.html", "journal.html", "alerts.html", "logs.html", "reports.html", "guide.html", "settings.html"];
 
 function defaultChrome() {
   if (process.platform === "win32") {
@@ -111,7 +111,7 @@ async function run() {
   }
 
   // --- Console error capture on the two terminals (load with Log domain) ---
-  for (const p of ["index.html", "today.html", "planner.html", "stocks.html"]) {
+  for (const p of ["crypto.html", "today.html", "planner.html", "stocks.html"]) {
     const created = await (await fetch(`http://127.0.0.1:${PORT}/json/new?about:blank`, { method: "PUT" })).json();
     await sleep(500);
     const list = await (await fetch(`http://127.0.0.1:${PORT}/json/list`)).json();
@@ -138,7 +138,7 @@ async function run() {
   {
     let s;
     try {
-      s = await open(`${BASE}/index.html`, { width: 1440, mobile: false });
+      s = await open(`${BASE}/crypto.html`, { width: 1440, mobile: false });
       const data = JSON.parse(await s.evaluate(`(() => {
         const clip = [];
         const clipAnc = (el) => { let n = el.parentElement; while (n && n !== document.documentElement) { const cs = getComputedStyle(n); if (cs.overflowX === 'hidden' || cs.overflow === 'hidden') return n; n = n.parentElement; } return null; };
@@ -155,7 +155,7 @@ async function run() {
   }
 
   // --- Phone layout: no overflow, queues fit, check strip, Analyse visible ---
-  for (const p of ["index.html", "stocks.html"]) {
+  for (const p of ["crypto.html", "stocks.html"]) {
     let s;
     try {
       s = await open(`${BASE}/${p}`, { width: 390, mobile: true });
@@ -176,7 +176,7 @@ async function run() {
       record(`phone:${p}:no-overflow`, data.scrollW <= 392, `scrollW=${data.scrollW}`);
       record(`phone:${p}:queue-fits`, data.queueW > 0 && data.queueW <= 392, `queueW=${data.queueW}`);
       record(`phone:${p}:analyse-visible`, data.analyseFits, `analyseFits=${data.analyseFits}`);
-      if (p === "index.html") record("phone:check-strip", data.checkVisible === "grid", `display=${data.checkVisible}`);
+      if (p === "crypto.html") record("phone:check-strip", data.checkVisible === "grid", `display=${data.checkVisible}`);
     } catch (e) { record(`phone:${p}`, false, e.message); } finally { s && s.close(); }
   }
 
@@ -263,7 +263,7 @@ async function run() {
   }
 
   // --- Large monitor: original size, never scaled up ---
-  for (const p of ["index.html", "stocks.html"]) {
+  for (const p of ["crypto.html", "stocks.html"]) {
     let s;
     try {
       s = await open(`${BASE}/${p}`, { width: 3400, mobile: false });
@@ -320,7 +320,7 @@ async function run() {
   {
     let s;
     try {
-      s = await open(`${BASE}/index.html`, { settle: 9000 });
+      s = await open(`${BASE}/crypto.html`, { settle: 9000 });
       const hb = await s.evaluate(`document.getElementById('feed-heartbeat')?.textContent || ''`);
       record("func:heartbeat-ok", /^OK/.test(hb), `heartbeat="${hb.slice(0,40)}"`);
       const blockMsg = await s.evaluate(`(async () => {
