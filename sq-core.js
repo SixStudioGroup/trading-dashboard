@@ -18,7 +18,12 @@
         githubPat: "sixquant.githubPat.v1"
     };
     const DEFAULT_RULES = { maxPositionPct: 8, cashReservePct: 20, exitAlertPct: 8, maxOpenRiskPct: 6 };
-    const DEFAULT_FEES = { brokerageFee: 5, feePercent: 0, spreadPercent: 0.10 };
+    // brokerageMode "nabtrade" works brokerage out from the trade size. brokerageFee is
+    // then only the manual figure kept for when the operator chooses "manual".
+    const DEFAULT_FEES = { brokerageMode: "nabtrade", brokerageFee: 14.95, feePercent: 0, spreadPercent: 0.10 };
+    // nabtrade online brokerage per side, inc. GST. nabtrade.com.au/pricing, checked 3 Nov 2026.
+    const NABTRADE_TIERS = [{ upTo: 1000, fee: 9.95 }, { upTo: 5000, fee: 14.95 }, { upTo: 20000, fee: 19.95 }];
+    const NABTRADE_OVER_PERCENT = 0.11;
     const DEFAULT_ACCOUNT = { accountValue: 0, riskPercent: 1, setupDone: false, lastBackupAt: "" };
     const GRADUATION = { minTrades: 30, minExpectancyR: 0, minAdherencePct: 90 };
     const SYDNEY = "Australia/Sydney";
@@ -108,7 +113,7 @@
         if (intraday) {
             return { state: "current", dataState: "delayed", blocks: false, intraday: true, lastSession, behind: 0, label: `ASX DELAYED: part-session ${when}`, detail: "Today's bar is incomplete, so volume and signals are provisional until the close." };
         }
-        return { state: "current", dataState: "delayed", blocks: false, lastSession, behind: 0, label: `ASX DELAYED: last close ${when}`, detail: "End-of-day data. Confirm live price and spread at your broker before any order." };
+        return { state: "current", dataState: "delayed", blocks: false, lastSession, behind: 0, label: `ASX DELAYED: last close ${when}`, detail: "End-of-day data. Confirm live price and spread in nabtrade before any order." };
     }
     function cryptoFreshness(lastUpdated, now = new Date()) {
         const at = new Date(lastUpdated);
@@ -173,6 +178,18 @@
         return { "High Consensus": "Rules agree (unproven)", "Analyse Candidate": "Research candidate" }[label] || label;
     }
 
+    // ---- Brokerage --------------------------------------------------------
+    function nabtradeBrokerage(value) {
+        const cents = Math.round(pos(value) * 100) / 100;
+        if (!(cents > 0)) return 0;
+        const tier = NABTRADE_TIERS.find(row => cents <= row.upTo);
+        return tier ? tier.fee : Math.round(cents * NABTRADE_OVER_PERCENT) / 100;
+    }
+    // Records saved before this mode existed have none, and keep their saved flat fee.
+    function brokeragePerSide(value, fees = DEFAULT_FEES) {
+        return fees.brokerageMode === "nabtrade" ? nabtradeBrokerage(value) : pos(fees.brokerageFee);
+    }
+
     // ---- Sizing -----------------------------------------------------------
     // Fee-aware: a stop-out realises price risk plus round-trip costs, so both
     // must fit inside the risk budget. Then the position cap may cut it further.
@@ -189,22 +206,37 @@
         const riskBudget = account * (riskPercent / 100);
         const perUnitRisk = entry > 0 && stop > 0 ? Math.max(0, entry - stop) : 0;
         const varRate = (2 * feePercent + spreadPercent) / 100;
-        const fixedRoundTrip = 2 * brokerageFee;
         const denom = perUnitRisk + entry * varRate;
-        const budgetAfterFixed = riskBudget - fixedRoundTrip;
-        const riskUnits = perUnitRisk > 0 && denom > 0 && budgetAfterFixed > 0 ? Math.floor(budgetAfterFixed / denom) : 0;
+        const unitsWithin = (roundTripFixed, unitCost) => (perUnitRisk > 0 && unitCost > 0 && riskBudget - roundTripFixed > 0
+            ? Math.floor((riskBudget - roundTripFixed) / unitCost) : 0);
+        let riskUnits;
+        if (input.brokerageMode === "nabtrade") {
+            // The fee depends on the size and the size on the fee, so take the largest
+            // size that fits its own tier's fee inside the risk budget.
+            riskUnits = 0;
+            NABTRADE_TIERS.forEach(tier => {
+                const tierCap = entry > 0 ? Math.floor(tier.upTo / entry) : 0;
+                riskUnits = Math.max(riskUnits, Math.min(unitsWithin(2 * tier.fee, denom), tierCap));
+            });
+            const overUnits = unitsWithin(0, denom + entry * (2 * NABTRADE_OVER_PERCENT / 100));
+            if (overUnits * entry > NABTRADE_TIERS[NABTRADE_TIERS.length - 1].upTo) riskUnits = Math.max(riskUnits, overUnits);
+        } else {
+            riskUnits = unitsWithin(2 * brokerageFee, denom);
+        }
         const capValue = account * (maxPositionPct / 100);
         const capUnits = entry > 0 ? Math.floor(capValue / entry) : 0;
         const units = Math.min(riskUnits, capUnits);
         const cappedByPosition = units > 0 && capUnits < riskUnits;
         const position = units * entry;
+        const perSide = brokeragePerSide(position, { brokerageMode: input.brokerageMode, brokerageFee });
+        const fixedRoundTrip = 2 * perSide;
         const roundTripCost = units > 0 ? fixedRoundTrip + position * varRate : 0;
         const priceRisk = units * perUnitRisk;
         const worstCaseLoss = priceRisk + roundTripCost;
         const grossReward = target > entry ? units * (target - entry) : 0;
         const netReward = grossReward - roundTripCost;
         return {
-            units, position, riskBudget, perUnitRisk, roundTripCost, priceRisk, worstCaseLoss,
+            units, position, riskBudget, perUnitRisk, brokeragePerSide: units > 0 ? perSide : 0, roundTripCost, priceRisk, worstCaseLoss,
             grossReward, netReward, cappedByPosition, capValue,
             rewardRisk: worstCaseLoss > 0 && target > entry ? netReward / worstCaseLoss : 0,
             breakeven: units > 0 ? entry + roundTripCost / units : 0,
@@ -264,7 +296,7 @@
         };
     }
     function estimatedFees(position, fees = DEFAULT_FEES) {
-        return 2 * pos(fees.brokerageFee) + pos(position) * ((2 * pos(fees.feePercent) + pos(fees.spreadPercent)) / 100);
+        return 2 * brokeragePerSide(position, fees) + pos(position) * ((2 * pos(fees.feePercent) + pos(fees.spreadPercent)) / 100);
     }
     function closeTrade(trade, { exitPrice, exitDate, feesPaid, exitReason, ruleFollowed, mistakeType, lessonLearned } = {}) {
         const exit = pos(exitPrice);
@@ -274,7 +306,7 @@
         const units = pos(trade.units);
         const position = entry * units;
         const fees = feesPaid === "" || feesPaid === undefined || feesPaid === null
-            ? estimatedFees(position, { brokerageFee: trade.brokerageFee, feePercent: trade.feePercent, spreadPercent: trade.spreadPercent })
+            ? estimatedFees(position, { brokerageMode: trade.brokerageMode, brokerageFee: trade.brokerageFee, feePercent: trade.feePercent, spreadPercent: trade.spreadPercent })
             : pos(feesPaid);
         return {
             trade: {
@@ -516,7 +548,7 @@
         KEYS, DEFAULT_RULES, DEFAULT_FEES, DEFAULT_ACCOUNT, GRADUATION,
         sydneyParts, expectedSession, sessionsBehind, isTradingDay, formatSessionDate, formatAge,
         asxFreshness, cryptoFreshness, demoFreshness, liveTradeReady, oneHourReturn, stockPlanGate, consensusLabel,
-        sizePosition, estimatedFees,
+        nabtradeBrokerage, brokeragePerSide, sizePosition, estimatedFees,
         tradeId, normalizeStockTrade, markEntered, closeResult, closeTrade, positionStatus, openExposure,
         planChecks, checksPass, tradeStats, graduation,
         movingAverage, chartSvg,

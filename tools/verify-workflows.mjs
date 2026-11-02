@@ -361,7 +361,7 @@ async function scenarioBlockedSubmit() {
   const PLANS = "sixquant.stocks.tradeJournal.v1";
   const FEES = "sixquant.stocks.auBrokerDefaults.v2";
   const seedPlans = symbol => JSON.stringify([{ id: "FIX-OLD", symbol, status: "planned", referencePrice: 166.72, targetPrice: 99, brokerageFee: 1, feePercent: 0.5, spreadPercent: 0.3, grossProfit: 11, netProfit: 9, totalCosts: 2, grossReturnPct: 1.1, netReturnPct: 0.9, breakevenPrice: 167, feeModelVersion: "release2" }]);
-  const seedFees = JSON.stringify({ spreadPercent: 0.2, brokerageFee: 7, feePercent: 0.1 });
+  const seedFees = JSON.stringify({ brokerageMode: "manual", spreadPercent: 0.2, brokerageFee: 7, feePercent: 0.1 });
   // Every fee field on the form differs from the saved values, so any write shows.
   const submit = (stop, size) => `(() => {
     const set = (id, v) => { document.getElementById(id).value = v; };
@@ -402,6 +402,81 @@ async function scenarioBlockedSubmit() {
 }
 
 // Truncation only where the table would otherwise clip, with nothing else moving.
+async function scenarioNabtrade() {
+  const PLANS = "sixquant.stocks.tradeJournal.v1";
+  const FEES = "sixquant.stocks.auBrokerDefaults.v2";
+  const c = await openContext("fresh");
+  await c.setPrivate("stocks.html");
+  // The old $5 default as an existing browser would hold it, plus a plan saved with it.
+  const oldPlan = { id: "FIX-OLD", symbol: "ZZB", status: "planned", referencePrice: 10, positionSize: 1000, brokerageFee: 5, feePercent: 0, spreadPercent: 0.1 };
+  await c.evaluate(`localStorage.setItem(${JSON.stringify(FEES)}, ${JSON.stringify(JSON.stringify({ brokerageFee: 5, feePercent: 0, spreadPercent: 0.1 }))}); localStorage.setItem(${JSON.stringify(PLANS)}, ${JSON.stringify(JSON.stringify([oldPlan]))})`);
+  await c.go("stocks.html");
+  await c.until(`document.querySelector('[data-analyse-stock="ZZA"]') && /DELAYED/.test(document.getElementById("stock-source-badge").textContent)`, "stocks rows");
+  await c.evaluate(pick("ZZA"));
+  await c.until(`document.querySelector(".stock-agent-consensus")`, "cockpit");
+  const field = `document.getElementById("stock-fee-brokerage")`;
+  check("nabtrade: Stocks brokerage field is calculated, not typed", await c.evaluate(`${field}.readOnly`));
+  check("nabtrade: Stocks field is labelled nabtrade", /nabtrade/.test(await c.evaluate(`${field}.closest("label").textContent`)));
+  const typeSize = v => c.evaluate(`(() => { const el = document.getElementById("stock-plan-position-size"); el.value = "${v}"; el.dispatchEvent(new Event("input", { bubbles: true })); return ${field}.value; })()`);
+  for (const [size, fee] of [[500, "9.95"], [1000, "9.95"], [1000.01, "14.95"], [5000, "14.95"], [20000, "19.95"], [30000, "33.00"]]) {
+    const got = await typeSize(size);
+    check(`nabtrade: $${size} position shows $${fee} per side`, got === fee, got);
+  }
+  await c.evaluate(`(() => { const set = (id, v) => { const el = document.getElementById(id); el.value = v; el.dispatchEvent(new Event("input", { bubbles: true })); }; set("stock-risk-entry", "100"); set("stock-fee-target", "110"); set("stock-fee-percent", "0"); set("stock-fee-spread", "0"); set("stock-plan-position-size", "5000"); })()`);
+  const feeText = await c.evaluate(text("#stock-fee-output"));
+  check("nabtrade: fee panel charges both sides ($29.90 on $5,000)", /\$29\.90/.test(feeText), feeText);
+  check("nabtrade: breakeven includes those costs ($100.60)", /\$100\.60/.test(feeText), feeText);
+  await c.evaluate(`(() => { const set = (id, v) => { const el = document.getElementById(id); el.value = v; el.dispatchEvent(new Event("input", { bubbles: true })); }; set("stock-risk-account", "100000"); set("stock-risk-percent", "1"); set("stock-risk-entry", "100"); set("stock-risk-invalidation-price", "95"); })()`);
+  const riskText = await c.evaluate(text("#stock-risk-output"));
+  check("nabtrade: risk panel sizes with the fee for its size (192 shares, $39.90 fees)", /192/.test(riskText) && /\$39\.90/.test(riskText), riskText);
+  const nabLinks = `[...document.querySelectorAll("#stock-broker-review a")].filter(a => /nabtrade/.test(a.href)).map(a => a.href)`;
+  check("nabtrade: no button before a completed plan", !(await c.evaluate(nabLinks)).length);
+  await c.evaluate(`document.getElementById("stock-fee-spread").value = "0.1"`);
+  await c.evaluate(stockFillWith(95));
+  await sleep(300);
+  check("nabtrade: no button with the plan saved but the checklist open", !(await c.evaluate(nabLinks)).length);
+  await c.evaluate(`document.querySelectorAll("[data-broker-check]").forEach((_, i) => { const el = document.querySelectorAll("[data-broker-check]")[i]; if (!el.checked) el.click(); })`);
+  await c.until(`document.querySelector("#stock-broker-review a")`, "nabtrade button");
+  const links = await c.evaluate(nabLinks);
+  check("nabtrade: after plan and checklist, one button to nabtrade with no order details", links.length === 1 && links[0] === "https://www.nabtrade.com.au/", links.join());
+  check("nabtrade: button opens a new tab safely", await c.evaluate(`(() => { const a = document.querySelector("#stock-broker-review a"); return a.target === "_blank" && /noopener/.test(a.rel); })()`));
+  const stored = await c.evaluate(`({ fees: JSON.parse(localStorage.getItem(${JSON.stringify(FEES)})), plans: JSON.parse(localStorage.getItem(${JSON.stringify(PLANS)})) })`);
+  const saved = stored.plans.find(p => p.symbol === "ZZA");
+  check("nabtrade: saved plan records mode and the fee for its size", saved?.brokerageMode === "nabtrade" && saved?.brokerageFee === 9.95, JSON.stringify(saved));
+  const old = stored.plans.find(p => p.symbol === "ZZB");
+  check("nabtrade: older plan keeps its saved $5 fee", old?.brokerageFee === 5 && !old?.brokerageMode, JSON.stringify(old));
+  check("nabtrade: saving keeps the mode on fee defaults", stored.fees.brokerageMode === "nabtrade" && stored.fees.brokerageFee === 5, JSON.stringify(stored.fees));
+  check("nabtrade: Stocks has no page errors", !c.errors.length, c.errors.join(" | "));
+
+  await c.go("planner.html?symbol=ZZA");
+  await c.until(`document.getElementById("plan-fee-note")?.textContent`, "planner note");
+  check("nabtrade: planner note names nabtrade", /nabtrade/.test(await c.evaluate(text("#plan-fee-note"))), await c.evaluate(text("#plan-fee-note")));
+
+  await c.go("settings.html");
+  await c.until(`document.getElementById("broker-fee-mode")?.value === "nabtrade"`, "settings mode");
+  check("nabtrade: Settings hides the old $5 behind the table", await c.evaluate(`document.getElementById("broker-fee-brokerage").disabled && document.getElementById("broker-fee-brokerage").value === ""`));
+  await c.evaluate(`(() => { const m = document.getElementById("broker-fee-mode"); m.value = "manual"; m.dispatchEvent(new Event("change", { bubbles: true })); const b = document.getElementById("broker-fee-brokerage"); b.value = "12"; document.getElementById("broker-fee-save").click(); })()`);
+  const manual = await c.evaluate(`JSON.parse(localStorage.getItem(${JSON.stringify(FEES)}))`);
+  check("manual: Settings saves mode and fee", manual.brokerageMode === "manual" && manual.brokerageFee === 12, JSON.stringify(manual));
+  await c.go("stocks.html");
+  await c.until(`document.querySelector('[data-analyse-stock="ZZA"]') && /DELAYED/.test(document.getElementById("stock-source-badge").textContent)`, "stocks rows");
+  await c.evaluate(pick("ZZA"));
+  await c.until(`document.querySelector(".stock-agent-consensus")`, "cockpit");
+  check("manual: Stocks field is editable and shows the manual fee", await c.evaluate(`!${field}.readOnly && Number(${field}.value) === 12`), await c.evaluate(`${field}.value`));
+  await c.go("settings.html");
+  await c.until(`document.getElementById("broker-fee-mode")?.value === "manual"`, "settings manual");
+  await c.evaluate(`document.getElementById("broker-fee-reset").click()`);
+  check("reset: back to the nabtrade table", (await c.evaluate(`JSON.parse(localStorage.getItem(${JSON.stringify(FEES)})).brokerageMode`)) === "nabtrade");
+  check("nabtrade: Settings has no page errors", !c.errors.length, c.errors.join(" | "));
+  await c.close();
+
+  const d = await openContext("fresh");
+  await d.go("today.html");
+  await d.until(`document.getElementById("sq-setup-form")`, "setup form");
+  check("nabtrade: Today setup shows the nabtrade table, with no fee to type", !(await d.evaluate(`Boolean(document.getElementById("setup-brokerage"))`)) && /nabtrade/.test(await d.evaluate(`document.querySelector("#sq-setup-form input[readonly]").value`)));
+  await d.close();
+}
+
 async function scenarioCompanyColumn() {
   const c = await openContext("sevenHours", { width: 1280, height: 1000 });
   await c.go("stocks.html");
@@ -561,7 +636,7 @@ async function main() {
   await connect();
   if (process.argv.includes("--sweep")) { await sweep(); return 0; }
   if (SHOTS) { await shots(); return 0; }
-  for (const scenario of [scenarioStaleOneHour, scenarioFreshOneHour, scenarioDemoAndStaleCrypto, scenarioStocks, scenarioBlockedSubmit, scenarioCompanyColumn, scenarioBackup]) {
+  for (const scenario of [scenarioStaleOneHour, scenarioFreshOneHour, scenarioDemoAndStaleCrypto, scenarioStocks, scenarioBlockedSubmit, scenarioNabtrade, scenarioCompanyColumn, scenarioBackup]) {
     if (arg("--only") && scenario.name !== arg("--only")) continue;
     try { await scenario(); } catch (e) { check(`${scenario.name} finished`, false, e.message); }
   }

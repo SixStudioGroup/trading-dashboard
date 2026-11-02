@@ -80,12 +80,16 @@
 
   function brokerDefaults() {
     migrateLegacyFeeDefaults();
-    return { brokerageFee: 5, feePercent: 0, spreadPercent: 0.10, ...readJson(FEE_DEFAULTS_KEY, {}) };
+    const stored = { brokerageFee: 14.95, feePercent: 0, spreadPercent: 0.10, ...readJson(FEE_DEFAULTS_KEY, {}) };
+    return { ...stored, brokerageMode: stored.brokerageMode === 'manual' ? 'manual' : 'nabtrade' };
   }
 
   function saveBrokerDefaultsFromForm() {
+    const current = brokerDefaults();
     const next = {
-      brokerageFee: finiteNumber(document.getElementById('stock-fee-brokerage')?.value, 5),
+      brokerageMode: current.brokerageMode,
+      // In nabtrade mode the field shows the calculated fee, not the saved manual figure.
+      brokerageFee: current.brokerageMode === 'manual' ? finiteNumber(document.getElementById('stock-fee-brokerage')?.value, current.brokerageFee) : current.brokerageFee,
       feePercent: finiteNumber(document.getElementById('stock-fee-percent')?.value, 0),
       spreadPercent: finiteNumber(document.getElementById('stock-fee-spread')?.value, 0.10)
     };
@@ -135,7 +139,25 @@
     return { entryPrice, targetPrice, positionSize, brokerageFee, feePercent, spreadPercent, units, grossProfit, brokerageTotal, percentageFees, spreadCost, totalCosts, netProfit, grossReturnPct, netReturnPct, breakevenPrice };
   }
 
+  function syncBrokerageField() {
+    const input = document.getElementById('stock-fee-brokerage');
+    if (!input) return;
+    const defaults = brokerDefaults();
+    const tiered = defaults.brokerageMode === 'nabtrade';
+    input.readOnly = tiered;
+    input.title = tiered ? 'Worked out from position size using nabtrade online pricing. Change in Settings.' : '';
+    const label = input.closest('label')?.querySelector('span');
+    if (label) label.textContent = tiered ? 'Brokerage per side AUD (nabtrade)' : 'Brokerage per side AUD';
+    if (tiered) {
+      const position = finiteNumber(document.getElementById('stock-plan-position-size')?.value);
+      input.value = position > 0 ? SQ.nabtradeBrokerage(position).toFixed(2) : '';
+    } else if (input.value === '') {
+      input.value = defaults.brokerageFee;
+    }
+  }
+
   function renderFeePanel() {
+    syncBrokerageField();
     const output = document.getElementById('stock-fee-output');
     if (!output) return;
     const result = calculateNetOutcome({
@@ -161,17 +183,21 @@
       if (input && input.value === '') input.value = value;
       if (input && id === 'stock-fee-brokerage') input.value = value;
     });
+    syncBrokerageField();
   }
 
   function patchPlanSubmit() {
     const form = document.getElementById('stock-plan-form');
     if (!form || form.dataset.release2Patched) return;
     form.dataset.release2Patched = 'true';
+    form.addEventListener('reset', () => setTimeout(() => { hydrateFeeDefaults(); renderFeePanel(); }, 0));
     form.addEventListener('submit', () => {
       // A plan the Stocks page refused (stale data, demo prices, a broken risk rule)
       // must not change the fee figures on an existing record.
       if (!isPrivateMode() || form.dataset.planSaved !== 'true') return;
       saveBrokerDefaultsFromForm();
+      syncBrokerageField();
+      const brokerageMode = brokerDefaults().brokerageMode;
       const data = new FormData(form);
       const fees = calculateNetOutcome({
         entryPrice: data.get('entryPrice'),
@@ -183,7 +209,7 @@
       });
       const symbol = safeText(data.get('symbol')).toUpperCase();
       const existing = loadPlans();
-      const updated = existing.map(plan => safeText(plan.symbol).toUpperCase() === symbol && !['open', 'closed', 'cancelled'].includes(plan.status) ? { ...plan, targetPrice: fees.targetPrice, brokerageFee: fees.brokerageFee, feePercent: fees.feePercent, spreadPercent: fees.spreadPercent, grossProfit: fees.grossProfit, netProfit: fees.netProfit, totalCosts: fees.totalCosts, grossReturnPct: fees.grossReturnPct, netReturnPct: fees.netReturnPct, breakevenPrice: fees.breakevenPrice, feeModelVersion: 'release2' } : plan);
+      const updated = existing.map(plan => safeText(plan.symbol).toUpperCase() === symbol && !['open', 'closed', 'cancelled'].includes(plan.status) ? { ...plan, targetPrice: fees.targetPrice, brokerageMode, brokerageFee: fees.brokerageFee, feePercent: fees.feePercent, spreadPercent: fees.spreadPercent, grossProfit: fees.grossProfit, netProfit: fees.netProfit, totalCosts: fees.totalCosts, grossReturnPct: fees.grossReturnPct, netReturnPct: fees.netReturnPct, breakevenPrice: fees.breakevenPrice, feeModelVersion: 'release2' } : plan);
       savePlans(updated);
       setTimeout(renderJournalFees, 0);
     });

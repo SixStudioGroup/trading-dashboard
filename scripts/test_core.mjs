@@ -91,6 +91,22 @@ const near = (a, b, tol = 0.005) => Math.abs(a - b) <= tol;
   s = SQ.sizePosition({ ...base, maxPositionPct: 8 });
   ok('position cap cuts size', s.units === 100 && s.cappedByPosition, String(s.units));
   ok('capped trade risks less than budget', s.worstCaseLoss < s.riskBudget);
+  ok('nabtrade tiers at each boundary', [[0, 0], [1000, 9.95], [1000.01, 14.95], [5000, 14.95], [5000.01, 19.95], [20000, 19.95], [20001, 22], [50000, 55]].every(([v, fee]) => SQ.nabtradeBrokerage(v) === fee));
+  const nab = { account: 50000, riskPercent: 1, entry: 40, stop: 38, target: 46, brokerageMode: 'nabtrade', feePercent: 0, spreadPercent: 0.1, maxPositionPct: 100 };
+  const sizedNab = SQ.sizePosition(nab);
+  ok('nabtrade sizing charges the fee for its own size', sizedNab.brokeragePerSide === SQ.nabtradeBrokerage(sizedNab.position));
+  ok('nabtrade sizing stays inside the risk budget', sizedNab.worstCaseLoss <= sizedNab.riskBudget + 0.01);
+  ok('nabtrade sizing leaves no affordable share unbought', (() => {
+    const v = (sizedNab.units + 1) * 40;
+    return (sizedNab.units + 1) * 2 + 2 * SQ.nabtradeBrokerage(v) + v * 0.001 > sizedNab.riskBudget || (sizedNab.units + 1) * 40 > 50000;
+  })());
+  ok('nabtrade sizing holds at every account size', [1000, 2500, 5000, 12000, 25000, 60000, 150000, 400000, 1000000].every(account => {
+    const s = SQ.sizePosition({ ...nab, account });
+    return s.worstCaseLoss <= s.riskBudget + 0.01 && (s.units === 0 || s.brokeragePerSide === SQ.nabtradeBrokerage(s.position));
+  }));
+  ok('nabtrade sizing can use the percentage tier', SQ.sizePosition({ ...nab, account: 1000000, stop: 39 }).position > 20000);
+  ok('a record with no brokerage mode keeps its saved fee', SQ.estimatedFees(10000, { brokerageFee: 5 }) === 10);
+  ok('a nabtrade record reprices at its real size', SQ.estimatedFees(10000, { brokerageMode: 'nabtrade', brokerageFee: 9.95 }) === 39.9);
   ok('stop above entry sizes to zero', SQ.sizePosition({ ...base, stop: 41 }).units === 0);
   ok('no stop sizes to zero', SQ.sizePosition({ ...base, stop: 0 }).units === 0);
   ok('fees bigger than budget size to zero', SQ.sizePosition({ ...base, account: 500 }).units === 0);
