@@ -3525,13 +3525,14 @@ function initDeviceModeCard() {
 // ASX broker fee defaults — shared key with stock-release2.js so saving here
 // pre-fills the Stocks fee panel and drives fee-aware position sizing.
 const BROKER_FEE_DEFAULTS_KEY = "sixquant.stocks.auBrokerDefaults.v2";
-const DEFAULT_BROKER_FEES = { brokerageFee: 5, feePercent: 0, spreadPercent: 0.10 };
+const DEFAULT_BROKER_FEES = { brokerageMode: "nabtrade", brokerageFee: 14.95, feePercent: 0, spreadPercent: 0.10 };
 
 function loadBrokerFeeDefaults() {
     if (!storageAvailable()) return { ...DEFAULT_BROKER_FEES };
     try {
         const stored = JSON.parse(window.localStorage.getItem(BROKER_FEE_DEFAULTS_KEY) || "{}");
         return {
+            brokerageMode: stored.brokerageMode === "manual" ? "manual" : "nabtrade",
             brokerageFee: Math.max(0, finiteNumber(stored.brokerageFee, DEFAULT_BROKER_FEES.brokerageFee)),
             feePercent: Math.max(0, finiteNumber(stored.feePercent, DEFAULT_BROKER_FEES.feePercent)),
             spreadPercent: Math.max(0, finiteNumber(stored.spreadPercent, DEFAULT_BROKER_FEES.spreadPercent))
@@ -3540,20 +3541,32 @@ function loadBrokerFeeDefaults() {
 }
 
 function initBrokerFeeCard() {
+    const modeInput = document.getElementById("broker-fee-mode");
     const brokerageInput = document.getElementById("broker-fee-brokerage");
     const percentInput = document.getElementById("broker-fee-percent");
     const spreadInput = document.getElementById("broker-fee-spread");
     const msg = document.getElementById("broker-fee-message");
-    if (!brokerageInput || !percentInput || !spreadInput) return;
+    if (!modeInput || !brokerageInput || !percentInput || !spreadInput) return;
+    let manualFee = DEFAULT_BROKER_FEES.brokerageFee;
+    const showMode = () => {
+        const tiered = modeInput.value === "nabtrade";
+        brokerageInput.disabled = tiered;
+        brokerageInput.placeholder = tiered ? "Set by table" : "";
+        brokerageInput.value = tiered ? "" : manualFee;
+    };
+    modeInput.addEventListener("change", showMode);
     const fill = (fees) => {
-        brokerageInput.value = fees.brokerageFee;
+        modeInput.value = fees.brokerageMode;
+        manualFee = fees.brokerageFee;
+        showMode();
         percentInput.value = fees.feePercent;
         spreadInput.value = fees.spreadPercent;
     };
     fill(loadBrokerFeeDefaults());
     document.getElementById("broker-fee-save")?.addEventListener("click", () => {
         const fees = {
-            brokerageFee: Math.max(0, finiteNumber(brokerageInput.value, DEFAULT_BROKER_FEES.brokerageFee)),
+            brokerageMode: modeInput.value === "manual" ? "manual" : "nabtrade",
+            brokerageFee: modeInput.value === "manual" ? Math.max(0, finiteNumber(brokerageInput.value, manualFee)) : manualFee,
             feePercent: Math.max(0, finiteNumber(percentInput.value, DEFAULT_BROKER_FEES.feePercent)),
             spreadPercent: Math.max(0, finiteNumber(spreadInput.value, DEFAULT_BROKER_FEES.spreadPercent))
         };

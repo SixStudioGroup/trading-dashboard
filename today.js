@@ -22,17 +22,18 @@
             <form class="sq-setup-form panel-body" id="sq-setup-form">
                 <label><span>Account value (AUD)</span><input id="setup-account" type="number" min="1" step="any" required value="${account.accountValue || ""}" placeholder="Paper or real starting value"></label>
                 <label><span>Risk per trade %</span><input id="setup-risk" type="number" min="0.05" max="5" step="0.05" required value="${account.riskPercent}"></label>
-                <label><span>Brokerage per side (AUD)</span><input id="setup-brokerage" type="number" min="0" step="any" required value="${fees.brokerageFee}"></label>
+                ${fees.brokerageMode === "nabtrade" ? `<label><span>Brokerage</span><input type="text" readonly value="nabtrade price table"></label>` : `<label><span>Brokerage per side (AUD)</span><input id="setup-brokerage" type="number" min="0" step="any" required value="${fees.brokerageFee}"></label>`}
                 <label><span>Spread / slippage %</span><input id="setup-spread" type="number" min="0" step="any" required value="${fees.spreadPercent}"></label>
                 <button class="button-primary" type="submit">Start in paper mode</button>
-                <p class="sq-note">Records are saved only in this browser. New trades default to paper. Check brokerage against your own broker's price list.</p>
+                <p class="sq-note">Records are saved only in this browser. New trades default to paper. Brokerage follows nabtrade online pricing, and you can change it in Settings.</p>
             </form>`;
         byId("sq-setup-form").addEventListener("submit", event => {
             event.preventDefault();
             S.setPrivate(true);
             S.setHideValues(false);
             S.saveAccount({ accountValue: Number(byId("setup-account").value), riskPercent: Number(byId("setup-risk").value), setupDone: true });
-            S.write(SQ.KEYS.feeDefaults, { ...S.fees(), brokerageFee: Number(byId("setup-brokerage").value), spreadPercent: Number(byId("setup-spread").value) });
+            const brokerageInput = byId("setup-brokerage");
+            S.write(SQ.KEYS.feeDefaults, { ...S.fees(), ...(brokerageInput ? { brokerageFee: Number(brokerageInput.value) } : {}), spreadPercent: Number(byId("setup-spread").value) });
             window.location.reload();
         });
     }
@@ -41,7 +42,7 @@
         const items = [];
         trades.filter(t => t.status === "open").forEach(t => {
             const status = SQ.positionStatus(t, assetFor(t.symbol)?.price);
-            if (status.state === "stop") items.push(["sq-alert-risk", `${t.symbol}: last close is at or below your stop. Check your broker and act on your plan.`]);
+            if (status.state === "stop") items.push(["sq-alert-risk", `${t.symbol}: last close is at or below your stop. Check nabtrade and act on your plan.`]);
             if (status.state === "target") items.push(["sq-alert-good", `${t.symbol}: last close reached your target. Review your exit plan.`]);
         });
         if (S.backupOverdue()) items.push(["sq-alert-warn", `Your records are only in this browser and have no recent backup. <button class="table-action" type="button" id="sq-backup-now">Download backup</button>`]);

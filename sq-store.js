@@ -47,8 +47,8 @@
     }
 
     const DEMO_TRADES = [
-        { id: "STOCK-DEMO-1", symbol: "BHP", name: "BHP Group (demo)", sector: "Materials", mode: "paper", status: "open", state: "Watch", referencePrice: 55, fillPrice: 55.2, units: 60, positionSize: 3312, invalidationPrice: 52.5, targetPrice: 61, brokerageFee: 5, feePercent: 0, spreadPercent: 0.1, whyNow: "Demo trade: workflow preview only", entryTrigger: "Demo trigger", recordedAt: "2026-10-26T18:00:00+11:00", fillDate: "2026-10-27T10:30:00+11:00" },
-        { id: "STOCK-DEMO-2", symbol: "CSL", name: "CSL (demo)", sector: "Health Care", mode: "paper", status: "planned", state: "Watch", referencePrice: 150, units: 20, positionSize: 3000, invalidationPrice: 143, targetPrice: 165, brokerageFee: 5, feePercent: 0, spreadPercent: 0.1, whyNow: "Demo plan: workflow preview only", entryTrigger: "Demo trigger", recordedAt: "2026-10-30T18:00:00+11:00" }
+        { id: "STOCK-DEMO-1", symbol: "BHP", name: "BHP Group (demo)", sector: "Materials", mode: "paper", status: "open", state: "Watch", referencePrice: 55, fillPrice: 55.2, units: 60, positionSize: 3312, invalidationPrice: 52.5, targetPrice: 61, brokerageMode: "nabtrade", brokerageFee: 14.95, feePercent: 0, spreadPercent: 0.1, whyNow: "Demo trade: workflow preview only", entryTrigger: "Demo trigger", recordedAt: "2026-10-26T18:00:00+11:00", fillDate: "2026-10-27T10:30:00+11:00" },
+        { id: "STOCK-DEMO-2", symbol: "CSL", name: "CSL (demo)", sector: "Health Care", mode: "paper", status: "planned", state: "Watch", referencePrice: 150, units: 20, positionSize: 3000, invalidationPrice: 143, targetPrice: 165, brokerageMode: "nabtrade", brokerageFee: 14.95, feePercent: 0, spreadPercent: 0.1, whyNow: "Demo plan: workflow preview only", entryTrigger: "Demo trigger", recordedAt: "2026-10-30T18:00:00+11:00" }
     ];
     let demoTrades = DEMO_TRADES.map(SQ.normalizeStockTrade);
 

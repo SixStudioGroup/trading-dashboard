@@ -5,7 +5,7 @@ const PRIVATE_LOCAL_MODE = "private";
 const STOCK_JOURNAL_STORAGE_KEY = "sixquant.stocks.tradeJournal.v1";
 const STOCK_HOLDINGS_STORAGE_KEY = "sixquant.stocks.holdings.v1";
 const STOCK_ASSET_CLASS = "stock";
-const MASTER_STOCK_RULE = "If the idea did not start in SixQuant, do not proceed to broker handoff.";
+const MASTER_STOCK_RULE = "If the idea did not start in SixQuant, do not proceed to nabtrade.";
 const STOCK_PUBLIC_WARNING = "Public Demo Mode shows sample plans and positions. Private Local Mode stores stock records only in this browser.";
 
 const DEMO_STOCKS = [
@@ -51,7 +51,7 @@ const brokerChecklistItems = [
     "Thesis recorded",
     "Invalidation recorded",
     "Position size reviewed",
-    "External broker details checked manually"
+    "Price, spread, fees checked in nabtrade"
 ];
 
 let portalMode = loadPortalMode();
@@ -286,6 +286,7 @@ function normalizePlan(plan = {}) {
         // other plan on each save; without carrying these through, saving one plan
         // would strip the persisted fee calculations off all the others.
         targetPrice: Math.max(0, finiteNumber(plan.targetPrice)),
+        brokerageMode: plan.brokerageMode,
         brokerageFee: finiteNumber(plan.brokerageFee),
         feePercent: finiteNumber(plan.feePercent),
         spreadPercent: finiteNumber(plan.spreadPercent),
@@ -455,7 +456,7 @@ function initMasterRuleFooter() {
     if (document.querySelector(".master-rule-footer")) return;
     const footer = document.createElement("footer");
     footer.className = "master-rule-footer";
-    footer.innerHTML = `<strong>${MASTER_STOCK_RULE}</strong><span>SixQuant decides. Broker handoff is a placeholder. SixQuant records and reviews.</span><span>${STOCK_PUBLIC_WARNING}</span>`;
+    footer.innerHTML = `<strong>${MASTER_STOCK_RULE}</strong><span>SixQuant decides. You place the order in nabtrade. SixQuant records and reviews.</span><span>${STOCK_PUBLIC_WARNING}</span>`;
     document.body.appendChild(footer);
 }
 
@@ -706,10 +707,10 @@ function renderAnalysis() {
                         </span>
                     `).join("")}
                 </div>
-                <p class="helper-output">These are simple rules on the same price data, not independent opinions, and they have shown no edge in testing. Review only. They do not unlock broker action.</p>
+                <p class="helper-output">These are simple rules on the same price data, not independent opinions, and they have shown no edge in testing. Review only. They do not unlock action in nabtrade.</p>
             </div>
             <div class="handoff-checklist">
-                <div class="mini-title">Broker Review Checklist <span class="checklist-progress">${completedBrokerChecks.size} / ${brokerChecklistItems.length} checks</span></div>
+                <div class="mini-title">nabtrade Review Checklist <span class="checklist-progress">${completedBrokerChecks.size} / ${brokerChecklistItems.length} checks</span></div>
                 <div class="checklist">
                     ${brokerChecklistItems.map(item => `
                         <label class="check-row">
@@ -746,11 +747,12 @@ function stockPlanForSelectedStock() {
 const STOCK_FEE_DEFAULTS_KEY = "sixquant.stocks.auBrokerDefaults.v2";
 
 function currentFeeAssumptions() {
-    let defaults = { brokerageFee: 5, feePercent: 0, spreadPercent: 0.10 };
+    let defaults = { brokerageMode: "nabtrade", brokerageFee: 14.95, feePercent: 0, spreadPercent: 0.10 };
     if (storageAvailable()) {
         try {
             const stored = JSON.parse(window.localStorage.getItem(STOCK_FEE_DEFAULTS_KEY) || "{}");
             defaults = {
+                brokerageMode: stored.brokerageMode === "manual" ? "manual" : "nabtrade",
                 brokerageFee: finiteNumber(stored.brokerageFee, defaults.brokerageFee),
                 feePercent: finiteNumber(stored.feePercent, defaults.feePercent),
                 spreadPercent: finiteNumber(stored.spreadPercent, defaults.spreadPercent)
@@ -762,6 +764,7 @@ function currentFeeAssumptions() {
         return el && el.value !== "" ? Math.max(0, finiteNumber(el.value, fallback)) : Math.max(0, fallback);
     };
     return {
+        brokerageMode: defaults.brokerageMode,
         brokerageFee: fromInput("stock-fee-brokerage", defaults.brokerageFee),
         feePercent: fromInput("stock-fee-percent", defaults.feePercent),
         spreadPercent: fromInput("stock-fee-spread", defaults.spreadPercent)
@@ -789,14 +792,19 @@ function riskPanelValues() {
     const fixedRoundTrip = 2 * fees.brokerageFee;
     const riskBudgetAfterFixed = maxLossAmount - fixedRoundTrip;
     const denom = perShareRisk + perShareVarCost;
-    const estimatedShares = denom > 0 && riskBudgetAfterFixed > 0
+    let estimatedShares = denom > 0 && riskBudgetAfterFixed > 0
         ? Math.floor(riskBudgetAfterFixed / denom)
         : 0;
+    // nabtrade brokerage depends on the trade size, so the shared sizing solves it.
+    const tiered = fees.brokerageMode === "nabtrade"
+        ? SQ.sizePosition({ account: accountValue, riskPercent, entry: entryPrice, stop: invalidationPrice, ...fees, maxPositionPct: 1e6 })
+        : null;
+    if (tiered) estimatedShares = tiered.units;
 
     const suggestedPositionSize = estimatedShares * entryPrice;
     const grossPositionSize = grossShares * entryPrice;
     // Worst-case round-trip cost on the fee-aware size (both legs transacted).
-    const roundTripCost = estimatedShares > 0
+    const roundTripCost = tiered ? tiered.roundTripCost : estimatedShares > 0
         ? fixedRoundTrip + suggestedPositionSize * ((2 * fees.feePercent + fees.spreadPercent) / 100)
         : 0;
     // Realised loss if stopped at invalidation = price risk + round-trip cost.
@@ -842,18 +850,19 @@ function renderBrokerReview() {
     panel.innerHTML = `
         <div class="broker-review-card">
             <div>
-                <span class="eyebrow">Broker handoff</span>
-                <h3>${escapeHtml(stock.symbol)} broker handoff</h3>
+                <span class="eyebrow">nabtrade handoff</span>
+                <h3>${escapeHtml(stock.symbol)} nabtrade handoff</h3>
                 <p>${escapeHtml(MASTER_STOCK_RULE)}</p>
             </div>
             <div class="rules-grid stock-rules-grid">
                 <div class="rule-card ${planSaved ? "strong" : "watch"}">Plan<span>${planSaved ? "Saved in SixQuant" : "Save plan first"}</span></div>
                 <div class="rule-card ${checklistComplete ? "strong" : "watch"}">Checklist<span>${completedBrokerChecks.size} / ${brokerChecklistItems.length}</span></div>
-                <div class="rule-card">Broker handoff<span>Broker execution not connected.</span></div>
+                <div class="rule-card">nabtrade<span>Not connected. You place the order.</span></div>
                 <div class="rule-card risk">Status<span>${ready ? "Not live-trade-ready" : "Locked"}</span></div>
             </div>
-            ${savedPlan ? `<p class="broker-lock-note">Saved plan: ${escapeHtml(savedPlan.symbol)} / ${escapeHtml(savedPlan.state)} / ${escapeHtml(savedPlan.entryTrigger)}. Broker execution not connected.</p>` : ""}
-            <p class="broker-lock-note">Broker execution not connected. SixQuant does not open, prefill, or link to a broker.</p>
+            ${savedPlan ? `<p class="broker-lock-note">Saved plan: ${escapeHtml(savedPlan.symbol)} / ${escapeHtml(savedPlan.state)} / ${escapeHtml(savedPlan.entryTrigger)}.</p>` : ""}
+            ${ready ? `<a class="table-action" style="justify-self:start;width:fit-content" href="https://www.nabtrade.com.au/" target="_blank" rel="noopener noreferrer" title="Opens nabtrade. No order details are sent.">Open nabtrade</a>` : ""}
+            <p class="broker-lock-note">Not connected to nabtrade. No order details are sent, and you place the order yourself.</p>
         </div>
     `;
 }
@@ -1042,7 +1051,7 @@ function renderStalenessWarning() {
         if (mode === "delayed") {
             // Persistent low-key notice — delayed data is the normal healthy state,
             // but the operator must never mistake it for licensed real-time data.
-            warning.innerHTML = `<span><strong>DELAYED ASX data — not licensed real-time.</strong> Review-only prices from an unlicensed delayed provider; confirm live price, spread and liquidity in your broker before any execution.${holidayNote} As at: ${asAt}.</span>`;
+            warning.innerHTML = `<span><strong>DELAYED ASX data — not licensed real-time.</strong> Review-only prices from an unlicensed delayed provider; confirm live price, spread and liquidity in nabtrade before any execution.${holidayNote} As at: ${asAt}.</span>`;
         } else {
             warning.innerHTML = mode === "offline"
                 ? `<span><strong>ASX feed UNAVAILABLE.</strong> Do not plan from this page.${holidayNote} As at: ${asAt}.</span>`

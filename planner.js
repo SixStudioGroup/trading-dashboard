@@ -114,7 +114,7 @@
             <div><dt>Reward : risk</dt><dd>${size.rewardRisk.toFixed(2)}R</dd></div>
             <div><dt>Breakeven</dt><dd>${S.price(size.breakeven)}</dd></div>`
             : `<p class="compact-empty sq-span">Enter entry, stop and account to size this trade.</p>`;
-        byId("plan-fee-note").innerHTML = `Using $${Number(fees.brokerageFee).toFixed(2)} brokerage per side and ${Number(fees.spreadPercent).toFixed(2)}% spread. Position cap ${rules.maxPositionPct}%. <a href="settings.html">Change</a>`;
+        byId("plan-fee-note").innerHTML = `Using ${fees.brokerageMode === "nabtrade" ? `nabtrade brokerage${size.units > 0 ? ` ($${size.brokeragePerSide.toFixed(2)} per side at this size)` : ""}` : `$${Number(fees.brokerageFee).toFixed(2)} brokerage per side`} and ${Number(fees.spreadPercent).toFixed(2)}% spread. Position cap ${rules.maxPositionPct}%. <a href="settings.html">Change</a>`;
         byId("plan-checks").innerHTML = checks.map(c => {
             if (c.status === "manual") {
                 return `<li class="sq-check manual"><label><input type="checkbox" data-manual-check="${e(c.id)}" ${manualDone.has(c.id) ? "checked" : ""}><span>${e(c.label)}</span></label>${c.detail ? `<small>${e(c.detail)}</small>` : ""}</li>`;
@@ -228,7 +228,7 @@
             referencePrice: Number(input.entry), invalidationPrice: Number(input.stop), targetPrice: Number(input.target),
             invalidation: `Close at or below ${S.price(input.stop)}`,
             units: size.units, positionSize: size.position, accountValue: Number(input.account), riskPercent: Number(input.riskPercent),
-            brokerageFee: fees.brokerageFee, feePercent: fees.feePercent, spreadPercent: fees.spreadPercent,
+            brokerageMode: fees.brokerageMode, brokerageFee: size.brokeragePerSide, feePercent: fees.feePercent, spreadPercent: fees.spreadPercent,
             totalCosts: size.roundTripCost, netProfit: size.netReward, breakevenPrice: size.breakeven, plannedRewardRisk: size.rewardRisk,
             feedSession: feed.lastSessionDate || "", dataStateAtPlan: freshness.dataState, liveTradeReady: SQ.liveTradeReady({ freshness, dataClass: feed.dataClass }).ready, checksAtPlan: checks.filter(c => c.status !== "manual").map(c => `${c.id}:${c.status}`).join(","),
             fromSixQuant: true, recordedAt: new Date().toISOString()
